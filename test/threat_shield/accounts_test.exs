@@ -391,9 +391,31 @@ defmodule ThreatShield.AccountsTest do
   describe "API keys" do
     setup do
       user = user_fixture()
-      expires_at = DateTime.add(DateTime.utc_now(), 30, :day)
-      {:ok, api_key} = Accounts.create_api_key(expires_at, actor: user)
+      {:ok, api_key} = Accounts.create_api_key(30, actor: user)
       %{user: user, api_key: api_key}
+    end
+
+    test "expire after the given number of days, at most 365", %{user: user} do
+      {:ok, api_key} = Accounts.create_api_key(365, actor: user)
+      expected = DateTime.add(DateTime.utc_now(), 365, :day)
+      assert abs(DateTime.diff(api_key.expires_at, expected)) < 60
+
+      assert {:error, error} = Accounts.create_api_key(366, actor: user)
+      assert %{valid_for_days: [_]} = errors_on(error)
+
+      assert {:error, error} = Accounts.create_api_key(0, actor: user)
+      assert %{valid_for_days: [_]} = errors_on(error)
+    end
+
+    test "do not accept an expiry date", %{user: user} do
+      expires_at = DateTime.add(DateTime.utc_now(), 1000, :day)
+
+      assert {:error, %Ash.Error.Invalid{}} =
+               ApiKey
+               |> Ash.Changeset.for_create(:create, %{valid_for_days: 1, expires_at: expires_at},
+                 actor: user
+               )
+               |> Ash.create()
     end
 
     test "sign in the user of the key", %{user: %{id: id}, api_key: api_key} do
@@ -410,14 +432,12 @@ defmodule ThreatShield.AccountsTest do
       plaintext = api_key.__metadata__.plaintext_api_key
       assert {:error, _} = Accounts.sign_in_with_api_key(plaintext <> "x")
 
-      expired_at = DateTime.add(DateTime.utc_now(), -1, :second)
-      {:ok, expired} = Accounts.create_api_key(expired_at, actor: user)
-      assert {:error, _} = Accounts.sign_in_with_api_key(expired.__metadata__.plaintext_api_key)
+      expired = api_key_fixture(user, -1)
+      assert {:error, _} = Accounts.sign_in_with_api_key(expired)
     end
 
     test "are deleted when they have expired", %{user: user, api_key: %{id: id}} do
-      expired_at = DateTime.add(DateTime.utc_now(), -1, :second)
-      {:ok, _expired} = Accounts.create_api_key(expired_at, actor: user)
+      _expired = api_key_fixture(user, -1)
 
       Accounts.delete_expired_api_keys()
 
@@ -433,9 +453,7 @@ defmodule ThreatShield.AccountsTest do
       {:ok, api_user} = Accounts.sign_in_with_api_key(api_key.__metadata__.plaintext_api_key)
 
       assert {:error, %Ash.Error.Forbidden{}} =
-               Accounts.create_api_key(DateTime.add(DateTime.utc_now(), 1, :day),
-                 actor: api_user
-               )
+               Accounts.create_api_key(1, actor: api_user)
     end
   end
 

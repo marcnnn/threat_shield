@@ -76,7 +76,7 @@ defmodule ThreatShield.Accounts do
 
     resource ThreatShield.Accounts.ApiKey do
       define :list_api_keys, action: :read
-      define :create_api_key, action: :create, args: [:expires_at]
+      define :create_api_key, action: :create, args: [:valid_for_days]
       define :revoke_api_key, action: :destroy, get_by: [:id]
     end
   end

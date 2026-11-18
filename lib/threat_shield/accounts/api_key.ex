@@ -62,9 +62,16 @@ defmodule ThreatShield.Accounts.ApiKey do
     create :create do
       description "Create an API key for the actor."
       primary? true
-      accept [:expires_at]
+      accept []
+
+      argument :valid_for_days, :integer do
+        allow_nil? false
+        constraints min: 1, max: 365
+        description "The number of days until the key expires, at most 365."
+      end
 
       change relate_actor(:user)
+      change ThreatShield.Accounts.Changes.SetApiKeyExpiry
 
       change {AshAuthentication.Strategy.ApiKey.GenerateApiKey,
               prefix: :threatshield, hash: :api_key_hash}

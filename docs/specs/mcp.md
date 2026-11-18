@@ -41,7 +41,8 @@ On **Account Settings** (`/users/settings`), section **API keys**:
 - changing or resetting the password deletes all keys of the user.
 - expired keys are deleted by `ThreatShield.Periodically`.
 
-Domain functions: `Accounts.create_api_key/2`, `Accounts.list_api_keys/1`,
+Domain functions: `Accounts.create_api_key/2` (the validity in days, 1-365; the action
+sets `expires_at`), `Accounts.list_api_keys/1`,
 `Accounts.revoke_api_key/2` (by id), each with `actor:`.
 
 ## Tools

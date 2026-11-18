@@ -186,9 +186,8 @@ defmodule ThreatShieldWeb.UserSettingsLive do
   def handle_event("create_api_key", %{"api_key" => %{"valid_for_days" => days}}, socket) do
     user = socket.assigns.current_user
     days = if days in Enum.map(@api_key_validity_days, &to_string/1), do: days, else: "90"
-    expires_at = DateTime.add(DateTime.utc_now(), String.to_integer(days), :day)
 
-    case Accounts.create_api_key(expires_at, actor: user) do
+    case Accounts.create_api_key(String.to_integer(days), actor: user) do
       {:ok, api_key} ->
         {:noreply,
          socket

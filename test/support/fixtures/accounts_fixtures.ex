@@ -89,8 +89,22 @@ defmodule ThreatShield.AccountsFixtures do
   `valid_for` seconds (negative for a key that has expired already).
   """
   def api_key_fixture(user, valid_for \\ 3600) do
-    expires_at = DateTime.add(DateTime.utc_now(), valid_for, :second)
-    {:ok, api_key} = ThreatShield.Accounts.create_api_key(expires_at, actor: user)
+    {:ok, api_key} = ThreatShield.Accounts.create_api_key(1, actor: user)
+    expire_api_key(api_key, valid_for)
     api_key.__metadata__.plaintext_api_key
+  end
+
+  @doc """
+  Sets the expiry of an API key to `valid_for` seconds from now, also in the past,
+  which the create action does not allow.
+  """
+  def expire_api_key(%ThreatShield.Accounts.ApiKey{id: id}, valid_for) do
+    import Ecto.Query, only: [where: 2]
+
+    expires_at = DateTime.add(DateTime.utc_now(), valid_for, :second)
+
+    ThreatShield.Accounts.ApiKey
+    |> where(id: ^id)
+    |> ThreatShield.Repo.update_all(set: [expires_at: expires_at])
   end
 end
