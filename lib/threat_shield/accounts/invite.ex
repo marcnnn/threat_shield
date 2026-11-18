@@ -163,10 +163,6 @@ defmodule ThreatShield.Accounts.Invite do
     end
   end
 
-  def generate_url(%{token: token}) do
-    ThreatShieldWeb.Endpoint.url() <> "/join/" <> token
-  end
-
   def expiration_point(%{inserted_at: inserted_at}) do
     NaiveDateTime.add(inserted_at, invite_lifetime_in_seconds())
   end

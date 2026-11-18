@@ -1,5 +1,8 @@
-defmodule ThreatShield.Const.Locations do
-  alias ThreatShield.Const.Locations
+defmodule ThreatShieldWeb.Locations do
+  @moduledoc """
+  The countries that an organisation can choose as its location, as options for a
+  select field.
+  """
 
   import ThreatShieldWeb.Gettext
 
@@ -314,7 +317,7 @@ defmodule ThreatShield.Const.Locations do
   end
 
   def list_locations() do
-    Locations.predefined_locations()
+    predefined_locations()
     |> Enum.sort_by(& &1.name)
     |> Enum.reduce([{dgettext("organisation", "Please choose your country"), ""}], fn location,
                                                                                       acc ->

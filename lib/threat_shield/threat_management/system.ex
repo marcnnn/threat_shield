@@ -42,9 +42,12 @@ defmodule ThreatShield.ThreatManagement.System do
     }
   ]
 
+  # replaceable for another application, see "Extraction" in AGENTS.md
+  @repo Application.compile_env(:threat_shield, :threat_management_repo, ThreatShield.Repo)
+
   postgres do
     table "systems"
-    repo ThreatShield.Repo
+    repo @repo
 
     # match the columns of the Ecto migrations
     migration_types name: {:varchar, 255},

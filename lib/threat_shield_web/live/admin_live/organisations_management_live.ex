@@ -2,7 +2,7 @@ defmodule ThreatShieldWeb.AdminLive.OrganisationsManagement do
   use ThreatShieldWeb, :live_view
 
   alias ThreatShield.Accounts
-  alias ThreatShield.Const.Locations
+  alias ThreatShieldWeb.Locations
 
   import ThreatShield.Accounts.Organisation, only: [attributes_config: 0]
 

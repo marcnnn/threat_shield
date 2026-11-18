@@ -4,7 +4,7 @@ defmodule ThreatShieldWeb.OrganisationLive.MyOrganisations do
   alias ThreatShield.Accounts
   alias ThreatShield.Accounts.Errors.InviteError
   alias ThreatShield.Accounts.Organisation
-  alias ThreatShield.Const.Locations
+  alias ThreatShieldWeb.Locations
 
   import ThreatShield.Accounts.Organisation, only: [attributes_config: 0]
   import ThreatShieldWeb.Helpers, only: [format_datetime: 1]

@@ -46,7 +46,7 @@ defmodule ThreatShieldWeb.MembersLive.Index do
 
   @impl true
   def handle_info({ThreatShieldWeb.MembersLive.InviteForm, {:saved, invite}}, socket) do
-    UserNotifier.deliver_invite(invite)
+    UserNotifier.deliver_invite(invite, url(~p"/join/#{invite.token}"))
 
     socket
     |> assign(
