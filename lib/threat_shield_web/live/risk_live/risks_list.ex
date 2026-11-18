@@ -5,7 +5,7 @@ defmodule ThreatShieldWeb.RiskLive.RisksList do
   alias ThreatShield.Scope
   alias ThreatShieldWeb.AiSuggestions
   alias ThreatShield.Risks
-  alias ThreatShield.Threats.Threat
+  alias ThreatShield.ThreatManagement.Threat
   alias ThreatShield.Accounts.User
   import ThreatShieldWeb.Helpers
 

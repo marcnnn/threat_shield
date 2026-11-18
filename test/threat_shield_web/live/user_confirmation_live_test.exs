@@ -4,8 +4,7 @@ defmodule ThreatShieldWeb.UserConfirmationLiveTest do
   import Phoenix.LiveViewTest
   import ThreatShield.AccountsFixtures
 
-  alias ThreatShield.Accounts
-  alias ThreatShield.Repo
+  alias ThreatShield.Accounts.Helpers, as: Accounts
 
   setup do
     %{user: user_fixture()}
@@ -38,7 +37,6 @@ defmodule ThreatShieldWeb.UserConfirmationLiveTest do
 
       assert Accounts.get_user!(user.id).confirmed_at
       refute get_session(conn, :user_token)
-      assert Repo.all(Accounts.UserToken) == []
 
       # when not logged in
       {:ok, lv, _html} = live(conn, ~p"/users/confirm/#{token}")

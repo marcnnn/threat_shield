@@ -2,7 +2,7 @@ defmodule ThreatShieldWeb.SystemLive.SystemsList do
   use ThreatShieldWeb, :live_component
 
   alias ThreatShield.Systems
-  alias ThreatShield.Systems.System
+  alias ThreatShield.ThreatManagement.System
   alias ThreatShield.Accounts.Organisation
 
   @moduledoc """
@@ -78,7 +78,7 @@ defmodule ThreatShieldWeb.SystemLive.SystemsList do
           action={:new_system}
           organisation={@scope.organisation}
           current_user={@scope.user}
-          attributes={System.attributes()}
+          attributes={System.attributes_config()}
           system={prepare_system(assigns)}
           patch={@origin}
         />

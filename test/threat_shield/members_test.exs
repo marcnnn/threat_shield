@@ -6,8 +6,9 @@ defmodule ThreatShield.MembersTest do
   alias ThreatShield.OrganisationsFixtures
   alias ThreatShield.AccountsFixtures
   alias ThreatShield.MembersFixtures
-  alias ThreatShield.{Members, Accounts, Organisations}
-  alias ThreatShield.Members.Invite
+  alias ThreatShield.{Members, Organisations}
+  alias ThreatShield.Accounts.Helpers, as: Accounts
+  alias ThreatShield.Accounts.Invite
   alias ThreatShield.Accounts.{Organisation, Membership}
 
   describe "members" do
@@ -17,11 +18,13 @@ defmodule ThreatShield.MembersTest do
 
       other_user = AccountsFixtures.confirmed_user_fixture()
 
-      {:ok, invite} = Members.create_invite(owner, organisation, %{email: other_user.email})
+      {:ok, invite} =
+        Members.create_invite(owner, organisation, %{email: to_string(other_user.email)})
 
       assert %Invite{} = invite
 
-      Members.accept_invite(other_user, invite.id)
+      {:ok, membership} = Members.accept_invite(other_user, invite.id)
+      assert membership.organisation_id == organisation.id
 
       reloaded = Accounts.get_user!(other_user.id)
       assert [%Organisation{id: org_id}] = Organisations.list_organisations(reloaded)
@@ -34,10 +37,14 @@ defmodule ThreatShield.MembersTest do
 
       other_user = AccountsFixtures.confirmed_user_fixture()
 
-      {:ok, invite_1} = Members.create_invite(owner, organisation, %{email: other_user.email})
+      {:ok, invite_1} =
+        Members.create_invite(owner, organisation, %{email: to_string(other_user.email)})
+
       {:ok, %Membership{}} = Members.accept_invite(other_user, invite_1.id)
 
-      {:ok, invite_2} = Members.create_invite(owner, organisation, %{email: other_user.email})
+      {:ok, invite_2} =
+        Members.create_invite(owner, organisation, %{email: to_string(other_user.email)})
+
       {:error, :already_member} = Members.accept_invite(other_user, invite_2.id)
     end
   end
@@ -77,10 +84,10 @@ defmodule ThreatShield.MembersTest do
 
     test "an address can be invited only once per organisation",
          %{owner: owner, organisation: organisation} do
-      assert {:error, %Ecto.Changeset{} = changeset} =
+      assert {:error, %Ash.Error.Invalid{} = error} =
                Members.create_invite(owner, organisation, %{"email" => "INVITED@example.com"})
 
-      assert "has already been invited to this organisation" in errors_on(changeset).email
+      assert "has already been invited to this organisation" in errors_on(error).email
 
       other_organisation = OrganisationsFixtures.organisation_fixture(owner)
 

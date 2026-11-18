@@ -10,8 +10,7 @@ defmodule ThreatShield.AssetsFixtures do
   def asset_fixture(user, organisation, attrs \\ %{}) do
     default_attrs = %{
       name: "some name",
-      description: "some description",
-      organisation: "some organisation"
+      description: "some description"
     }
 
     merged_attrs = Map.merge(default_attrs, attrs)

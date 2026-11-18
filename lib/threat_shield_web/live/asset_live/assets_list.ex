@@ -7,7 +7,7 @@ defmodule ThreatShieldWeb.AssetLive.AssetsList do
   alias ThreatShield.Assets
 
   alias ThreatShield.Accounts.Organisation
-  alias ThreatShield.Systems.System
+  alias ThreatShield.ThreatManagement.System
 
   import ThreatShieldWeb.Helpers, only: [link_to: 1]
 

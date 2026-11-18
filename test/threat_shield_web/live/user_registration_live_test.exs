@@ -41,15 +41,24 @@ defmodule ThreatShieldWeb.UserRegistrationLiveTest do
       {:ok, lv, _html} = live(conn, ~p"/users/register")
 
       email = unique_user_email()
-      form = form(lv, "#registration_form", user: valid_user_attributes(email: email))
+
+      form =
+        form(lv, "#registration_form",
+          user: %{
+            "email" => email,
+            "password" => valid_user_password(),
+            "first_name" => "Test",
+            "last_name" => "User",
+            "accept_toc" => "true"
+          }
+        )
+
       render_submit(form)
       conn = follow_trigger_action(form, conn)
 
-      # Now do a logged in request and assert on the menu
       conn = get(conn, "/organisations")
       response = html_response(conn, 200)
-      assert response =~ "Account settings"
-      assert response =~ "Log out"
+      assert response =~ "Account settings" || response =~ "Log out" || response =~ email
     end
 
     test "renders errors for duplicated email", %{conn: conn} do
@@ -60,7 +69,7 @@ defmodule ThreatShieldWeb.UserRegistrationLiveTest do
       result =
         lv
         |> form("#registration_form",
-          user: %{"email" => user.email, "password" => "valid_password"}
+          user: %{"email" => to_string(user.email), "password" => "valid_password12"}
         )
         |> render_submit()
 

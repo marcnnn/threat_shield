@@ -21,7 +21,17 @@ if File.exists?(dotenv_path) do
 end
 
 config :threat_shield,
-  ecto_repos: [ThreatShield.Repo]
+  ecto_repos: [ThreatShield.Repo],
+  ash_domains: [
+    ThreatShield.Accounts,
+    ThreatShield.ThreatManagement,
+    ThreatShield.Quotas
+  ]
+
+config :ash,
+  include_embedded_source_by_default?: false,
+  default_page_type: :keyset,
+  policies: [no_filter_static_forbidden_reads?: false]
 
 # Configures the endpoint
 config :threat_shield, ThreatShieldWeb.Endpoint,

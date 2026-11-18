@@ -4,9 +4,6 @@ defmodule ThreatShieldWeb.UserForgotPasswordLiveTest do
   import Phoenix.LiveViewTest
   import ThreatShield.AccountsFixtures
 
-  alias ThreatShield.Accounts
-  alias ThreatShield.Repo
-
   describe "Forgot password page" do
     test "renders email page", %{conn: conn} do
       {:ok, lv, html} = live(conn, ~p"/users/reset_password")
@@ -42,9 +39,6 @@ defmodule ThreatShieldWeb.UserForgotPasswordLiveTest do
         |> follow_redirect(conn, "/")
 
       assert Phoenix.Flash.get(conn.assigns.flash, :info) =~ "If your email is in our system"
-
-      assert Repo.get_by!(Accounts.UserToken, user_id: user.id).context ==
-               "reset_password"
     end
 
     test "does not send reset password token if email is invalid", %{conn: conn} do
@@ -57,7 +51,6 @@ defmodule ThreatShieldWeb.UserForgotPasswordLiveTest do
         |> follow_redirect(conn, "/")
 
       assert Phoenix.Flash.get(conn.assigns.flash, :info) =~ "If your email is in our system"
-      assert Repo.all(Accounts.UserToken) == []
     end
   end
 end

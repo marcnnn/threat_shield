@@ -12,8 +12,7 @@ defmodule ThreatShield.MitigationsFixtures do
       attrs
       |> Enum.into(%{
         name: "some name",
-        description: "some description",
-        is_implemented: true
+        description: "some description"
       })
 
     {:ok, mitigation} = ThreatShield.Mitigations.create_mitigation(user, risk, attrs)

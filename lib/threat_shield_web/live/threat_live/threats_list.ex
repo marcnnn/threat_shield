@@ -6,10 +6,10 @@ defmodule ThreatShieldWeb.ThreatLive.ThreatsList do
   alias ThreatShieldWeb.AiSuggestions
 
   alias ThreatShield.Threats
-  alias ThreatShield.Threats.Threat
-  alias ThreatShield.Assets.Asset
+  alias ThreatShield.ThreatManagement.Threat
+  alias ThreatShield.ThreatManagement.Asset
   alias ThreatShield.Accounts.Organisation
-  alias ThreatShield.Systems.System
+  alias ThreatShield.ThreatManagement.System
 
   import ThreatShieldWeb.Labels
   import ThreatShieldWeb.Helpers

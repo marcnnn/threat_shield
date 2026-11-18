@@ -8,10 +8,10 @@ defmodule ThreatShieldWeb.Helpers do
   import Phoenix.Component
   alias ThreatShieldWeb.Endpoint
 
-  alias ThreatShield.Risks.Risk
-  alias ThreatShield.Threats.Threat
-  alias ThreatShield.Systems.System
-  alias ThreatShield.Assets.Asset
+  alias ThreatShield.ThreatManagement.Risk
+  alias ThreatShield.ThreatManagement.Threat
+  alias ThreatShield.ThreatManagement.System
+  alias ThreatShield.ThreatManagement.Asset
 
   alias ThreatShield.Scope
 

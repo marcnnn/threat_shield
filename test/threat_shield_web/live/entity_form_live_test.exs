@@ -13,11 +13,11 @@ defmodule ThreatShieldWeb.EntityFormLiveTest do
   alias ThreatShield.Repo
   alias ThreatShield.Systems
   alias ThreatShield.Accounts.Organisation
-  alias ThreatShield.Assets.Asset
-  alias ThreatShield.Mitigations.Mitigation
-  alias ThreatShield.Risks.Risk
-  alias ThreatShield.Systems.System
-  alias ThreatShield.Threats.Threat
+  alias ThreatShield.ThreatManagement.Asset
+  alias ThreatShield.ThreatManagement.Mitigation
+  alias ThreatShield.ThreatManagement.Risk
+  alias ThreatShield.ThreatManagement.System
+  alias ThreatShield.ThreatManagement.Threat
 
   setup :register_and_log_in_user
 

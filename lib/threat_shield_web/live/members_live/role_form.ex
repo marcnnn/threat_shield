@@ -1,10 +1,15 @@
 defmodule ThreatShieldWeb.MembersLive.RoleForm do
-  alias ThreatShield.Accounts.Membership
   use ThreatShieldWeb, :live_component
 
   import ThreatShieldWeb.FormHelpers
 
   alias ThreatShield.Members
+
+  @role_options [
+    {:owner, "owner"},
+    {:editor, "editor"},
+    {:viewer, "viewer"}
+  ]
 
   @impl true
   def render(assigns) do
@@ -26,7 +31,7 @@ defmodule ThreatShieldWeb.MembersLive.RoleForm do
           type="select"
           label="Role"
           options={
-            Ecto.Enum.mappings(Membership, :role)
+            @role_options
             |> Enum.map(fn {_, v} ->
               {Gettext.dgettext(ThreatShieldWeb.Gettext, "organisation", v), v}
             end)
@@ -51,6 +56,7 @@ defmodule ThreatShieldWeb.MembersLive.RoleForm do
     {:ok,
      socket
      |> assign(assigns)
+     |> assign(:role_options, @role_options)
      |> assign_form(changeset)}
   end
 
@@ -69,13 +75,20 @@ defmodule ThreatShieldWeb.MembersLive.RoleForm do
     user = socket.assigns.current_user
 
     {role, _} =
-      Ecto.Enum.mappings(Membership, :role)
-      |> Enum.find(fn {_, v} -> v == Map.get(membership_params, "role") end)
+      Enum.find(@role_options, fn {_, v} -> v == Map.get(membership_params, "role") end)
 
     result = Members.update_role(user, membership, role)
 
-    socket
-    |> handle_save_result(result, __MODULE__, "Role updated successfully")
-    |> noreply()
+    case result do
+      {:error, :last_owner} ->
+        socket
+        |> put_flash(:error, "Cannot change role: this is the last owner")
+        |> noreply()
+
+      result ->
+        socket
+        |> handle_save_result(result, __MODULE__, "Role updated successfully")
+        |> noreply()
+    end
   end
 end

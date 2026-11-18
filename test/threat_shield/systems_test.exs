@@ -3,15 +3,15 @@ defmodule ThreatShield.SystemsTest do
   use ThreatShield.DataCase
 
   alias ThreatShield.Systems
-  alias ThreatShield.Systems.System
+  alias ThreatShield.ThreatManagement.System
   alias ThreatShield.AccountsFixtures
   alias ThreatShield.AssetsFixtures
   alias ThreatShield.OrganisationsFixtures
   alias ThreatShield.RisksFixtures
   alias ThreatShield.ThreatsFixtures
-  alias ThreatShield.Assets.Asset
-  alias ThreatShield.Risks.Risk
-  alias ThreatShield.Threats.Threat
+  alias ThreatShield.ThreatManagement.Asset
+  alias ThreatShield.ThreatManagement.Risk
+  alias ThreatShield.ThreatManagement.Threat
 
   describe "systems" do
     test "create_system/3 with valid data creates a system" do

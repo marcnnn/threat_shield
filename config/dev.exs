@@ -70,3 +70,7 @@ config :phoenix, :plug_init_mode, :runtime
 
 # Disable swoosh api client as it is only required for production adapters.
 config :swoosh, :api_client, false
+
+# AshAuthentication token signing secret
+config :threat_shield,
+  token_signing_secret: "development_token_signing_secret_at_least_32_chars_long_for_safety"

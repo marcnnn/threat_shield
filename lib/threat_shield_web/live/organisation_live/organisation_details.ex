@@ -10,7 +10,7 @@ defmodule ThreatShieldWeb.OrganisationLive.OrganisationDetails do
   alias ThreatShield.Threats
 
   import ThreatShield.Accounts.Organisation,
-    only: [attributes: 0]
+    only: [attributes_config: 0]
 
   alias ThreatShield.Scope
 
@@ -26,12 +26,12 @@ defmodule ThreatShieldWeb.OrganisationLive.OrganisationDetails do
     systems = Systems.list_systems(user, organisation)
 
     socket
-    |> assign(:attributes, attributes())
+    |> assign(:attributes, attributes_config())
     |> assign(:organisation, organisation)
     |> assign(:membership, membership)
     |> assign(:systems, systems)
     |> assign(locations_options: Locations.list_locations())
-    |> assign(:attributes, Organisation.attributes())
+    |> assign(:attributes, Organisation.attributes_config())
     |> assign(:scope, Scope.for(user, organisation))
     |> show_tab(:systems)
     |> ok()

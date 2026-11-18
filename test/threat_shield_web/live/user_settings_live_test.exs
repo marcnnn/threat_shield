@@ -1,7 +1,7 @@
 defmodule ThreatShieldWeb.UserSettingsLiveTest do
   use ThreatShieldWeb.ConnCase
 
-  alias ThreatShield.Accounts
+  alias ThreatShield.Accounts.Helpers, as: Accounts
   import Phoenix.LiveViewTest
   import ThreatShield.AccountsFixtures
 

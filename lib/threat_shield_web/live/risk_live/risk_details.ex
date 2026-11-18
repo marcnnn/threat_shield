@@ -1,10 +1,10 @@
 defmodule ThreatShieldWeb.RiskLive.RiskDetails do
   use ThreatShieldWeb, :live_view
 
-  alias ThreatShield.Threats.Threat
+  alias ThreatShield.ThreatManagement.Threat
   alias ThreatShield.Risks
-  alias ThreatShield.Risks.Risk
-  alias ThreatShield.Mitigations.Mitigation
+  alias ThreatShield.ThreatManagement.Risk
+  alias ThreatShield.ThreatManagement.Mitigation
   import ThreatShieldWeb.ScopeUrlBinding
 
   import ThreatShieldWeb.Helpers

@@ -8,7 +8,7 @@ defmodule ThreatShield.ThreatsTest do
   alias ThreatShield.MembersFixtures
   alias ThreatShield.Systems
   alias ThreatShield.Threats
-  alias ThreatShield.Threats.Threat
+  alias ThreatShield.ThreatManagement.Threat
 
   describe "threats" do
     test "create_threat/3 with valid data creates a threat" do
@@ -17,8 +17,7 @@ defmodule ThreatShield.ThreatsTest do
 
       valid_attrs = %{
         name: "some name",
-        description: "some description",
-        organisation: "some organisation"
+        description: "some description"
       }
 
       assert {:ok, %Threat{}} = Threats.create_threat(user, organisation, valid_attrs)
@@ -68,13 +67,13 @@ defmodule ThreatShield.ThreatsTest do
       viewer = AccountsFixtures.user_fixture()
       MembersFixtures.membership_fixture(organisation, viewer, :viewer)
 
-      assert_raise Ecto.NoResultsError, fn ->
+      assert_not_found(fn ->
         Threats.add_threat_with_name_and_description(
           Scope.for(viewer, organisation),
           "a name",
           "a description"
         )
-      end
+      end)
     end
   end
 
@@ -117,17 +116,17 @@ defmodule ThreatShield.ThreatsTest do
     } do
       foreign_asset = AssetsFixtures.asset_fixture(other_user, other_organisation)
 
-      assert_raise Ecto.NoResultsError, fn ->
-        Threats.create_threat(
-          user,
-          organisation,
-          Map.put(@valid_attrs, :asset_id, foreign_asset.id)
-        )
-      end
+      assert {:error, error} =
+               Threats.create_threat(
+                 user,
+                 organisation,
+                 Map.put(@valid_attrs, :asset_id, foreign_asset.id)
+               )
 
-      assert_raise Ecto.NoResultsError, fn ->
-        Threats.update_threat(user, threat, %{asset_id: foreign_asset.id})
-      end
+      assert %{asset_id: ["must belong to the same organisation"]} = errors_on(error)
+
+      assert {:error, error} = Threats.update_threat(user, threat, %{asset_id: foreign_asset.id})
+      assert %{asset_id: ["must belong to the same organisation"]} = errors_on(error)
 
       assert Repo.get!(Threat, threat.id).asset_id == nil
     end
@@ -149,17 +148,19 @@ defmodule ThreatShield.ThreatsTest do
 
       MembersFixtures.membership_fixture(other_organisation, user, :viewer)
 
-      assert_raise Ecto.NoResultsError, fn ->
-        Threats.create_threat(
-          user,
-          organisation,
-          Map.put(@valid_attrs, :system_id, foreign_system.id)
-        )
-      end
+      assert {:error, error} =
+               Threats.create_threat(
+                 user,
+                 organisation,
+                 Map.put(@valid_attrs, :system_id, foreign_system.id)
+               )
 
-      assert_raise Ecto.NoResultsError, fn ->
-        Threats.update_threat(user, threat, %{system_id: foreign_system.id})
-      end
+      assert %{system_id: ["must belong to the same organisation"]} = errors_on(error)
+
+      assert {:error, error} =
+               Threats.update_threat(user, threat, %{system_id: foreign_system.id})
+
+      assert %{system_id: ["must belong to the same organisation"]} = errors_on(error)
 
       assert Repo.get!(Threat, threat.id).system_id == nil
     end

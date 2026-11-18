@@ -6,7 +6,7 @@ defmodule ThreatShieldWeb.SystemLive.SystemForm do
   alias ThreatShield.Systems
   alias ThreatShield.DynamicAttribute
 
-  import ThreatShield.Systems.System, only: [attributes: 0]
+  import ThreatShield.ThreatManagement.System, only: [attributes_config: 0]
 
   @impl true
   def render(assigns) do
@@ -87,7 +87,7 @@ defmodule ThreatShieldWeb.SystemLive.SystemForm do
   end
 
   defp extract_attributes_from_params(params) do
-    attributes()
+    attributes_config()
     |> Enum.map(fn d -> {d.name, Map.get(params, d.name, "")} end)
     |> Map.new()
   end

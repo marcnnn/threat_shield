@@ -60,7 +60,7 @@
       <.table id="invites" rows={@organisation.invites}>
         <:col :let={invite} label="Email"><%= invite.email %></:col>
         <:col :let={invite} label="Expiration Date">
-          <%= format_datetime(ThreatShield.Members.Invite.expiration_point(invite)) %>
+          <%= format_datetime(ThreatShield.Accounts.Invite.expiration_point(invite)) %>
         </:col>
         <:col :let={invite}>
           <div class="text-right">

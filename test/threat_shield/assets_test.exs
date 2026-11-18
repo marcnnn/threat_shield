@@ -6,9 +6,9 @@ defmodule ThreatShield.AssetsTest do
   alias ThreatShield.AccountsFixtures
   alias ThreatShield.AssetsFixtures
   alias ThreatShield.ThreatsFixtures
-  alias ThreatShield.Threats.Threat
+  alias ThreatShield.ThreatManagement.Threat
   alias ThreatShield.Assets
-  alias ThreatShield.Assets.Asset
+  alias ThreatShield.ThreatManagement.Asset
 
   describe "assets" do
     test "create_asset/3 with valid data creates an asset" do
@@ -17,8 +17,7 @@ defmodule ThreatShield.AssetsTest do
 
       valid_attrs = %{
         name: "some_name",
-        description: "some description",
-        organisation: "some organisation"
+        description: "some description"
       }
 
       assert {:ok, %Asset{}} = Assets.create_asset(user, organisation, valid_attrs)

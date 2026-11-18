@@ -6,7 +6,7 @@ defmodule ThreatShield.RisksTest do
   alias ThreatShield.OrganisationsFixtures
   alias ThreatShield.AccountsFixtures
   alias ThreatShield.Risks
-  alias ThreatShield.Risks.Risk
+  alias ThreatShield.ThreatManagement.Risk
 
   describe "risks" do
     test "create_risk/3 - creates a risk" do

@@ -1,65 +1,86 @@
 defmodule ThreatShield.Accounts.Membership do
-  use Ecto.Schema
-  import Ecto.Changeset
+  use Ash.Resource,
+    otp_app: :threat_shield,
+    domain: ThreatShield.Accounts,
+    data_layer: AshPostgres.DataLayer,
+    authorizers: [Ash.Policy.Authorizer]
 
-  alias ThreatShield.Members.Rights
+  postgres do
+    table "memberships"
+    repo ThreatShield.Repo
 
-  schema "memberships" do
-    field :role, Ecto.Enum, values: [:owner, :editor, :viewer]
-
-    belongs_to :user, ThreatShield.Accounts.User
-    belongs_to :organisation, ThreatShield.Accounts.Organisation
-  end
-
-  @doc false
-  def changeset(membership, attrs) do
-    membership
-    |> cast(attrs, [:role])
-    |> validate_required([:role])
-  end
-
-  import Ecto.Query
-
-  def get(id) do
-    from(e in __MODULE__, as: :membership, where: e.id == ^id)
-  end
-
-  def for_user(user_id) do
-    from(e in __MODULE__, as: :membership)
-    |> for_user(user_id)
-  end
-
-  def for_user(query, user_id) do
-    query
-    |> join(:inner, [membership: m], assoc(m, :organisation), as: :organisation)
-    |> join(:inner, [organisation: o], assoc(o, :memberships), as: :ac_org_memberships)
-    |> where([ac_org_memberships: o], o.user_id == ^user_id)
-  end
-
-  def for_user(query, user_id, right) do
-    query
-    |> join(:inner, [membership: m], assoc(m, :organisation), as: :organisation)
-    |> join(:inner, [organisation: o], assoc(o, :memberships), as: :ac_org_memberships)
-    |> where([ac_org_memberships: m], m.user_id == ^user_id)
-    |> where([ac_org_memberships: m], m.role in ^Rights.get_authorised_roles(right))
-  end
-
-  def preload_org_memberships(query) do
-    query
-    |> join_organisation()
-    |> join(:inner, [organisation: o], assoc(o, :memberships), as: :org_memberships)
-    |> preload([organisation: o, org_memberships: m], organisation: {o, memberships: m})
-  end
-
-  def join_organisation(query) do
-    if has_named_binding?(query, :organisation) do
-      query
-    else
-      join(query, :inner, [membership: m], assoc(m, :organisation), as: :organisation)
+    references do
+      reference :user, on_delete: :delete
+      reference :organisation, on_delete: :delete
     end
   end
 
-  def select(query) do
-    select(query, [membership: m], m)
+  attributes do
+    integer_primary_key :id
+
+    attribute :role, :atom do
+      constraints one_of: [:owner, :editor, :viewer]
+      allow_nil? false
+      public? true
+    end
+  end
+
+  relationships do
+    belongs_to :user, ThreatShield.Accounts.User do
+      allow_nil? false
+      attribute_type :integer
+    end
+
+    belongs_to :organisation, ThreatShield.Accounts.Organisation do
+      allow_nil? false
+      attribute_type :integer
+    end
+  end
+
+  actions do
+    defaults [:read, :destroy]
+
+    create :create do
+      accept [:role]
+
+      argument :user_id, :integer, allow_nil?: false
+      argument :organisation_id, :integer, allow_nil?: false
+
+      change manage_relationship(:user_id, :user, type: :append_and_remove)
+      change manage_relationship(:organisation_id, :organisation, type: :append_and_remove)
+    end
+
+    update :update_role do
+      accept [:role]
+    end
+
+    read :for_user do
+      argument :user_id, :integer, allow_nil?: false
+      argument :roles, {:array, :atom}, allow_nil?: false
+
+      filter expr(
+               exists(
+                 organisation.memberships,
+                 user_id == ^arg(:user_id) and role in ^arg(:roles)
+               )
+             )
+    end
+  end
+
+  policies do
+    policy action_type(:read) do
+      authorize_if relates_to_actor_via(:user)
+      authorize_if expr(exists(organisation.memberships, user_id == ^actor(:id)))
+    end
+
+    policy action_type(:create) do
+      authorize_if always()
+    end
+
+    policy action_type([:update, :destroy]) do
+      authorize_if expr(
+                     exists(organisation.memberships, user_id == ^actor(:id) and role == :owner)
+                   )
+    end
   end
 end

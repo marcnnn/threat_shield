@@ -26,16 +26,26 @@ defmodule ThreatShield.DynamicAttribute do
   @max_value_length 500
 
   @doc """
-  Validates the attribute map of a changeset: every value must be a string of at
-  most #{@max_value_length} characters.
+  The error message for an attribute map with an invalid value.
+  """
+  def invalid_values_message(), do: "must be texts of at most #{@max_value_length} characters"
+
+  @doc """
+  Checks an attribute map: every value must be a string of at most
+  #{@max_value_length} characters.
+  """
+  def valid_values?(attributes) when is_map(attributes),
+    do: Enum.all?(attributes, &valid_value?/1)
+
+  def valid_values?(_attributes), do: false
+
+  @doc """
+  Validates the attribute map of an Ecto changeset, see `valid_values?/1`. The
+  forms use it for their live validation.
   """
   def validate_values(%Ecto.Changeset{} = changeset, field) do
     Ecto.Changeset.validate_change(changeset, field, fn _field, attributes ->
-      if is_map(attributes) and Enum.all?(attributes, &valid_value?/1) do
-        []
-      else
-        [{field, "must be texts of at most #{@max_value_length} characters"}]
-      end
+      if valid_values?(attributes), do: [], else: [{field, invalid_values_message()}]
     end)
   end
 

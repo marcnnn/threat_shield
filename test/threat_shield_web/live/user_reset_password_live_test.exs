@@ -4,7 +4,7 @@ defmodule ThreatShieldWeb.UserResetPasswordLiveTest do
   import Phoenix.LiveViewTest
   import ThreatShield.AccountsFixtures
 
-  alias ThreatShield.Accounts
+  alias ThreatShield.Accounts.Helpers, as: Accounts
 
   setup do
     user = user_fixture()

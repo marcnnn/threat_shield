@@ -5,7 +5,7 @@ defmodule ThreatShieldWeb.MembersLive.Index do
   use ThreatShieldWeb, :live_view
 
   alias ThreatShield.Members
-  alias ThreatShield.Members.Invite
+  alias ThreatShield.Accounts.Invite
   alias ThreatShield.Accounts.{User, Organisation, Membership, UserNotifier}
 
   import ThreatShieldWeb.Helpers, only: [add_breadcrumbs: 2, format_datetime: 1]

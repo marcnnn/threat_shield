@@ -6,7 +6,7 @@ defmodule ThreatShieldWeb.MitigationLive.MitigationsList do
   alias ThreatShieldWeb.AiSuggestions
 
   alias ThreatShield.Accounts.User
-  alias ThreatShield.Risks.Risk
+  alias ThreatShield.ThreatManagement.Risk
   alias ThreatShield.Mitigations
 
   @moduledoc """

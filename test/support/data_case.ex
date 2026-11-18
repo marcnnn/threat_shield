@@ -48,11 +48,37 @@ defmodule ThreatShield.DataCase do
       assert %{password: ["password is too short"]} = errors_on(changeset)
 
   """
-  def errors_on(changeset) do
-    Ecto.Changeset.traverse_errors(changeset, fn {message, opts} ->
-      Regex.replace(~r"%{(\w+)}", message, fn _, key ->
-        opts |> Keyword.get(String.to_existing_atom(key), key) |> to_string()
-      end)
+  def errors_on(%Ecto.Changeset{} = changeset) do
+    Ecto.Changeset.traverse_errors(changeset, &interpolate/1)
+  end
+
+  # The errors of an Ash action or changeset, with the messages that the forms show
+  def errors_on(ash_error_or_changeset) do
+    ash_error_or_changeset
+    |> ThreatShieldWeb.AshErrors.field_errors()
+    |> Enum.reduce(%{}, fn {field, error}, acc ->
+      Map.update(acc, field, [interpolate(error)], &(&1 ++ [interpolate(error)]))
     end)
+  end
+
+  defp interpolate({message, opts}) do
+    Regex.replace(~r"%{(\w+)}", message, fn _, key ->
+      opts |> Keyword.get(String.to_existing_atom(key), key) |> to_string()
+    end)
+  end
+
+  @doc """
+  Asserts that the function raises because a record was not found for the user,
+  either because it does not exist or because the user lacks the right.
+  """
+  def assert_not_found(fun) when is_function(fun, 0) do
+    error = ExUnit.Assertions.assert_raise(Ash.Error.Invalid, fun)
+
+    ExUnit.Assertions.assert(
+      Enum.any?(error.errors, &match?(%Ash.Error.Query.NotFound{}, &1)),
+      "expected a not found error, got: #{Exception.message(error)}"
+    )
+
+    error
   end
 end

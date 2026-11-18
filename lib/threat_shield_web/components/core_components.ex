@@ -688,7 +688,7 @@ defmodule ThreatShieldWeb.CoreComponents do
             <%= dgettext("common", "Risk board") %>
           </.link>
         <% end %>
-        <%= if ThreatShield.Accounts.RBAC.has_permission(assigns[:current_user], :administer_platform) do %>
+        <%= if assigns[:current_user] && "platform_admin" in (assigns[:current_user].global_roles || []) do %>
           <.link
             href={~p"/platform-administration/organisations"}
             class="leading-6 text-white hover:underline"

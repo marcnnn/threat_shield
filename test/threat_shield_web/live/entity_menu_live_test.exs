@@ -17,9 +17,9 @@ defmodule ThreatShieldWeb.EntityMenuLiveTest do
 
   alias ThreatShield.Repo
   alias ThreatShield.Systems
-  alias ThreatShield.Mitigations.Mitigation
-  alias ThreatShield.Risks.Risk
-  alias ThreatShield.Threats.Threat
+  alias ThreatShield.ThreatManagement.Mitigation
+  alias ThreatShield.ThreatManagement.Risk
+  alias ThreatShield.ThreatManagement.Threat
 
   setup :register_and_log_in_user
 

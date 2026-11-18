@@ -12,8 +12,7 @@ defmodule ThreatShield.OrganisationsFixtures do
     {:ok, organisation} =
       attrs
       |> Enum.into(%{
-        name: "some name",
-        description: "some description"
+        name: "some name"
       })
       |> Organisations.create_organisation(user)
 

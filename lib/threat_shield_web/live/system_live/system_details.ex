@@ -6,7 +6,7 @@ defmodule ThreatShieldWeb.SystemLive.SystemDetails do
 
   alias ThreatShield.Scope
   alias ThreatShield.Systems
-  alias ThreatShield.Systems.System
+  alias ThreatShield.ThreatManagement.System
   import ThreatShieldWeb.Helpers, only: [add_breadcrumbs: 2, link_to: 1]
 
   @impl true
@@ -20,7 +20,7 @@ defmodule ThreatShieldWeb.SystemLive.SystemDetails do
     |> assign(:system, system)
     |> assign(:organisation, organisation)
     |> assign(:membership, Organisation.get_membership(organisation, user))
-    |> assign(:attributes, System.attributes())
+    |> assign(:attributes, System.attributes_config())
     |> assign(:scope, Scope.for_system(user, organisation, system))
     |> ok()
   end

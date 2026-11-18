@@ -11,10 +11,10 @@ defmodule ThreatShield.AITest do
   alias ThreatShield.AI
   alias ThreatShield.Scope
   alias ThreatShield.{Assets, Organisations, Risks, Systems, Threats}
-  alias ThreatShield.Assets.Asset
-  alias ThreatShield.Mitigations.Mitigation
-  alias ThreatShield.Risks.Risk
-  alias ThreatShield.Threats.Threat
+  alias ThreatShield.ThreatManagement.Asset
+  alias ThreatShield.ThreatManagement.Mitigation
+  alias ThreatShield.ThreatManagement.Risk
+  alias ThreatShield.ThreatManagement.Threat
 
   setup do
     Application.put_env(:threat_shield, :open_ai_stub_listener, self())

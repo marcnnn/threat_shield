@@ -71,7 +71,7 @@
         <%= invite.organisation.name %>
       </:col>
       <:col :let={invite} label={dgettext("common", "Valid until")}>
-        <%= format_datetime(ThreatShield.Members.Invite.expiration_point(invite)) %>
+        <%= format_datetime(ThreatShield.Accounts.Invite.expiration_point(invite)) %>
       </:col>
       <:col :let={invite}>
         <div class="flex flex-grow gap-x-2">

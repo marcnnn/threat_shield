@@ -1,98 +1,72 @@
 defmodule ThreatShield.Systems do
   @moduledoc """
-  The Systems context.
+  The Systems context - delegates to Ash resources.
   """
 
-  import Ecto.Query, warn: false
-  alias ThreatShield.Accounts.Organisation
-  alias ThreatShield.Repo
+  require Ash.Query
 
-  alias ThreatShield.Accounts.User
-  alias ThreatShield.Systems.System
+  alias ThreatShield.Access
+  alias ThreatShield.Params
+  alias ThreatShield.ThreatManagement.System
+  alias ThreatShield.Accounts.{User, Organisation}
 
-  def get_system!(%User{id: user_id}, sys_id) do
-    System.get(sys_id)
-    |> System.for_user(user_id)
-    |> System.with_assets()
-    |> System.with_threats()
-    |> System.preload_organisation()
-    |> System.with_org_systems()
-    |> System.preload_membership()
-    |> Repo.one!()
+  def get_system!(%User{} = user, sys_id) do
+    Access.get!(System, user, sys_id, nil,
+      assets: [],
+      threats: [],
+      organisation: [:systems, :memberships]
+    )
   end
 
-  def list_systems(%User{id: user_id}, %Organisation{id: org_id}) do
-    System.from()
-    |> System.for_user(user_id)
-    |> System.for_organisation(org_id)
-    |> System.with_assets()
-    |> System.with_threats()
-    |> Repo.all()
+  def list_systems(%User{} = user, %Organisation{id: org_id}) do
+    System
+    |> Access.query(user)
+    |> Ash.Query.filter(organisation_id == ^org_id)
+    |> Ash.Query.load([:assets, :threats])
+    |> Ash.read!(authorize?: false)
   end
 
   @doc """
-  Creates a system.
-
-  ## Examples
-
-      iex> create_system(%{field: value})
-      {:ok, %System{}}
-
-      iex> create_system(%{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
+  Creates a system. Returns `{:error, %Ash.Error.Invalid{}}` for invalid attributes.
   """
-  def create_system(%User{id: user_id}, %Organisation{id: org_id}, attrs \\ %{}) do
-    Repo.transaction(fn ->
-      organisation =
-        Organisation.get(org_id)
-        |> Organisation.for_user(user_id, :create_system)
-        |> Repo.one!()
+  def create_system(%User{} = user, %Organisation{id: org_id}, attrs \\ %{}) do
+    organisation = Access.get!(Organisation, user, org_id, :create_system)
 
-      %System{}
-      |> System.changeset(attrs)
-      |> Ecto.Changeset.put_assoc(:organisation, organisation)
-      |> Repo.insert_or_rollback()
-    end)
+    System
+    |> Ash.Changeset.for_create(:create, Params.put(attrs, :organisation_id, organisation.id),
+      authorize?: false,
+      skip_unknown_inputs: :*
+    )
+    |> Ash.create()
+  end
+
+  def update_system(%User{} = user, %System{id: sys_id}, attrs) do
+    System
+    |> Access.get!(user, sys_id, :edit_system)
+    |> Ash.Changeset.for_update(:update, attrs, authorize?: false, skip_unknown_inputs: :*)
+    |> Ash.update()
   end
 
   @doc """
-  Updates a system.
-
-  ## Examples
-
-      iex> update_system(system, %{field: new_value})
-      {:ok, %System{}}
-
-      iex> update_system(system, %{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
+  Deletes a system. The database deletes its assets and threats.
   """
-  def update_system(%User{id: user_id}, %System{id: sys_id}, attrs) do
-    System.get(sys_id)
-    |> System.for_user(user_id, :edit_system)
-    |> Repo.one!()
-    |> System.changeset(attrs)
-    |> Repo.update()
+  def delete_sys_by_id!(%User{} = user, id) do
+    case Access.get(System, user, id, :delete_system) do
+      {:ok, system} ->
+        Ash.destroy!(system, authorize?: false)
+        {1, [system]}
+
+      {:error, :not_found} ->
+        {0, []}
+    end
   end
 
-  def delete_sys_by_id!(%User{id: user_id}, id) do
-    System.get(id)
-    |> System.for_user(user_id, :delete_system)
-    |> System.select()
-    |> Repo.delete_all()
-  end
-
-  @doc """
-  Returns an `%Ecto.Changeset{}` for tracking system changes.
-
-  ## Examples
-
-      iex> change_system(system)
-      %Ecto.Changeset{data: %System{}}
-
-  """
   def change_system(%System{} = system, attrs \\ %{}) do
-    System.changeset(system, attrs)
+    system
+    |> Ecto.Changeset.cast(attrs, [:name, :description, :attributes])
+    |> Ecto.Changeset.validate_required([:name, :description])
+    |> Ecto.Changeset.validate_length(:name, max: 60)
+    |> Ecto.Changeset.validate_length(:description, max: 4000)
+    |> ThreatShield.DynamicAttribute.validate_values(:attributes)
   end
 end

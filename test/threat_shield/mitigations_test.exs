@@ -24,12 +24,10 @@ defmodule ThreatShield.MitigationsTest do
   end
 
   describe "mitigations" do
-    alias ThreatShield.Mitigations.Mitigation
-
-    @invalid_attrs %{name: nil, description: nil, is_implemented: nil}
+    alias ThreatShield.ThreatManagement.Mitigation
 
     test "create_mitigation/1 with valid data creates a mitigation" do
-      valid_attrs = %{name: "some name", description: "some description", is_implemented: true}
+      valid_attrs = %{name: "some name", description: "some description"}
       %{user: user, risk: risk} = user_risk_fixture()
 
       assert {:ok, %Mitigation{} = mitigation} =
@@ -40,11 +38,11 @@ defmodule ThreatShield.MitigationsTest do
       assert mitigation.is_implemented == false
     end
 
-    test "create_mitigation/1 with invalid data returns error changeset" do
+    test "create_mitigation/1 with invalid data returns error" do
       %{user: user, risk: risk} = user_risk_fixture()
 
-      assert {:error, %Ecto.Changeset{}} =
-               Mitigations.create_mitigation(user, risk, @invalid_attrs)
+      assert {:error, _} =
+               Mitigations.create_mitigation(user, risk, %{name: nil, description: nil})
     end
 
     test "update_mitigation/3 does not move the mitigation to another risk" do

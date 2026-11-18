@@ -4,7 +4,7 @@ defmodule ThreatShield.Scope do
   """
   alias ThreatShield.Accounts.User
   alias ThreatShield.Accounts.Organisation
-  alias ThreatShield.Systems.System
+  alias ThreatShield.ThreatManagement.System
 
   defstruct [
     :id,
@@ -16,9 +16,6 @@ defmodule ThreatShield.Scope do
     :threat
   ]
 
-  @doc """
-  Defined a scope for an organisation and optionally a threat for this organisation.
-  """
   def for(%User{} = user, %Organisation{} = org) do
     id = to_string(org.id)
 

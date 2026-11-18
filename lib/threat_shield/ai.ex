@@ -1,11 +1,11 @@
 defmodule ThreatShield.AI do
   alias ThreatShield.DynamicAttribute
   alias ThreatShield.Accounts.Organisation
-  alias ThreatShield.Threats.Threat
-  alias ThreatShield.Assets.Asset
-  alias ThreatShield.Risks.Risk
-  alias ThreatShield.Mitigations.Mitigation
-  alias ThreatShield.Systems.System
+  alias ThreatShield.ThreatManagement.Threat
+  alias ThreatShield.ThreatManagement.Asset
+  alias ThreatShield.ThreatManagement.Risk
+  alias ThreatShield.ThreatManagement.Mitigation
+  alias ThreatShield.ThreatManagement.System
   alias ThreatShield.Scope
   alias ThreatShield.Quotas.QuotaManager
 
@@ -164,6 +164,8 @@ defmodule ThreatShield.AI do
 
   defp prompts(kind, %Organisation{} = organisation, existing, opts) do
     plural = Atom.to_string(kind)
+    # a relationship that was not loaded counts as empty
+    existing = if is_list(existing), do: existing, else: []
 
     existing_names =
       if Enum.empty?(existing) do

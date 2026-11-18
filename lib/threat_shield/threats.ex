@@ -1,86 +1,67 @@
 defmodule ThreatShield.Threats do
   @moduledoc """
-  The Threats context.
+  The Threats context - delegates to Ash resources.
   """
 
-  import Ecto.Query, warn: false
+  require Ash.Query
 
-  alias ThreatShield.Repo
+  alias ThreatShield.Access
+  alias ThreatShield.Params
   alias ThreatShield.Scope
+  alias ThreatShield.ThreatManagement.{Threat, System, Asset}
+  alias ThreatShield.Accounts.{User, Organisation}
 
-  alias ThreatShield.Threats.Threat
-  alias ThreatShield.Accounts.User
-  alias ThreatShield.Accounts.Organisation
-  alias ThreatShield.Systems.System
-  alias ThreatShield.Assets.Asset
-
-  def get_threat!(%User{id: user_id}, threat_id) do
-    Threat.get(threat_id)
-    |> Threat.for_user(user_id)
-    |> Threat.with_system()
-    |> Threat.with_asset()
-    |> Threat.with_organisation_and_risks()
-    |> Threat.with_org_systems()
-    |> Threat.with_org_assets()
-    |> Threat.preload_membership()
-    |> Repo.one!()
+  def get_threat!(%User{} = user, threat_id) do
+    Access.get!(Threat, user, threat_id, nil,
+      system: [],
+      asset: [],
+      risks: :mitigations,
+      organisation: [:systems, :assets, :memberships]
+    )
   end
 
-  def list_threats(%User{id: user_id}, %Organisation{id: org_id}) do
-    Threat.from()
-    |> Threat.for_user(user_id)
-    |> Threat.for_organisation(org_id)
-    |> Threat.with_system()
-    |> Threat.with_asset()
-    |> Threat.with_organisation_and_risks()
-    |> Threat.with_org_systems()
-    |> Threat.with_org_assets()
-    |> Repo.all()
+  def list_threats(%User{} = user, %Organisation{id: org_id}) do
+    Threat
+    |> Access.query(user)
+    |> Ash.Query.filter(organisation_id == ^org_id)
+    |> Ash.Query.load([:system, :asset, :risks])
+    |> Ash.read!(authorize?: false)
   end
 
-  def find_by_system(%User{id: user_id}, %System{id: system_id, organisation_id: org_id}) do
-    Threat.from()
-    |> Threat.for_user(user_id)
-    |> Threat.where_organisation(org_id)
-    |> Threat.where_system(system_id)
-    |> Threat.with_system()
-    |> Threat.with_asset()
-    |> Repo.all()
+  def find_by_system(%User{} = user, %System{id: system_id, organisation_id: org_id}) do
+    Threat
+    |> Access.query(user)
+    |> Ash.Query.filter(organisation_id == ^org_id and system_id == ^system_id)
+    |> Ash.Query.load([:system, :asset])
+    |> Ash.read!(authorize?: false)
   end
 
   def find_by_asset(%Asset{id: asset_id, organisation_id: org_id}) do
-    Threat.from()
-    |> Threat.where_organisation(org_id)
-    |> Threat.where_asset(asset_id)
-    |> Threat.with_system()
-    |> Threat.with_asset()
-    |> Repo.all()
+    Threat
+    |> Ash.Query.filter(organisation_id == ^org_id and asset_id == ^asset_id)
+    |> Ash.Query.load([:system, :asset])
+    |> Ash.read!(authorize?: false)
   end
 
   def count_all_threats(%Organisation{id: org_id}) do
-    Threat.from()
-    |> Threat.where_organisation(org_id)
-    |> Repo.aggregate(:count, :id)
+    Threat
+    |> Ash.Query.filter(organisation_id == ^org_id)
+    |> Ash.count!(authorize?: false)
   end
 
-  def create_threat(
-        %User{id: user_id},
-        %Organisation{id: org_id} = organisation,
-        attrs \\ %{}
-      ) do
-    changeset =
-      %Threat{organisation: organisation}
-      |> Threat.changeset(attrs)
+  @doc """
+  Creates a threat. The system and the asset of the threat must belong to its
+  organisation. Returns `{:error, %Ash.Error.Invalid{}}` for invalid attributes.
+  """
+  def create_threat(%User{} = user, %Organisation{id: org_id}, attrs \\ %{}) do
+    organisation = Access.get!(Organisation, user, org_id, :create_threat)
 
-    Repo.transaction(fn ->
-      Organisation.get(org_id)
-      |> Organisation.for_user(user_id, :create_threat)
-      |> Repo.one!()
-
-      check_related_entities_in_threat_changeset(changeset, org_id)
-
-      Repo.insert_or_rollback(changeset)
-    end)
+    Threat
+    |> Ash.Changeset.for_create(:create, Params.put(attrs, :organisation_id, organisation.id),
+      authorize?: false,
+      skip_unknown_inputs: :*
+    )
+    |> Ash.create()
   end
 
   @doc """
@@ -96,66 +77,29 @@ defmodule ThreatShield.Threats do
     })
   end
 
-  def update_threat(%User{id: user_id}, %Threat{id: threat_id} = threat, attrs) do
-    changeset =
-      threat
-      |> Threat.changeset(attrs)
-
-    Repo.transaction(fn ->
-      %Threat{organisation_id: org_id} =
-        Threat.get(threat_id)
-        |> Threat.for_user(user_id, :edit_threat)
-        |> Repo.one!()
-
-      check_related_entities_in_threat_changeset(changeset, org_id)
-
-      Repo.update_or_rollback(changeset)
-    end)
+  def update_threat(%User{} = user, %Threat{id: threat_id}, attrs) do
+    Threat
+    |> Access.get!(user, threat_id, :edit_threat)
+    |> Ash.Changeset.for_update(:update, attrs, authorize?: false, skip_unknown_inputs: :*)
+    |> Ash.update()
   end
 
-  def delete_threat_by_id(%User{id: user_id}, threat_id) do
-    case Threat.get(threat_id)
-         |> Threat.for_user(user_id, :delete_threat)
-         |> Threat.select()
-         |> Repo.delete_all() do
-      {1, _} -> {:ok, 1}
-      _ -> {:error, :unauthorized}
+  def delete_threat_by_id(%User{} = user, threat_id) do
+    case Access.get(Threat, user, threat_id, :delete_threat) do
+      {:ok, threat} ->
+        Ash.destroy!(threat, authorize?: false)
+        {:ok, 1}
+
+      {:error, :not_found} ->
+        {:error, :unauthorized}
     end
   end
 
-  @doc """
-  Returns an `%Ecto.Changeset{}` for tracking threat changes.
-
-  ## Examples
-
-      iex> change_threat(threat)
-      %Ecto.Changeset{data: %Threat{}}
-
-  """
   def change_threat(%Threat{} = threat, attrs \\ %{}) do
-    Threat.changeset(threat, attrs)
-  end
-
-  # A threat may only reference a system and an asset of its own organisation.
-  defp check_related_entities_in_threat_changeset(%Ecto.Changeset{changes: changes}, org_id) do
-    case changes do
-      %{system_id: sys_id} when not is_nil(sys_id) ->
-        System.get(sys_id)
-        |> System.for_organisation(org_id)
-        |> Repo.one!()
-
-      _ ->
-        nil
-    end
-
-    case changes do
-      %{asset_id: asset_id} when not is_nil(asset_id) ->
-        Asset.get(asset_id)
-        |> Asset.for_organisation(org_id)
-        |> Repo.one!()
-
-      _ ->
-        nil
-    end
+    threat
+    |> Ecto.Changeset.cast(attrs, [:name, :description, :system_id, :asset_id])
+    |> Ecto.Changeset.validate_required([:name, :description])
+    |> Ecto.Changeset.validate_length(:name, max: 60)
+    |> Ecto.Changeset.validate_length(:description, max: 4000)
   end
 end

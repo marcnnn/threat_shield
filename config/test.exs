@@ -37,3 +37,10 @@ config :logger, :console, level: :warning
 
 # Initialize plugs at runtime for faster test compilation
 config :phoenix, :plug_init_mode, :runtime
+
+# AshAuthentication token signing secret
+config :threat_shield,
+  token_signing_secret: "test_token_signing_secret_at_least_32_characters_long_for_safety"
+
+# Ignore missed Ash notifications in tests (sandbox transactions)
+config :ash, :missed_notifications, :ignore

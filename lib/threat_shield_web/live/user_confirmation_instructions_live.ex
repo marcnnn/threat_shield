@@ -1,7 +1,7 @@
 defmodule ThreatShieldWeb.UserConfirmationInstructionsLive do
   use ThreatShieldWeb, :live_view
 
-  alias ThreatShield.Accounts
+  alias ThreatShield.Accounts.Helpers, as: Accounts
 
   def render(assigns) do
     ~H"""

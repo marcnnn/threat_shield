@@ -1,5 +1,5 @@
 defmodule ThreatShield.Analytics.RiskAnalytics do
-  alias ThreatShield.Risks.Risk
+  alias ThreatShield.ThreatManagement.Risk
 
   @moduledoc """
   This module provides analytics functions for risks.

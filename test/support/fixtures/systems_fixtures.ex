@@ -4,18 +4,16 @@ defmodule ThreatShield.SystemsFixtures do
   entities via the `ThreatShield.Systems` context.
   """
 
-  @doc """
-  Generate a system.
-  """
   def system_fixture(user, organisation, attrs \\ %{}) do
-    {:ok, system} =
+    attrs =
       attrs
       |> Enum.into(%{
         attributes: %{},
         name: "some name",
         description: "some description"
       })
-      |> ThreatShield.Systems.create_system(user, organisation)
+
+    {:ok, system} = ThreatShield.Systems.create_system(user, organisation, attrs)
 
     system
   end

@@ -21,7 +21,8 @@ defmodule ThreatShieldWeb.FormHelpers do
 
   On success, it sends `{form_module, {:saved, entity}}` to the parent LiveView,
   shows the message, and returns to the path in the assign `:patch`. On a
-  validation error, it shows the changeset in the form.
+  validation error, it shows the changeset, or the errors of the Ash action, in the
+  form.
   """
   def handle_save_result(socket, {:ok, entity}, form_module, message) do
     send(self(), {form_module, {:saved, entity}})
@@ -32,6 +33,12 @@ defmodule ThreatShieldWeb.FormHelpers do
   end
 
   def handle_save_result(socket, {:error, %Ecto.Changeset{} = changeset}, _form_module, _message) do
+    assign_form(socket, changeset)
+  end
+
+  # The contexts call Ash actions. Their errors are shown in the changeset of the form.
+  def handle_save_result(socket, {:error, %Ash.Error.Invalid{} = error}, _form_module, _message) do
+    changeset = ThreatShieldWeb.AshErrors.add_to_changeset(socket.assigns.form.source, error)
     assign_form(socket, changeset)
   end
 end

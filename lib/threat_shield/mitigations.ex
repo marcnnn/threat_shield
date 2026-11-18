@@ -1,139 +1,88 @@
 defmodule ThreatShield.Mitigations do
   @moduledoc """
-  The Mitigations context.
+  The Mitigations context - delegates to Ash resources.
   """
 
-  import Ecto.Query, warn: false
+  require Ash.Query
+
+  alias ThreatShield.Access
+  alias ThreatShield.Params
+  alias ThreatShield.ThreatManagement.{Mitigation, Risk}
   alias ThreatShield.Accounts.{User, Organisation}
-  alias ThreatShield.Risks.Risk
-  alias ThreatShield.Repo
 
-  alias ThreatShield.Mitigations.Mitigation
-
-  @doc """
-  Gets a single mitigation.
-
-  Raises `Ecto.NoResultsError` if the Mitigation does not exist.
-
-  ## Examples
-
-      iex> get_mitigation!(123)
-      %Mitigation{}
-
-      iex> get_mitigation!(456)
-      ** (Ecto.NoResultsError)
-
-  """
-  def get_mitigation!(%User{id: user_id}, id) do
-    Mitigation.get(id)
-    |> Mitigation.for_user(user_id)
-    |> Mitigation.preload_risk()
-    |> Mitigation.preload_full_threat()
-    |> Mitigation.preload_membership()
-    |> Repo.one!()
+  def get_mitigation!(%User{} = user, id) do
+    Access.get!(Mitigation, user, id, nil,
+      risk: [threat: [:system, organisation: [:memberships]]]
+    )
   end
 
-  def get_all_mitigations(%User{id: user_id}, org_id) do
-    Mitigation.from()
-    |> Mitigation.for_user(user_id)
-    |> Mitigation.where_organisation(org_id)
-    |> Mitigation.preload_risk()
-    |> Repo.all()
+  def get_all_mitigations(%User{} = user, org_id) do
+    Mitigation
+    |> Access.query(user)
+    |> Ash.Query.filter(risk.threat.organisation_id == ^org_id)
+    |> Ash.Query.load([:risk])
+    |> Ash.read!(authorize?: false)
   end
 
   def count_all_mitigations(%Organisation{id: org_id}) do
-    Mitigation.from()
-    |> Mitigation.where_organisation(org_id)
-    |> Repo.aggregate(:count, :id)
+    Mitigation
+    |> Ash.Query.filter(risk.threat.organisation_id == ^org_id)
+    |> Ash.count!(authorize?: false)
   end
 
   @doc """
-  Creates a mitigation.
-
-  ## Examples
-
-      iex> create_mitigation(%{field: value})
-      {:ok, %Mitigation{}}
-
-      iex> create_mitigation(%{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
+  Creates a mitigation for a risk. Returns `{:error, %Ash.Error.Invalid{}}` for
+  invalid attributes.
   """
-  def create_mitigation(%User{id: user_id}, %Risk{id: risk_id}, attrs \\ %{}) do
-    Repo.transaction(fn ->
-      risk =
-        Risk.get(risk_id)
-        |> Risk.for_user(user_id, :create_mitigation)
-        |> Repo.one!()
+  def create_mitigation(%User{} = user, %Risk{id: risk_id}, attrs \\ %{}) do
+    risk = Access.get!(Risk, user, risk_id, :create_mitigation)
 
-      %Mitigation{}
-      |> Mitigation.changeset(attrs)
-      |> update_implementation_status()
-      |> Ecto.Changeset.put_assoc(:risk, risk)
-      |> Repo.insert_or_rollback()
-    end)
+    Mitigation
+    |> Ash.Changeset.for_create(:create, Params.put(attrs, :risk_id, risk.id),
+      authorize?: false,
+      skip_unknown_inputs: :*
+    )
+    |> Ash.create()
   end
 
   @doc """
-  Updates a mitigation.
-
-  ## Examples
-
-      iex> update_mitigation(mitigation, %{field: new_value})
-      {:ok, %Mitigation{}}
-
-      iex> update_mitigation(mitigation, %{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
+  Updates a mitigation. The risk of a mitigation cannot be changed.
   """
-  def update_mitigation(%User{id: user_id}, %Mitigation{id: mitigation_id}, attrs) do
-    Mitigation.get(mitigation_id)
-    |> Mitigation.for_user(user_id, :edit_mitigation)
-    |> Repo.one!()
-    |> Mitigation.changeset(attrs)
-    |> update_implementation_status()
-    |> Repo.update()
+  def update_mitigation(%User{} = user, %Mitigation{id: mitigation_id}, attrs) do
+    Mitigation
+    |> Access.get!(user, mitigation_id, :edit_mitigation)
+    |> Ash.Changeset.for_update(:update, attrs, authorize?: false, skip_unknown_inputs: :*)
+    |> Ash.update()
   end
 
-  @doc """
-  Returns an `%Ecto.Changeset{}` for tracking mitigation changes.
+  @mitigation_fields ~w(name description issue_link status implementation_date implementation_notes verification_date verification_method verification_result)a
 
-  ## Examples
-
-      iex> change_mitigation(mitigation)
-      %Ecto.Changeset{data: %Mitigation{}}
-
-  """
   def change_mitigation(%Mitigation{} = mitigation, attrs \\ %{}) do
-    Mitigation.changeset(mitigation, attrs)
-    |> update_implementation_status()
+    changeset =
+      mitigation
+      |> Ecto.Changeset.cast(attrs, @mitigation_fields)
+      |> Ecto.Changeset.validate_required([:name, :description])
+      |> Ecto.Changeset.validate_length(:name, max: 60)
+      |> Ecto.Changeset.validate_length(:description, max: 4000)
+      |> Ecto.Changeset.validate_length(:implementation_notes, max: 255)
+      |> Ecto.Changeset.validate_length(:verification_method, max: 255)
+      |> Ecto.Changeset.validate_length(:verification_result, max: 255)
+      |> Ecto.Changeset.validate_length(:issue_link, max: 255)
+
+    # Auto-update implementation status
+    applied = Ecto.Changeset.apply_changes(changeset)
+    implemented = applied.status in [:implemented, :verified]
+    Ecto.Changeset.put_change(changeset, :is_implemented, implemented)
   end
 
-  def delete_mitigation_by_id!(%User{id: user_id}, id) do
-    Mitigation.get(id)
-    |> Mitigation.for_user(user_id, :delete_mitigation)
-    |> Mitigation.select()
-    |> Repo.delete_all()
-  end
+  def delete_mitigation_by_id!(%User{} = user, id) do
+    case Access.get(Mitigation, user, id, :delete_mitigation) do
+      {:ok, mitigation} ->
+        Ash.destroy!(mitigation, authorize?: false)
+        {1, [mitigation]}
 
-  # Internal
-
-  defp update_implementation_status(%Ecto.Changeset{} = mitigation_cs) do
-    %Mitigation{} = mitigation = Ecto.Changeset.apply_changes(mitigation_cs)
-
-    implemented =
-      case(to_string(mitigation.status)) do
-        "implemented" ->
-          true
-
-        "verified" ->
-          true
-
-        _ ->
-          false
-      end
-
-    mitigation_cs
-    |> Ecto.Changeset.put_change(:is_implemented, implemented)
+      {:error, :not_found} ->
+        {0, []}
+    end
   end
 end

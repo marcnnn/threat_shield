@@ -4,7 +4,7 @@ defmodule ThreatShieldWeb.AdminLive.OrganisationsManagement do
   alias ThreatShield.Organisations
   alias ThreatShield.Const.Locations
 
-  import ThreatShield.Accounts.Organisation, only: [attributes: 0]
+  import ThreatShield.Accounts.Organisation, only: [attributes_config: 0]
 
   @impl true
   def mount(_params, _session, socket) do
@@ -15,7 +15,7 @@ defmodule ThreatShieldWeb.AdminLive.OrganisationsManagement do
     socket
     |> assign(locations_options: locations_options)
     |> stream_organisations(organisations)
-    |> assign(:attributes, attributes())
+    |> assign(:attributes, attributes_config())
     |> ok()
   end
 

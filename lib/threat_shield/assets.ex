@@ -1,44 +1,38 @@
 defmodule ThreatShield.Assets do
   @moduledoc """
-  The Assets context.
+  The Assets context - delegates to Ash resources.
   """
 
-  import Ecto.Query, warn: false
-  alias ThreatShield.Repo
+  require Ash.Query
+
+  alias ThreatShield.Access
+  alias ThreatShield.Params
   alias ThreatShield.Scope
+  alias ThreatShield.ThreatManagement.{Asset, System}
+  alias ThreatShield.Accounts.{User, Organisation}
 
-  alias ThreatShield.Assets.Asset
-  alias ThreatShield.Accounts.User
-  alias ThreatShield.Systems.System
-  alias ThreatShield.Accounts.Organisation
-
-  def get_asset!(%User{id: user_id}, asset_id) do
-    Asset.get(asset_id)
-    |> Asset.for_user(user_id)
-    |> Asset.preload_organisation()
-    |> Asset.with_system()
-    |> Asset.with_threats()
-    |> Asset.with_org_systems()
-    |> Asset.with_org_assets()
-    |> Asset.preload_membership()
-    |> Repo.one!()
+  def get_asset!(%User{} = user, asset_id) do
+    Access.get!(Asset, user, asset_id, nil,
+      system: [],
+      threats: [],
+      organisation: [:systems, :assets, :memberships]
+    )
   end
 
-  def list_assets(%User{id: user_id}, %Organisation{id: org_id}) do
-    Asset.from()
-    |> Asset.for_user(user_id)
-    |> Asset.for_organisation(org_id)
-    |> Asset.with_threats()
-    |> Repo.all()
+  def list_assets(%User{} = user, %Organisation{id: org_id}) do
+    Asset
+    |> Access.query(user)
+    |> Ash.Query.filter(organisation_id == ^org_id)
+    |> Ash.Query.load([:threats])
+    |> Ash.read!(authorize?: false)
   end
 
-  def find_by_system(%User{id: user_id}, %System{id: system_id, organisation_id: org_id}) do
-    Asset.from()
-    |> Asset.for_user(user_id)
-    |> Asset.for_organisation(org_id)
-    |> Asset.where_system(system_id)
-    |> Asset.with_threats()
-    |> Repo.all()
+  def find_by_system(%User{} = user, %System{id: system_id, organisation_id: org_id}) do
+    Asset
+    |> Access.query(user)
+    |> Ash.Query.filter(organisation_id == ^org_id and system_id == ^system_id)
+    |> Ash.Query.load([:threats])
+    |> Ash.read!(authorize?: false)
   end
 
   def prepare_asset(system_id \\ nil) do
@@ -52,58 +46,46 @@ defmodule ThreatShield.Assets do
   end
 
   def change_asset(%Asset{} = asset, attrs \\ %{}) do
-    Asset.changeset(asset, attrs)
-    |> update_overall_criticality()
-  end
-
-  def create_asset(
-        %User{id: user_id} = user,
-        %Organisation{id: org_id} = organisation,
-        attrs \\ %{}
-      ) do
-    changeset =
-      %Asset{organisation: organisation}
-      |> Asset.changeset(attrs)
-
-    Repo.transaction(fn ->
-      check_related_system_in_asset_changeset(changeset, user)
-
-      Organisation.get(org_id)
-      |> Organisation.for_user(user_id, :create_asset)
-      |> Repo.one!()
-
-      Repo.insert_or_rollback(changeset)
-      |> Repo.reload!()
-      |> Repo.preload(:system)
-    end)
-  end
-
-  def update_asset(%User{id: user_id} = user, %Asset{id: asset_id} = asset, attrs) do
     changeset =
       asset
-      |> Asset.changeset(attrs)
+      |> Ecto.Changeset.cast(attrs, [
+        :name,
+        :description,
+        :system_id,
+        :criticality_loss,
+        :criticality_theft,
+        :criticality_publication,
+        :criticality_overall
+      ])
+      |> Ecto.Changeset.validate_required([:name])
+      |> Ecto.Changeset.validate_length(:name, max: 60)
+      |> Ecto.Changeset.validate_length(:description, max: 4000)
 
-    Repo.transaction(fn ->
-      check_related_system_in_asset_changeset(changeset, user)
-
-      Asset.get(asset_id)
-      |> Asset.for_user(user_id, :edit_asset)
-      |> Repo.one!()
-
-      Repo.update_or_rollback(changeset)
-      |> Repo.reload!()
-      |> Repo.preload(:system)
-    end)
+    # Auto-calculate overall criticality
+    applied = Ecto.Changeset.apply_changes(changeset)
+    crit = Asset.calc_overall_criticality(applied)
+    Ecto.Changeset.put_change(changeset, :criticality_overall, crit)
   end
 
-  defp check_related_system_in_asset_changeset(%{changes: %{system_id: sys_id}}, user)
-       when not is_nil(sys_id) do
-    System.get(sys_id)
-    |> System.for_user(user.id)
-    |> Repo.one!()
+  @doc """
+  Creates an asset. Returns `{:error, %Ash.Error.Invalid{}}` for invalid attributes.
+  """
+  def create_asset(%User{} = user, %Organisation{id: org_id}, attrs \\ %{}) do
+    organisation = Access.get!(Organisation, user, org_id, :create_asset)
+
+    Asset
+    |> Ash.Changeset.for_create(:create, Params.put(attrs, :organisation_id, organisation.id),
+      authorize?: false,
+      skip_unknown_inputs: :*
+    )
+    |> Ash.create(load: [:system])
   end
 
-  defp check_related_system_in_asset_changeset(_, _user) do
+  def update_asset(%User{} = user, %Asset{id: asset_id}, attrs) do
+    Asset
+    |> Access.get!(user, asset_id, :edit_asset)
+    |> Ash.Changeset.for_update(:update, attrs, authorize?: false, skip_unknown_inputs: :*)
+    |> Ash.update(load: [:system])
   end
 
   @doc """
@@ -118,18 +100,17 @@ defmodule ThreatShield.Assets do
     })
   end
 
-  defp update_overall_criticality(%Ecto.Changeset{} = asset_cs) do
-    asset = Ecto.Changeset.apply_changes(asset_cs)
-    crit = Asset.calc_overall_criticality(asset)
+  @doc """
+  Deletes an asset. The database keeps its threats and removes their reference.
+  """
+  def delete_asset_by_id(%User{} = user, asset_id) do
+    case Access.get(Asset, user, asset_id, :delete_asset) do
+      {:ok, asset} ->
+        Ash.destroy!(asset, authorize?: false)
+        {1, [asset]}
 
-    asset_cs
-    |> Ecto.Changeset.put_change(:criticality_overall, crit)
-  end
-
-  def delete_asset_by_id(%User{id: user_id}, asset_id) do
-    Asset.get(asset_id)
-    |> Asset.for_user(user_id, :delete_asset)
-    |> Asset.select()
-    |> Repo.delete_all()
+      {:error, :not_found} ->
+        {0, []}
+    end
   end
 end

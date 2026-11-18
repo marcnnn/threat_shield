@@ -6,7 +6,7 @@ defmodule ThreatShieldWeb.OrganisationLive.MyOrganisations do
   alias ThreatShield.Accounts.Organisation
   alias ThreatShield.Const.Locations
 
-  import ThreatShield.Accounts.Organisation, only: [attributes: 0]
+  import ThreatShield.Accounts.Organisation, only: [attributes_config: 0]
   import ThreatShieldWeb.Helpers, only: [format_datetime: 1]
 
   @impl true
@@ -14,7 +14,7 @@ defmodule ThreatShieldWeb.OrganisationLive.MyOrganisations do
     socket
     |> stream_organisations()
     |> assign(:locations_options, Locations.list_locations())
-    |> assign(:attributes, attributes())
+    |> assign(:attributes, attributes_config())
     |> assign_open_invitations()
     |> ok()
   end
@@ -32,14 +32,14 @@ defmodule ThreatShieldWeb.OrganisationLive.MyOrganisations do
     socket
     |> assign(:page_title, "New Organisation")
     |> assign(:edit_organisation, %Organisation{users: [current_user]})
-    |> assign(:attributes, attributes())
+    |> assign(:attributes, attributes_config())
   end
 
   defp apply_action(socket, :index, _params) do
     socket
     |> assign(:page_title, "Listing Organisations")
     |> assign(:edit_organisation, nil)
-    |> assign(:attributes, attributes())
+    |> assign(:attributes, attributes_config())
   end
 
   @impl true

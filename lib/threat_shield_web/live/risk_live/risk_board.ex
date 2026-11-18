@@ -3,7 +3,7 @@ defmodule ThreatShieldWeb.RiskLive.RiskBoard do
 
   alias ThreatShield.Accounts.Organisation
   alias ThreatShield.{Risks, Threats, Mitigations, Members}
-  alias ThreatShield.Risks.Risk
+  alias ThreatShield.ThreatManagement.Risk
 
   import ThreatShield.Analytics.RiskAnalytics
   import ThreatShieldWeb.Helpers

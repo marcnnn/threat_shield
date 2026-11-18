@@ -88,4 +88,13 @@ if config_env() == :prod do
     base_url: "https://api.eu.mailgun.net/v3"
 
   config :swoosh, :api_client, Swoosh.ApiClient.Hackney
+
+  # AshAuthentication token signing secret
+  config :threat_shield,
+    token_signing_secret:
+      System.get_env("TOKEN_SIGNING_SECRET") ||
+        raise("""
+        environment variable TOKEN_SIGNING_SECRET is missing.
+        You can generate one by calling: mix phx.gen.secret
+        """)
 end

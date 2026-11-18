@@ -2,8 +2,8 @@ defmodule ThreatShieldWeb.UserRegistrationLive do
   use ThreatShieldWeb, :live_view
 
   alias ThreatShield.Members
-  alias ThreatShield.Members.Invite
-  alias ThreatShield.Accounts
+  alias ThreatShield.Accounts.Invite
+  alias ThreatShield.Accounts.Helpers, as: Accounts
   alias ThreatShield.Accounts.User
 
   @impl true

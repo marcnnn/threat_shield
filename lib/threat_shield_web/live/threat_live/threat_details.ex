@@ -3,8 +3,8 @@ defmodule ThreatShieldWeb.ThreatLive.ThreatDetails do
 
   alias ThreatShield.Scope
   alias ThreatShield.Threats
-  alias ThreatShield.Threats.Threat
-  alias ThreatShield.Risks.Risk
+  alias ThreatShield.ThreatManagement.Threat
+  alias ThreatShield.ThreatManagement.Risk
 
   import ThreatShield.Accounts.Organisation,
     only: [list_system_options: 1, list_asset_options: 1]

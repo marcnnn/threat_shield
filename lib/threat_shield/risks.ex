@@ -1,77 +1,75 @@
 defmodule ThreatShield.Risks do
   @moduledoc """
-  The Risks context.
+  The Risks context - delegates to Ash resources.
   """
 
-  import Ecto.Query, warn: false
-  alias ThreatShield.Repo
+  require Ash.Query
+
+  alias ThreatShield.Access
+  alias ThreatShield.Params
+  alias ThreatShield.ThreatManagement.{Risk, Threat}
   alias ThreatShield.Accounts.User
 
-  alias ThreatShield.Risks.Risk
-  alias ThreatShield.Threats.Threat
-
-  def get_risk!(%User{id: user_id}, risk_id) do
-    Risk.get(risk_id)
-    |> Risk.for_user(user_id)
-    |> Risk.preload_threat()
-    |> Risk.preload_membership()
-    |> Risk.with_organisation()
-    |> Risk.with_org_systems()
-    |> Risk.with_mitigations()
-    |> Repo.one!()
+  def get_risk!(%User{} = user, risk_id) do
+    Access.get!(Risk, user, risk_id, nil,
+      mitigations: [],
+      threat: [:system, organisation: [:systems, :memberships]]
+    )
   end
 
-  def get_all_risks(%User{id: user_id}, org_id) do
-    Risk.all()
-    |> Risk.for_user(user_id)
-    |> Risk.where_organisation(org_id)
-    |> Risk.preload_threat()
-    |> Repo.all()
-  end
-
-  def create_risk(%User{id: user_id}, threat_id, attrs \\ %{}) do
-    Repo.transaction(fn ->
-      threat =
-        Threat.get(threat_id)
-        |> Threat.for_user(user_id, :create_risk)
-        |> Repo.one!()
-
-      %Risk{}
-      |> Risk.changeset(attrs)
-      |> Ecto.Changeset.put_assoc(:threat, threat)
-      |> Repo.insert_or_rollback()
-    end)
-  end
-
-  def update_risk(%User{id: user_id}, %Risk{id: risk_id} = risk, attrs) do
-    Repo.transaction(fn ->
-      Risk.get(risk_id)
-      |> Risk.for_user(user_id, :edit_risk)
-      |> Repo.one!()
-
-      risk
-      |> Risk.changeset(attrs)
-      |> Repo.update_or_rollback()
-    end)
-  end
-
-  def delete_risk_by_id!(%User{id: user_id}, id) do
-    Risk.get(id)
-    |> Risk.for_user(user_id, :delete_risk)
-    |> Risk.select()
-    |> Repo.delete_all()
+  def get_all_risks(%User{} = user, org_id) do
+    Risk
+    |> Access.query(user)
+    |> Ash.Query.filter(threat.organisation_id == ^org_id)
+    |> Ash.Query.load(threat: :system)
+    |> Ash.read!(authorize?: false)
   end
 
   @doc """
-  Returns an `%Ecto.Changeset{}` for tracking risk changes.
-
-  ## Examples
-
-      iex> change_risk(risk)
-      %Ecto.Changeset{data: %Risk{}}
-
+  Creates a risk for a threat. Returns `{:error, %Ash.Error.Invalid{}}` for invalid
+  attributes.
   """
+  def create_risk(%User{} = user, threat_id, attrs \\ %{}) do
+    threat = Access.get!(Threat, user, threat_id, :create_risk)
+
+    Risk
+    |> Ash.Changeset.for_create(:create, Params.put(attrs, :threat_id, threat.id),
+      authorize?: false,
+      skip_unknown_inputs: :*
+    )
+    |> Ash.create()
+  end
+
+  def update_risk(%User{} = user, %Risk{id: risk_id}, attrs) do
+    Risk
+    |> Access.get!(user, risk_id, :edit_risk)
+    |> Ash.Changeset.for_update(:update, attrs, authorize?: false, skip_unknown_inputs: :*)
+    |> Ash.update()
+  end
+
+  def delete_risk_by_id!(%User{} = user, id) do
+    case Access.get(Risk, user, id, :delete_risk) do
+      {:ok, risk} ->
+        Ash.destroy!(risk, authorize?: false)
+        {1, [risk]}
+
+      {:error, :not_found} ->
+        {0, []}
+    end
+  end
+
   def change_risk(%Risk{} = risk, attrs \\ %{}) do
-    Risk.changeset(risk, attrs)
+    risk
+    |> Ecto.Changeset.cast(attrs, [
+      :name,
+      :description,
+      :estimated_cost,
+      :probability,
+      :severity,
+      :status
+    ])
+    |> Ecto.Changeset.validate_required([:name, :description])
+    |> Ecto.Changeset.validate_length(:name, max: 60)
+    |> Ecto.Changeset.validate_length(:description, max: 4000)
   end
 end

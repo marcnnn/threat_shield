@@ -8,7 +8,7 @@ defmodule ThreatShieldWeb.OrganisationLiveTest do
   alias ThreatShield.OrganisationsFixtures
   alias ThreatShield.Accounts.Organisation
   alias ThreatShield.Members
-  alias ThreatShield.Members.Invite
+  alias ThreatShield.Accounts.Invite
   alias ThreatShield.Repo
 
   @create_attrs %{name: "some name"}

@@ -2,13 +2,13 @@ defmodule ThreatShield.Accounts.UserNotifier do
   import Swoosh.Email
 
   alias ThreatShield.Mailer
-  alias ThreatShield.Members.Invite
+  alias ThreatShield.Accounts.Invite
 
   # Delivers the email using the application mailer.
   defp deliver(recipient, subject, body) do
     email =
       new()
-      |> to(recipient)
+      |> to(to_string(recipient))
       |> from({"ThreatShield", "no-reply@mg.inspired.consulting"})
       |> reply_to({"ThreatShield", "threatshield@inspired.consulting"})
       |> subject(subject)
@@ -88,7 +88,7 @@ defmodule ThreatShield.Accounts.UserNotifier do
 
     You have been invited to join #{invite.organisation.name} on ThreatShield 🙂 Follow the link below to accept the invite:
 
-    #{ThreatShield.Members.Invite.generate_url(invite)}
+    #{ThreatShield.Accounts.Invite.generate_url(invite)}
 
     Best regards,
     Your ThreatShield team

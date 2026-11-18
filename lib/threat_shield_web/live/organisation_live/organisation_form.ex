@@ -5,7 +5,7 @@ defmodule ThreatShieldWeb.OrganisationLive.OrganisationForm do
   import ThreatShieldWeb.FormHelpers
 
   alias ThreatShield.Organisations
-  import ThreatShield.Accounts.Organisation, only: [attributes: 0]
+  import ThreatShield.Accounts.Organisation, only: [attributes_config: 0]
 
   @impl true
   def render(assigns) do
@@ -84,7 +84,7 @@ defmodule ThreatShieldWeb.OrganisationLive.OrganisationForm do
   end
 
   defp extract_attributes_from_params(params) do
-    attributes()
+    attributes_config()
     |> Enum.map(fn d -> {d.name, Map.get(params, d.name, "")} end)
     |> Map.new()
   end

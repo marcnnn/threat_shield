@@ -4,10 +4,10 @@ defmodule ThreatShieldWeb.Labels do
   use ThreatShieldWeb, :verified_routes
   import ThreatShieldWeb.Gettext
 
-  alias ThreatShield.Systems.System
-  alias ThreatShield.Assets.Asset
-  alias ThreatShield.Threats.Threat
-  alias ThreatShield.Risks.Risk
+  alias ThreatShield.ThreatManagement.System
+  alias ThreatShield.ThreatManagement.Asset
+  alias ThreatShield.ThreatManagement.Threat
+  alias ThreatShield.ThreatManagement.Risk
 
   def system_label(%Risk{} = risk) do
     system_label(risk.threat)

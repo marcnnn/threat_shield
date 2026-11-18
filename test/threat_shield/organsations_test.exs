@@ -16,10 +16,10 @@ defmodule ThreatShield.OrganisationsTest do
                Organisations.create_organisation(valid_attrs, user)
     end
 
-    test "create_organisation/2 with invalid data returns error changeset" do
+    test "create_organisation/2 with invalid data returns error" do
       user = AccountsFixtures.user_fixture()
 
-      assert {:error, %Ecto.Changeset{}} = Organisations.create_organisation(%{}, user)
+      assert {:error, _} = Organisations.create_organisation(%{}, user)
     end
 
     test "update_organisation/3 with valid data updates the organisation" do

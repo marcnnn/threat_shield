@@ -1,7 +1,7 @@
 defmodule ThreatShieldWeb.UserSessionController do
   use ThreatShieldWeb, :controller
 
-  alias ThreatShield.Accounts
+  alias ThreatShield.Accounts.Helpers, as: Accounts
   alias ThreatShieldWeb.UserAuth
 
   def create(conn, %{"_action" => "registered"} = params) do

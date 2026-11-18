@@ -1,12 +1,11 @@
 defmodule ThreatShield.Accounts.Organisation do
-  use Ecto.Schema
-  import Ecto.Changeset
+  use Ash.Resource,
+    otp_app: :threat_shield,
+    domain: ThreatShield.Accounts,
+    data_layer: AshPostgres.DataLayer,
+    authorizers: [Ash.Policy.Authorizer]
 
-  alias ThreatShield.Systems.System
-  alias ThreatShield.Accounts.User
   alias ThreatShield.DynamicAttribute
-
-  import ThreatShield.Members.Rights, only: [get_authorised_roles: 1]
 
   @attributes [
     %DynamicAttribute{
@@ -28,61 +27,122 @@ defmodule ThreatShield.Accounts.Organisation do
     }
   ]
 
-  schema "organisations" do
-    field :name, :string
-    field :location, :string
-    field :attributes, :map
-    field :quotas, :map, default: %{ai_requests_per_month: 100}
+  postgres do
+    table "organisations"
+    repo ThreatShield.Repo
+  end
 
-    many_to_many :users, ThreatShield.Accounts.User, join_through: "memberships"
+  attributes do
+    integer_primary_key :id
+
+    attribute :name, :string do
+      allow_nil? false
+      public? true
+      constraints max_length: 255
+    end
+
+    attribute :location, :string do
+      allow_nil? true
+      public? true
+      constraints max_length: 255
+    end
+
+    attribute :attributes, :map do
+      allow_nil? true
+      public? true
+    end
+
+    attribute :quotas, :map do
+      default %{ai_requests_per_month: 100}
+      public? true
+    end
+
+    create_timestamp :inserted_at
+    update_timestamp :updated_at
+  end
+
+  relationships do
+    many_to_many :users, ThreatShield.Accounts.User do
+      through ThreatShield.Accounts.Membership
+      source_attribute_on_join_resource :organisation_id
+      destination_attribute_on_join_resource :user_id
+    end
 
     has_many :memberships, ThreatShield.Accounts.Membership
-    has_many :systems, ThreatShield.Systems.System
-    has_many :threats, ThreatShield.Threats.Threat
-    has_many :assets, ThreatShield.Assets.Asset
-    has_many :invites, ThreatShield.Members.Invite
-
-    timestamps()
+    has_many :systems, ThreatShield.ThreatManagement.System
+    has_many :threats, ThreatShield.ThreatManagement.Threat
+    has_many :assets, ThreatShield.ThreatManagement.Asset
+    has_many :invites, ThreatShield.Accounts.Invite
   end
 
-  @doc false
-  def changeset(organisation, attrs) do
-    organisation
-    |> cast(attrs, [
-      :name,
-      :location,
-      :attributes
-    ])
-    |> validate_required([:name])
-    |> validate_length(:name, max: 255)
-    |> validate_length(:location, max: 255)
-    |> DynamicAttribute.validate_values(:attributes)
+  validations do
+    validate {ThreatShield.Validations.AttributeValues, attribute: :attributes}
   end
 
-  def attributes() do
+  actions do
+    defaults [:read, :destroy]
+
+    create :create do
+      accept [:name, :location, :attributes]
+    end
+
+    update :update do
+      accept [:name, :location, :attributes]
+      require_atomic? false
+    end
+
+    read :for_user do
+      argument :user_id, :integer, allow_nil?: false
+      argument :roles, {:array, :atom}, allow_nil?: false
+
+      filter expr(exists(memberships, user_id == ^arg(:user_id) and role in ^arg(:roles)))
+    end
+  end
+
+  policies do
+    policy action_type(:read) do
+      authorize_if relates_to_actor_via([:memberships, :user])
+    end
+
+    policy action_type(:create) do
+      authorize_if always()
+    end
+
+    policy action_type([:update, :destroy]) do
+      authorize_if actor_attribute_equals(:__struct__, ThreatShield.Accounts.User)
+    end
+  end
+
+  def attributes_config do
     @attributes
   end
 
-  def get_membership(%__MODULE__{memberships: memberships}, %User{id: user_id}) do
+  def get_membership(%{memberships: memberships}, %{id: user_id}) when is_list(memberships) do
     Enum.find(memberships, fn m -> m.user_id == user_id end)
   end
 
-  def list_system_options(%__MODULE__{systems: systems}) do
+  def get_membership(_, _), do: nil
+
+  def list_system_options(%{systems: systems}) when is_list(systems) do
     [{"None", nil} | Enum.map(systems, fn s -> {s.name, s.id} end)]
   end
 
-  def list_asset_options(%__MODULE__{assets: assets}) do
+  def list_system_options(_), do: [{"None", nil}]
+
+  def list_asset_options(%{assets: assets}) when is_list(assets) do
     [{"None", nil} | Enum.map(assets, fn a -> {a.name, a.id} end)]
   end
 
-  def describe(%__MODULE__{name: name, attributes: attributes, systems: systems}) do
+  def list_asset_options(_), do: [{"None", nil}]
+
+  def describe(%{name: name, attributes: attributes, systems: systems}) do
     name_string = """
     The name of the organisation is "#{name}".
     """
 
     attribute_values =
       "The organisation has the following properties:\n" <>
-        (attributes
+        ((attributes || %{})
          |> Enum.filter(fn {_, val} -> val != "" end)
          |> Enum.map_join("\n", fn {key, val} -> ~s{"#{key}: ", "#{val}"} end))
 
@@ -91,90 +151,15 @@ defmodule ThreatShield.Accounts.Organisation do
         (@attributes
          |> Enum.map_join("\n", fn d -> ~s{"#{d.name}: ", "#{d.description}"} end))
 
+    systems_list = if is_list(systems), do: systems, else: []
+
     system_description =
       "It has the following systems:\n" <>
-        (systems
-         |> Enum.map(fn sys -> System.describe(sys) end)
+        (systems_list
+         |> Enum.map(fn sys -> ThreatShield.ThreatManagement.System.describe(sys) end)
          |> Enum.join("\n"))
 
     [name_string, attribute_values, attribute_description, system_description]
     |> Enum.join(" ")
-  end
-
-  import Ecto.Query
-
-  def get(id) do
-    from(o in __MODULE__, as: :organisation, where: o.id == ^id)
-  end
-
-  def for_user(query, user_id) do
-    query
-    |> join(:inner, [organisation: o], assoc(o, :memberships), as: :memberships)
-    |> join(:inner, [memberships: m], assoc(m, :user), as: :user)
-    |> where([user: u], u.id == ^user_id)
-  end
-
-  def preload_membership(query) do
-    query
-    |> preload([memberships: m], memberships: m)
-  end
-
-  def for_user(query, user_id, right) do
-    query
-    |> join(:inner, [organisation: o], assoc(o, :memberships), as: :memberships)
-    |> join(:inner, [memberships: m], assoc(m, :user), as: :user)
-    |> where([user: u], u.id == ^user_id)
-    |> where([memberships: m], m.role in ^get_authorised_roles(right))
-  end
-
-  def with_threats(query) do
-    query
-    |> join(:left, [organisation: o], assoc(o, :threats), as: :threats)
-    |> join(:left, [threats: t], assoc(t, :system), as: :threat_system)
-    |> join(:left, [threats: t], assoc(t, :asset), as: :threat_asset)
-    |> preload([threats: t, threat_system: s], threats: {t, system: s})
-    |> preload([threats: t, threat_asset: a], threats: {t, asset: a})
-  end
-
-  def with_risks(query) do
-    query
-    |> join(:left, [threats: t], assoc(t, :risks), as: :risks)
-    |> preload([threats: t, risks: r], threats: {t, risks: r})
-  end
-
-  def with_mitigations(query) do
-    query
-    |> join(:left, [risks: r], assoc(r, :mitigations), as: :mitigations)
-    |> preload([threats: t, mitigations: m, risks: r], threats: {t, risks: {r, mitigations: m}})
-  end
-
-  def with_systems(query) do
-    query
-    |> join(:left, [organisation: o], assoc(o, :systems), as: :systems)
-    |> preload([systems: s], systems: s)
-  end
-
-  def with_assets(query) do
-    query
-    |> join(:left, [organisation: o], assoc(o, :assets), as: :assets)
-    |> join(:left, [assets: a], assoc(a, :system), as: :asset_systems)
-    |> preload([assets: a, asset_systems: s], assets: {a, system: s})
-  end
-
-  def with_memberships(query) do
-    query
-    |> join(:left, [organisation: o], assoc(o, :memberships), as: :all_memberships)
-    |> join(:left, [all_memberships: m], assoc(m, :user), as: :all_membership_users)
-    |> preload([all_memberships: m, all_membership_users: u], memberships: {m, user: u})
-  end
-
-  def with_invites(query) do
-    query
-    |> join(:left, [organisation: o], assoc(o, :invites), as: :invites)
-    |> preload([invites: i], invites: i)
-  end
-
-  def select(query) do
-    select(query, [organisation: o], o)
   end
 end

@@ -1,13 +1,13 @@
 defmodule ThreatShield.Exporters.ExcelExporter do
-  alias ThreatShield.Mitigations.Mitigation
+  alias ThreatShield.ThreatManagement.Mitigation
   alias Elixlsx.Workbook
   alias Elixlsx.Sheet
 
-  alias ThreatShield.Threats.Threat
-  alias ThreatShield.Systems.System
-  alias ThreatShield.Assets.Asset
-  alias ThreatShield.Risks.Risk
-  alias ThreatShield.Mitigations.Mitigation
+  alias ThreatShield.ThreatManagement.Threat
+  alias ThreatShield.ThreatManagement.System
+  alias ThreatShield.ThreatManagement.Asset
+  alias ThreatShield.ThreatManagement.Risk
+  alias ThreatShield.ThreatManagement.Mitigation
 
   def export(systems, threats, assets, risks, mitigations) do
     sheets = [

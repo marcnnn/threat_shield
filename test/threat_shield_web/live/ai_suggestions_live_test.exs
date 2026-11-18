@@ -17,10 +17,10 @@ defmodule ThreatShieldWeb.AiSuggestionsLiveTest do
   alias ThreatShield.Repo
   alias ThreatShield.Systems
   alias ThreatShield.Accounts.Organisation
-  alias ThreatShield.Assets.Asset
-  alias ThreatShield.Mitigations.Mitigation
-  alias ThreatShield.Risks.Risk
-  alias ThreatShield.Threats.Threat
+  alias ThreatShield.ThreatManagement.Asset
+  alias ThreatShield.ThreatManagement.Mitigation
+  alias ThreatShield.ThreatManagement.Risk
+  alias ThreatShield.ThreatManagement.Threat
 
   @moduletag :capture_log
 
