@@ -1,8 +1,7 @@
 defmodule ThreatShieldWeb.UserRegistrationLive do
   use ThreatShieldWeb, :live_view
 
-  alias ThreatShield.Members
-  alias ThreatShield.Accounts.Invite
+  alias ThreatShield.Accounts
   alias ThreatShield.Accounts.User
   alias ThreatShieldWeb.UserAuth
 
@@ -115,8 +114,9 @@ defmodule ThreatShieldWeb.UserRegistrationLive do
 
   @impl true
   def handle_params(%{"token" => token}, _url, socket) when is_binary(token) do
-    case Members.get_invite_by_token(token) do
-      %Invite{} = invite ->
+    # The token is the secret of the invite link, so no actor is needed
+    case Accounts.get_invite_by_token!(token) do
+      %Accounts.Invite{} = invite ->
         socket
         |> assign(:token, token)
         |> assign(:invite, invite)
@@ -180,10 +180,9 @@ defmodule ThreatShieldWeb.UserRegistrationLive do
     |> to_form()
   end
 
+  defp maybe_join_organisation(%User{}, nil), do: :ok
+
   defp maybe_join_organisation(%User{} = user, token) do
-    case token do
-      nil -> :ok
-      _ -> Members.join_with_token(user, token)
-    end
+    Accounts.join_with_token(token, actor: user)
   end
 end

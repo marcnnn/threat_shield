@@ -72,7 +72,7 @@ Organisation ──< System ──< Asset
   `list_threats!(org_id, actor: user)`, `create_risk(attrs, actor: user)`,
   `update_asset(asset, attrs, actor: user)`, `destroy_system(id, actor: user)`.
   LiveViews, controllers and tests call these functions directly; there are no context
-  modules. (`ThreatShield.Members` only keeps two functions for the registration flow.)
+  modules.
 - **Resources** live under `lib/threat_shield/<domain>/<resource>.ex`. Actions and
   their arguments have a `description`: they will be exposed as MCP tools (ash_ai).
 - Logic goes into the resource, not into callers: module **changes**

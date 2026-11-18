@@ -62,6 +62,41 @@ defmodule ThreatShieldWeb.UserRegistrationLiveTest do
       assert response =~ "Log out"
     end
 
+    test "joins the organisation of the invite link", %{conn: conn} do
+      owner = user_fixture()
+      organisation = ThreatShield.OrganisationsFixtures.organisation_fixture(owner)
+      email = unique_user_email()
+      invite = ThreatShield.MembersFixtures.invite_fixture(owner, organisation, email)
+
+      {:ok, lv, html} = live(conn, ~p"/users/register?token=#{invite.token}")
+      assert html =~ email
+
+      lv
+      |> form("#registration_form",
+        user: %{
+          "email" => email,
+          "password" => valid_user_password(),
+          "first_name" => "Test",
+          "last_name" => "User",
+          "accept_toc" => "true"
+        }
+      )
+      |> render_submit()
+
+      user = ThreatShield.Accounts.get_user_by_email!(email, authorize?: false)
+      organisation_id = organisation.id
+
+      assert [%{id: ^organisation_id}] =
+               ThreatShield.Accounts.list_organisations!(actor: user)
+    end
+
+    test "rejects an unknown invite token", %{conn: conn} do
+      assert {:error, {:live_redirect, %{to: "/users/register", flash: flash}}} =
+               live(conn, ~p"/users/register?token=unknown")
+
+      assert flash["error"] =~ "Invalid invitation token"
+    end
+
     test "renders errors for duplicated email", %{conn: conn} do
       {:ok, lv, _html} = live(conn, ~p"/users/register")
 

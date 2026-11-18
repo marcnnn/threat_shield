@@ -47,7 +47,7 @@ Users can authenticate with a personal API key (`Accounts.create_api_key/2`,
 `Accounts.sign_in_with_api_key/1`), but no plug or route accepts one yet.
 
 Open points: how API clients send the key, and how the existing access control (`Scope`,
-`Members.Rights`) applies to API requests.
+`Accounts.Rights`) applies to API requests.
 
 ## Component hierarchy for systems
 
