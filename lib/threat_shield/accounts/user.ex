@@ -64,6 +64,10 @@ defmodule ThreatShield.Accounts.User do
         # new password for an existing user validate the confirmation themselves.
         confirmation_required? false
         sign_in_tokens_enabled? false
+        # The action :register_with_password is the app's own: AshAuthentication would
+        # require it to issue a session token, which nobody uses, because the
+        # registration page signs the user in with the session controller.
+        registration_enabled? false
 
         resettable do
           sender Senders.SendPasswordResetEmail
@@ -206,10 +210,8 @@ defmodule ThreatShield.Accounts.User do
 
       validate argument_equals(:accept_toc, true), message: "must be accepted"
 
-      change Password.HashPasswordChange
-      change AshAuthentication.GenerateTokenChange
-
-      metadata :token, :string, allow_nil?: false
+      # No session token, see registration_enabled? above
+      change {Password.HashPasswordChange, strategy_name: :password}
     end
 
     read :sign_in_with_password do
@@ -270,7 +272,7 @@ defmodule ThreatShield.Accounts.User do
       validate User.Validations.PasswordConfirmation
 
       # The password change revokes all tokens of the user, the reset token too,
-      # and all API keys
+      # and all API keys. AshAuthentication requires a new token here.
       change Password.HashPasswordChange
       change User.Changes.RevokeApiKeys
       change AshAuthentication.GenerateTokenChange
@@ -332,12 +334,16 @@ defmodule ThreatShield.Accounts.User do
 
     update :confirm_email_change do
       description "Apply a requested email address with the token that was sent to it."
+      # AshAuthentication requires a confirm action to accept the monitored field.
+      # ConfirmChange overwrites it with the address that was stored with the token,
+      # so a given email is ignored.
       accept [:email]
       require_atomic? false
 
       argument :confirm, :string, allow_nil?: false, sensitive?: true
 
       change AshAuthentication.AddOn.Confirmation.ConfirmChange
+      # required by AshAuthentication for a confirm action
       change AshAuthentication.GenerateTokenChange
       # Following the link proves that the user owns the address
       change set_attribute(:confirmed_at, &DateTime.utc_now/0)

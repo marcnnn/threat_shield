@@ -100,14 +100,20 @@ defmodule ThreatShield.AccountsTest do
       assert "must be accepted" in errors_on(error).accept_toc
     end
 
-    test "registers users with a hashed password and a session token" do
+    test "registers users with a hashed password and without a session token" do
       email = unique_user_email()
       {:ok, user} = Accounts.register_user(valid_user_attributes(email: email))
       assert to_string(user.email) == email
       assert is_binary(user.hashed_password)
       assert user.hashed_password != valid_user_password()
       assert is_nil(user.confirmed_at)
-      assert token_valid?(user.__metadata__.token)
+
+      # The session controller signs the new user in and issues the session token
+      refute Map.has_key?(user.__metadata__, :token)
+
+      assert {"user?id=#{user.id}", "user"} not in Repo.all(
+               from t in "user_tokens", select: {t.subject, t.purpose}
+             )
     end
 
     test "sends the confirmation instructions with the link of the configured module" do
@@ -364,6 +370,23 @@ defmodule ThreatShield.AccountsTest do
       assert changed.confirmed_at
 
       assert {:error, _} = Accounts.confirm_user_email_change(changed, token, actor: changed)
+    end
+
+    test "ignores an address given with the token", %{user: user} do
+      email = unique_user_email()
+      {:ok, _} = request_change(user, email)
+      assert_received {:email, %{to: [{_, ^email}], text_body: body}}
+
+      {:ok, changed} =
+        user
+        |> Ash.Changeset.for_update(
+          :confirm_email_change,
+          %{confirm: link_token(body), email: unique_user_email()},
+          actor: user
+        )
+        |> Ash.update()
+
+      assert to_string(changed.email) == email
     end
 
     test "does not apply the token to another user", %{user: user} do

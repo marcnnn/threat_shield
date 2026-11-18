@@ -34,7 +34,7 @@ defmodule ThreatShield.AccountsFixtures do
       0 -> :ok
     end
 
-    user
+    Ash.Resource.put_metadata(user, :token, session_token(user))
   end
 
   def confirmed_user_fixture(attrs \\ %{}) do
