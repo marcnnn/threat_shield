@@ -2,7 +2,6 @@ defmodule ThreatShieldWeb.MitigationLive.MitigationDetails do
   use ThreatShieldWeb, :live_view
 
   alias ThreatShield.ThreatManagement
-  alias ThreatShield.Accounts.Organisation
 
   import ThreatShieldWeb.Helpers, only: [add_breadcrumbs: 2, get_path_prefix: 1]
 
@@ -18,7 +17,7 @@ defmodule ThreatShieldWeb.MitigationLive.MitigationDetails do
     |> assign(organisation: mitigation.risk.threat.organisation)
     |> assign(
       :membership,
-      Organisation.get_membership(mitigation.risk.threat.organisation, user)
+      mitigation.risk.threat.organisation.actor_membership
     )
     |> assign(system: mitigation.risk.threat.system)
     |> ok()
@@ -67,7 +66,7 @@ defmodule ThreatShieldWeb.MitigationLive.MitigationDetails do
   defp get_mitigation!(user, id) do
     ThreatManagement.get_mitigation!(id,
       actor: user,
-      load: [risk: [threat: [:system, organisation: [:memberships]]]]
+      load: [risk: [threat: [:system, organisation: [:actor_membership]]]]
     )
   end
 

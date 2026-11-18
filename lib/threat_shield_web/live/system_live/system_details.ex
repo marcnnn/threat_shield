@@ -19,7 +19,7 @@ defmodule ThreatShieldWeb.SystemLive.SystemDetails do
     |> assign(:current_tab, :assets)
     |> assign(:system, system)
     |> assign(:organisation, organisation)
-    |> assign(:membership, Organisation.get_membership(organisation, user))
+    |> assign(:membership, organisation.actor_membership)
     |> assign(:attributes, System.attributes_config())
     |> assign(:scope, Scope.for_system(user, organisation, system))
     |> ok()
@@ -101,14 +101,14 @@ defmodule ThreatShieldWeb.SystemLive.SystemDetails do
   defp get_system!(user, id) do
     ThreatManagement.get_system!(id,
       actor: user,
-      load: [:assets, :threats, organisation: [:systems, :memberships]]
+      load: [:assets, :threats, organisation: [:systems, :actor_membership]]
     )
   end
 
   defp get_organisation!(user, id) do
     Accounts.get_organisation!(id,
       actor: user,
-      load: [:memberships, :systems, assets: [:system], threats: [:system, :asset]]
+      load: [:actor_membership, :systems, assets: [:system], threats: [:system, :asset]]
     )
   end
 end

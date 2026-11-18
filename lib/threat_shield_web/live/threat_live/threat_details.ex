@@ -94,7 +94,7 @@ defmodule ThreatShieldWeb.ThreatLive.ThreatDetails do
         :system,
         :asset,
         risks: :mitigations,
-        organisation: [:systems, :assets, :memberships]
+        organisation: [:systems, :assets, :actor_membership]
       ]
     )
   end

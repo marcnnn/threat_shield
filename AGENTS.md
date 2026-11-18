@@ -86,7 +86,7 @@ Organisation ──< System ──< Asset
   `belongs_to`).
 - Logic goes into the resource, not into callers: module **changes**
   (`threat_management/changes/`, `accounts/changes/`), **validations**
-  (`validations/`, `accounts/validations/`), **calculations** (e.g.
+  (`validations/`, `threat_management/validations/`), **calculations** (e.g.
   `Risk.estimated_risk_cost`, `Threat.system_name`), **aggregates** (e.g.
   `Organisation.threat_count`), and read actions with arguments for filters
   (`:for_organisation`, `:for_system`, `:for_asset`). Filter in the database, not in

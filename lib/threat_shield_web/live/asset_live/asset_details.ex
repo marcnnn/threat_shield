@@ -83,7 +83,11 @@ defmodule ThreatShieldWeb.AssetLive.AssetDetails do
   defp get_asset!(user, id) do
     ThreatManagement.get_asset!(id,
       actor: user,
-      load: [:system, threats: [:system, :asset], organisation: [:systems, :assets, :memberships]]
+      load: [
+        :system,
+        threats: [:system, :asset],
+        organisation: [:systems, :assets, :actor_membership]
+      ]
     )
   end
 

@@ -102,7 +102,7 @@ defmodule ThreatShieldWeb.RiskLive.RiskDetails do
       load: [
         :estimated_risk_cost,
         :mitigations,
-        threat: [:system, :asset, organisation: [:systems, :memberships]]
+        threat: [:system, :asset, organisation: [:systems, :actor_membership]]
       ]
     )
   end

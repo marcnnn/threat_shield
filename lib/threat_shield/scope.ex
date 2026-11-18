@@ -1,9 +1,11 @@
 defmodule ThreatShield.Scope do
   @moduledoc """
-  Defined a scope for domain objects
+  Defined a scope for domain objects. The membership of the user is the
+  `:actor_membership` of the organisation, if it is loaded (with the user as the
+  actor).
   """
   alias ThreatShield.Accounts.User
-  alias ThreatShield.Accounts.Organisation
+  alias ThreatShield.Accounts.{Membership, Organisation}
   alias ThreatShield.ThreatManagement.System
 
   defstruct [
@@ -23,7 +25,7 @@ defmodule ThreatShield.Scope do
       id: id,
       user: user,
       organisation: org,
-      membership: Organisation.get_membership(org, user)
+      membership: membership(org)
     }
   end
 
@@ -34,7 +36,7 @@ defmodule ThreatShield.Scope do
       id: id,
       user: user,
       organisation: org,
-      membership: Organisation.get_membership(org, user),
+      membership: membership(org),
       threat: context[:threat],
       system: context[:system],
       asset: context[:asset]
@@ -55,8 +57,11 @@ defmodule ThreatShield.Scope do
       id: id,
       user: user,
       organisation: org,
-      membership: Organisation.get_membership(org, user),
+      membership: membership(org),
       system: system
     }
   end
+
+  defp membership(%Organisation{actor_membership: %Membership{} = membership}), do: membership
+  defp membership(_organisation), do: nil
 end

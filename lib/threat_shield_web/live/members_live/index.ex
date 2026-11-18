@@ -15,12 +15,11 @@ defmodule ThreatShieldWeb.MembersLive.Index do
   def mount(%{"org_id" => org_id}, _session, socket) do
     %User{} = user = socket.assigns.current_user
     %Organisation{} = organisation = get_organisation!(user, org_id)
-    current_membership = Organisation.get_membership(organisation, user)
 
     socket
     |> assign(:organisation, organisation)
-    |> assign(:current_org_membership, current_membership)
-    |> assign(:owner_count, owner_count(organisation))
+    |> assign(:current_org_membership, organisation.actor_membership)
+    |> assign(:owner_count, organisation.owner_count)
     |> ok()
   end
 
@@ -65,8 +64,8 @@ defmodule ThreatShieldWeb.MembersLive.Index do
 
     socket
     |> assign(:organisation, organisation)
-    |> assign(:current_org_membership, Organisation.get_membership(organisation, user))
-    |> assign(:owner_count, owner_count(organisation))
+    |> assign(:current_org_membership, organisation.actor_membership)
+    |> assign(:owner_count, organisation.owner_count)
     |> noreply()
   end
 
@@ -137,11 +136,10 @@ defmodule ThreatShieldWeb.MembersLive.Index do
   end
 
   defp get_organisation!(user, id) do
-    Accounts.get_organisation!(id, actor: user, load: [:invites, memberships: [:user]])
-  end
-
-  defp owner_count(%Organisation{memberships: memberships}) do
-    Enum.count(memberships, fn m -> m.role == :owner end)
+    Accounts.get_organisation!(id,
+      actor: user,
+      load: [:invites, :owner_count, :actor_membership, memberships: [:user]]
+    )
   end
 
   defp delete_by_id(list, id) do

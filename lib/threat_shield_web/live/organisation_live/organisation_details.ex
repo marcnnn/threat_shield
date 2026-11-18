@@ -18,7 +18,7 @@ defmodule ThreatShieldWeb.OrganisationLive.OrganisationDetails do
     user = socket.assigns.current_user
 
     organisation = get_organisation!(user, org_id)
-    membership = Organisation.get_membership(organisation, user)
+    membership = organisation.actor_membership
 
     systems =
       ThreatManagement.list_systems!(organisation.id, actor: user, load: [:assets, :threats])
@@ -130,7 +130,7 @@ defmodule ThreatShieldWeb.OrganisationLive.OrganisationDetails do
   defp get_organisation!(user, id) do
     Accounts.get_organisation!(id,
       actor: user,
-      load: [:memberships, :systems, assets: [:system], threats: [:system, :asset]]
+      load: [:actor_membership, :systems, assets: [:system], threats: [:system, :asset]]
     )
   end
 

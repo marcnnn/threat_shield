@@ -87,6 +87,14 @@ defmodule ThreatShield.Accounts.Organisation do
     end
 
     has_many :memberships, ThreatShield.Accounts.Membership, public?: true
+
+    # Load it with the actor whose membership is needed
+    has_one :actor_membership, ThreatShield.Accounts.Membership do
+      public? true
+      filter expr(user_id == ^actor(:id))
+      description "The membership of the actor in the organisation."
+    end
+
     has_many :systems, ThreatShield.ThreatManagement.System, public?: true
     has_many :threats, ThreatShield.ThreatManagement.Threat, public?: true
     has_many :assets, ThreatShield.ThreatManagement.Asset, public?: true
@@ -94,6 +102,17 @@ defmodule ThreatShield.Accounts.Organisation do
   end
 
   aggregates do
+    count :member_count, :memberships do
+      public? true
+      description "The number of members of the organisation."
+    end
+
+    count :owner_count, :memberships do
+      public? true
+      filter expr(role == :owner)
+      description "The number of owners of the organisation."
+    end
+
     count :threat_count, :threats do
       public? true
       description "The number of threats of the organisation."
@@ -155,12 +174,6 @@ defmodule ThreatShield.Accounts.Organisation do
   def attributes_config do
     @attributes
   end
-
-  def get_membership(%{memberships: memberships}, %{id: user_id}) when is_list(memberships) do
-    Enum.find(memberships, fn m -> m.user_id == user_id end)
-  end
-
-  def get_membership(_, _), do: nil
 
   def list_system_options(%{systems: systems}) when is_list(systems) do
     [{"None", nil} | Enum.map(systems, fn s -> {s.name, s.id} end)]

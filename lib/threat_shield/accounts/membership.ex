@@ -11,7 +11,7 @@ defmodule ThreatShield.Accounts.Membership do
     authorizers: [Ash.Policy.Authorizer]
 
   alias ThreatShield.Accounts.Changes.AcceptInvite
-  alias ThreatShield.Accounts.Validations.KeepsOwner
+  alias ThreatShield.Accounts.Changes.KeepsOwner
   alias ThreatShield.Checks.OrganisationRole
 
   postgres do
@@ -96,17 +96,17 @@ defmodule ThreatShield.Accounts.Membership do
     update :update_role do
       description "Changes the role of a member. The last owner stays an owner."
       accept [:role]
-      # the validation counts the owners of the organisation
+      # the change locks the organisation and counts its owners
       require_atomic? false
-      validate KeepsOwner
+      change KeepsOwner
     end
 
     destroy :destroy do
       primary? true
       description "Removes a member from an organisation. The last owner cannot be removed."
-      # the validation counts the members of the organisation
+      # the change locks the organisation and counts its members
       require_atomic? false
-      validate {KeepsOwner, members: true}
+      change {KeepsOwner, members: true}
     end
   end
 

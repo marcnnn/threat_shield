@@ -289,5 +289,39 @@ defmodule ThreatShield.MembersTest do
       assert %{role: ["the last owner must stay an owner"]} = errors_on(error)
       assert %Membership{role: :owner} = Repo.get(Membership, owner_membership.id)
     end
+
+    test "one of two owners can lose the role, then the other one cannot",
+         %{owner: owner, organisation: organisation, member: member, membership: membership} do
+      {:ok, second} = Accounts.update_membership_role(membership, :owner, actor: owner)
+
+      owner_membership =
+        Repo.get_by!(Membership, user_id: owner.id, organisation_id: organisation.id)
+
+      assert {:ok, _} = Accounts.update_membership_role(owner_membership, :editor, actor: owner)
+
+      assert {:error, error} = Accounts.update_membership_role(second, :viewer, actor: member)
+      assert %{role: ["the last owner must stay an owner"]} = errors_on(error)
+    end
+
+    test "the organisation counts its members and owners and has the membership of the actor",
+         %{owner: owner, organisation: organisation, member: member} do
+      owner_id = owner.id
+
+      assert %{
+               member_count: 2,
+               owner_count: 1,
+               actor_membership: %Membership{user_id: ^owner_id, role: :owner}
+             } =
+               Accounts.get_organisation!(organisation.id,
+                 actor: owner,
+                 load: [:member_count, :owner_count, :actor_membership]
+               )
+
+      assert %{actor_membership: %Membership{role: :viewer}} =
+               Accounts.get_organisation!(organisation.id,
+                 actor: member,
+                 load: [:actor_membership]
+               )
+    end
   end
 end
