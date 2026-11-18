@@ -79,7 +79,11 @@ We need these secrets:
 
 * threatshield-db-password: Password for CloudSQL DB (generated)
 * phx-secret-key-base: Secret key for Phoenix (generated)
+* token-signing-secret: Secret that signs the session tokens of AshAuthentication,
+  environment variable `TOKEN_SIGNING_SECRET` (generated). The application does not
+  start without it.
 * mailgun-api-key: API key for Mailgun (prepared)
+* openai-api-key: API key for OpenAI (prepared)
 
 The secrets can be created with:
 
@@ -87,7 +91,19 @@ The secrets can be created with:
 infra/create_secrets.py -p <project>
 ```
 
-Afterwards, the mailgun-api-key has to be set manually.
+Afterwards, the mailgun-api-key and the openai-api-key have to be set manually.
+
+The deploy workflow (`.github/workflows/deploy_gcp.yml`) only replaces the image of the
+existing Cloud Run service; it does not change its secrets. A new secret must therefore
+be created and referenced by the service **before** the change that needs it is merged
+to `main`. For `token-signing-secret`, on an existing service:
+
+```shell
+infra/create_secrets.py -p <project>
+gcloud run services update threatshield-webapp \
+    --update-secrets=TOKEN_SIGNING_SECRET=token-signing-secret:1 \
+    --region=europe-west3 --project=<project>
+```
 
 
 ### Create VPC Network
