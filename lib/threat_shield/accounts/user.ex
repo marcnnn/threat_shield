@@ -60,6 +60,11 @@ defmodule ThreatShield.Accounts.User do
           token_lifetime {1, :days}
         end
       end
+
+      api_key :api_key do
+        api_key_relationship :valid_api_keys
+        api_key_hash_attribute :api_key_hash
+      end
     end
 
     add_ons do
@@ -143,6 +148,12 @@ defmodule ThreatShield.Accounts.User do
     end
 
     has_many :memberships, ThreatShield.Accounts.Membership
+
+    has_many :api_keys, ThreatShield.Accounts.ApiKey
+
+    has_many :valid_api_keys, ThreatShield.Accounts.ApiKey do
+      filter expr(valid)
+    end
   end
 
   identities do
@@ -201,6 +212,15 @@ defmodule ThreatShield.Accounts.User do
       prepare Password.SignInPreparation
 
       metadata :token, :string, allow_nil?: false
+    end
+
+    read :sign_in_with_api_key do
+      description "Sign in with a personal API key."
+      get? true
+
+      argument :api_key, :string, allow_nil?: false, sensitive?: true
+
+      prepare AshAuthentication.Strategy.ApiKey.SignInPreparation
     end
 
     action :request_password_reset_with_password do
@@ -317,11 +337,12 @@ defmodule ThreatShield.Accounts.User do
     end
 
     # The entry points of the sign in flows. They need no actor, because each one
-    # proves the identity itself: with the password or with a token that was sent by
-    # email.
+    # proves the identity itself: with the password, with a token that was sent by
+    # email, or with an API key.
     bypass action([
              :register_with_password,
              :sign_in_with_password,
+             :sign_in_with_api_key,
              :request_password_reset_with_password,
              :get_by_reset_token,
              :password_reset_with_password,

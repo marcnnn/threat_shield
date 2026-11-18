@@ -8,7 +8,7 @@ defmodule ThreatShield.AccountsTest do
 
   alias AshAuthentication.Jwt
   alias ThreatShield.Accounts
-  alias ThreatShield.Accounts.{Membership, User}
+  alias ThreatShield.Accounts.{ApiKey, Membership, User}
   alias ThreatShield.OrganisationsFixtures
 
   defp token_valid?(token), do: match?({:ok, _, _}, Jwt.verify(token, :threat_shield))
@@ -351,6 +351,48 @@ defmodule ThreatShield.AccountsTest do
 
       assert to_string(Accounts.get_user!(other_user.id, actor: other_user).email) ==
                to_string(other_user.email)
+    end
+  end
+
+  describe "API keys" do
+    setup do
+      user = user_fixture()
+      expires_at = DateTime.add(DateTime.utc_now(), 30, :day)
+      {:ok, api_key} = Accounts.create_api_key(expires_at, actor: user)
+      %{user: user, api_key: api_key}
+    end
+
+    test "sign in the user of the key", %{user: %{id: id}, api_key: api_key} do
+      plaintext = api_key.__metadata__.plaintext_api_key
+      assert plaintext =~ "threatshield_"
+
+      assert {:ok, %User{id: ^id} = user} = Accounts.sign_in_with_api_key(plaintext)
+      assert user.__metadata__.using_api_key?
+    end
+
+    test "do not sign in with a wrong or expired key", %{user: user, api_key: api_key} do
+      assert {:error, _} = Accounts.sign_in_with_api_key("threatshield_invalid")
+
+      plaintext = api_key.__metadata__.plaintext_api_key
+      assert {:error, _} = Accounts.sign_in_with_api_key(plaintext <> "x")
+
+      expired_at = DateTime.add(DateTime.utc_now(), -1, :second)
+      {:ok, expired} = Accounts.create_api_key(expired_at, actor: user)
+      assert {:error, _} = Accounts.sign_in_with_api_key(expired.__metadata__.plaintext_api_key)
+    end
+
+    test "are visible only to their user", %{user: user, api_key: %{id: id}} do
+      assert [%ApiKey{id: ^id}] = Ash.read!(ApiKey, actor: user)
+      assert [] = Ash.read!(ApiKey, actor: user_fixture())
+    end
+
+    test "can not create further keys", %{api_key: api_key} do
+      {:ok, api_user} = Accounts.sign_in_with_api_key(api_key.__metadata__.plaintext_api_key)
+
+      assert {:error, %Ash.Error.Forbidden{}} =
+               Accounts.create_api_key(DateTime.add(DateTime.utc_now(), 1, :day),
+                 actor: api_user
+               )
     end
   end
 
