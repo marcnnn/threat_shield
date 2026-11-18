@@ -1,6 +1,6 @@
 # Backlog
 
-**Status:** open list. Last updated 2026-10-07.
+**Status:** open list. Last updated 2026-11-18.
 
 Short entries for open work without a plan of its own. When work on an entry starts and
 needs steps, it gets its own file in this folder and is removed from here.
@@ -43,11 +43,12 @@ The app has no API. The router defines an `:api` pipeline, but no route uses it.
 REST API for the domain objects (organisations, systems, assets, threats, risks,
 mitigations).
 
-Users can authenticate with a personal API key (`Accounts.create_api_key/2`,
-`Accounts.sign_in_with_api_key/1`), but no plug or route accepts one yet.
+Chat agents already reach the domain actions through the MCP server at `/mcp`
+(`specs/mcp.md`). A REST API could use the same authentication: the `:mcp` pipeline
+signs the user in with a personal API key (`Authorization: Bearer`) and sets the actor,
+so the policies apply.
 
-Open points: how API clients send the key, and how the existing access control (`Scope`,
-`Accounts.Rights`) applies to API requests.
+Open point: whether a REST API is still needed beside MCP.
 
 ## Component hierarchy for systems
 
