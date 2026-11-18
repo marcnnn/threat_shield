@@ -105,7 +105,7 @@ defmodule ThreatShieldWeb.McpTest do
 
     test "a request with a revoked key is unauthorized", %{conn: conn, user: user, key: key} do
       [api_key] = ThreatShield.Accounts.list_api_keys!(actor: user)
-      :ok = ThreatShield.Accounts.revoke_api_key!(api_key, actor: user)
+      :ok = ThreatShield.Accounts.revoke_api_key!(api_key.id, actor: user)
 
       assert conn |> rpc(key, "tools/list") |> response(401)
     end

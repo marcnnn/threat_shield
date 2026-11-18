@@ -215,4 +215,55 @@ defmodule ThreatShieldWeb.UserSettingsLiveTest do
       assert message == "You must log in to access this page."
     end
   end
+
+  describe "API keys" do
+    setup %{conn: conn} do
+      user = user_fixture()
+      %{conn: log_in_user(conn, user), user: user}
+    end
+
+    test "creates a key, shows it once, and the key signs in",
+         %{conn: conn, user: %{id: user_id} = user} do
+      {:ok, lv, html} = live(conn, ~p"/users/settings")
+      assert html =~ "http://localhost:4002/mcp"
+      refute html =~ "new_api_key"
+
+      html = lv |> form("#api_key_form", api_key: %{valid_for_days: "30"}) |> render_submit()
+
+      [_, key] = Regex.run(~r{<code[^>]*>(threatshield_[^<]+)</code>}, html)
+      assert {:ok, %{id: ^user_id}} = Accounts.sign_in_with_api_key(key)
+
+      assert [api_key] = Accounts.list_api_keys!(actor: user)
+      days = DateTime.diff(api_key.expires_at, DateTime.utc_now(), :day)
+      assert days in 29..30
+      assert has_element?(lv, "#api_key-#{api_key.id}")
+
+      # the key is not shown again
+      {:ok, _lv, html} = live(conn, ~p"/users/settings")
+      refute html =~ key
+    end
+
+    test "revokes a key", %{conn: conn, user: user} do
+      key = api_key_fixture(user)
+      [api_key] = Accounts.list_api_keys!(actor: user)
+
+      {:ok, lv, _html} = live(conn, ~p"/users/settings")
+      lv |> element("#api_key-#{api_key.id} button", "Revoke") |> render_click()
+
+      refute has_element?(lv, "#api_key-#{api_key.id}")
+      assert [] = Accounts.list_api_keys!(actor: user)
+      assert {:error, _} = Accounts.sign_in_with_api_key(key)
+    end
+
+    test "does not revoke the key of another user", %{conn: conn} do
+      other = user_fixture()
+      key = api_key_fixture(other)
+      [api_key] = Accounts.list_api_keys!(actor: other)
+
+      {:ok, lv, _html} = live(conn, ~p"/users/settings")
+      assert render_click(lv, "revoke_api_key", %{"id" => api_key.id}) =~ "was not found"
+
+      assert {:ok, _} = Accounts.sign_in_with_api_key(key)
+    end
+  end
 end

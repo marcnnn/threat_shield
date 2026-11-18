@@ -4,6 +4,10 @@ defmodule ThreatShieldWeb.UserSettingsLive do
   alias ThreatShield.Accounts
   alias ThreatShieldWeb.UserAuth
 
+  import ThreatShieldWeb.Helpers, only: [format_datetime: 1]
+
+  @api_key_validity_days [30, 90, 365]
+
   def render(assigns) do
     ~H"""
     <section class="w-full bg-white py-4 shadow-primary-200 shadow-sm">
@@ -72,6 +76,71 @@ defmodule ThreatShieldWeb.UserSettingsLive do
               </:actions>
             </.simple_form>
           </div>
+          <div id="api_keys" class="pt-8">
+            <.h3><%= dgettext("accounts", "API keys") %></.h3>
+            <p class="mt-2 text-sm text-gray-700">
+              <%= dgettext(
+                "accounts",
+                "Chat agents such as Claude use an API key to work with your organisations through the MCP server at %{url}. A key has your rights.",
+                url: @mcp_url
+              ) %>
+            </p>
+
+            <div
+              :if={@new_api_key}
+              id="new_api_key"
+              class="mt-4 rounded-lg border border-primary-300 bg-primary-50 p-4"
+            >
+              <p class="text-sm font-semibold">
+                <%= dgettext("accounts", "Copy the key now. It is not shown again.") %>
+              </p>
+              <code class="mt-2 block break-all text-sm"><%= @new_api_key %></code>
+            </div>
+
+            <.simple_form for={@api_key_form} id="api_key_form" phx-submit="create_api_key">
+              <.input
+                field={@api_key_form[:valid_for_days]}
+                type="select"
+                label={dgettext("accounts", "Valid for")}
+                options={@api_key_validity_options}
+              />
+              <:actions>
+                <.button_primary phx-disable-with="Creating...">
+                  <%= dgettext("accounts", "Create API key") %>
+                </.button_primary>
+              </:actions>
+            </.simple_form>
+
+            <table :if={@api_keys != []} class="mt-6 w-full text-sm">
+              <thead class="text-left text-gray-600">
+                <tr>
+                  <th class="py-1"><%= dgettext("accounts", "Created") %></th>
+                  <th class="py-1"><%= dgettext("accounts", "Expires") %></th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr :for={api_key <- @api_keys} id={"api_key-#{api_key.id}"}>
+                  <td class="py-1"><%= format_datetime(api_key.inserted_at) %></td>
+                  <td class="py-1">
+                    <%= format_datetime(api_key.expires_at) %>
+                    <span :if={!api_key.valid} class="text-gray-500">
+                      (<%= dgettext("accounts", "expired") %>)
+                    </span>
+                  </td>
+                  <td class="py-1 text-right">
+                    <.button_secondary
+                      phx-click="revoke_api_key"
+                      phx-value-id={api_key.id}
+                      data-confirm={dgettext("accounts", "Revoke this API key?")}
+                    >
+                      <%= dgettext("accounts", "Revoke") %>
+                    </.button_secondary>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </section>
@@ -104,8 +173,46 @@ defmodule ThreatShieldWeb.UserSettingsLive do
       |> assign(:email_form, email_form(user))
       |> assign(:password_form, password_form(user))
       |> assign(:trigger_submit, false)
+      |> assign(:mcp_url, url(~p"/mcp"))
+      |> assign(:new_api_key, nil)
+      |> assign(:api_key_form, to_form(%{"valid_for_days" => "90"}, as: "api_key"))
+      |> assign(:api_key_validity_options, api_key_validity_options())
+      |> assign_api_keys()
 
     {:ok, socket}
+  end
+
+  # The key itself is shown once, right after it was created; only its hash is stored.
+  def handle_event("create_api_key", %{"api_key" => %{"valid_for_days" => days}}, socket) do
+    user = socket.assigns.current_user
+    days = if days in Enum.map(@api_key_validity_days, &to_string/1), do: days, else: "90"
+    expires_at = DateTime.add(DateTime.utc_now(), String.to_integer(days), :day)
+
+    case Accounts.create_api_key(expires_at, actor: user) do
+      {:ok, api_key} ->
+        {:noreply,
+         socket
+         |> assign(:new_api_key, api_key.__metadata__.plaintext_api_key)
+         |> assign_api_keys()}
+
+      {:error, _error} ->
+        {:noreply,
+         put_flash(socket, :error, dgettext("accounts", "The API key was not created."))}
+    end
+  end
+
+  def handle_event("revoke_api_key", %{"id" => id}, socket) do
+    case Accounts.revoke_api_key(id, actor: socket.assigns.current_user) do
+      :ok ->
+        {:noreply,
+         socket
+         |> assign(:new_api_key, nil)
+         |> put_flash(:info, dgettext("accounts", "The API key was revoked."))
+         |> assign_api_keys()}
+
+      {:error, _error} ->
+        {:noreply, put_flash(socket, :error, dgettext("accounts", "The API key was not found."))}
+    end
   end
 
   # The current password is a separate parameter, see the inputs of the forms
@@ -196,5 +303,22 @@ defmodule ThreatShieldWeb.UserSettingsLive do
       actor: user
     )
     |> to_form()
+  end
+
+  defp assign_api_keys(socket) do
+    api_keys =
+      Accounts.list_api_keys!(
+        actor: socket.assigns.current_user,
+        query: [sort: [inserted_at: :desc]],
+        load: [:valid]
+      )
+
+    assign(socket, :api_keys, api_keys)
+  end
+
+  defp api_key_validity_options do
+    Enum.map(@api_key_validity_days, fn days ->
+      {dngettext("accounts", "%{count} day", "%{count} days", days), to_string(days)}
+    end)
   end
 end
