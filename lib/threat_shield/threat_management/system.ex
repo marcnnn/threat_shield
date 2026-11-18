@@ -89,6 +89,12 @@ defmodule ThreatShield.ThreatManagement.System do
                     "database and infrastructure, as a map of names to texts."
     end
 
+    attribute :organisation_id, :integer do
+      allow_nil? false
+      public? true
+      description "The id of the organisation of the system."
+    end
+
     create_timestamp :inserted_at
     update_timestamp :updated_at
   end
@@ -98,6 +104,8 @@ defmodule ThreatShield.ThreatManagement.System do
       allow_nil? false
       attribute_type :integer
       public? true
+      # declared in the attributes, with a description
+      define_attribute? false
     end
 
     has_many :threats, ThreatShield.ThreatManagement.Threat, public?: true

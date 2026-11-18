@@ -80,6 +80,12 @@ defmodule ThreatShield.ThreatManagement.Risk do
       description "The status of the risk."
     end
 
+    attribute :threat_id, :integer do
+      allow_nil? false
+      public? true
+      description "The id of the threat of the risk."
+    end
+
     create_timestamp :inserted_at
     update_timestamp :updated_at
   end
@@ -89,6 +95,8 @@ defmodule ThreatShield.ThreatManagement.Risk do
       allow_nil? false
       attribute_type :integer
       public? true
+      # declared in the attributes, with a description
+      define_attribute? false
     end
 
     has_many :mitigations, ThreatShield.ThreatManagement.Mitigation, public?: true

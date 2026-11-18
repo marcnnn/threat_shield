@@ -51,5 +51,10 @@ defmodule ThreatShield.ThreatManagement do
       define :update_mitigation, action: :update
       define :destroy_mitigation, action: :destroy, get_by: [:id]
     end
+
+    resource ThreatShield.ThreatManagement.ThreatModel do
+      define :threat_model_context, action: :context, args: [:organisation_id]
+      define :risk_summary, action: :risk_summary, args: [:organisation_id]
+    end
   end
 end

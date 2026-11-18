@@ -109,6 +109,12 @@ defmodule ThreatShield.ThreatManagement.Mitigation do
       description "The result of the verification."
     end
 
+    attribute :risk_id, :integer do
+      allow_nil? false
+      public? true
+      description "The id of the risk that the mitigation reduces."
+    end
+
     create_timestamp :inserted_at
     update_timestamp :updated_at
   end
@@ -118,6 +124,8 @@ defmodule ThreatShield.ThreatManagement.Mitigation do
       allow_nil? false
       attribute_type :integer
       public? true
+      # declared in the attributes, with a description
+      define_attribute? false
     end
   end
 

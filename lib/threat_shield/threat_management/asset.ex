@@ -82,6 +82,20 @@ defmodule ThreatShield.ThreatManagement.Asset do
                     "the other three criticalities."
     end
 
+    attribute :organisation_id, :integer do
+      allow_nil? false
+      public? true
+      description "The id of the organisation of the asset."
+    end
+
+    attribute :system_id, :integer do
+      allow_nil? true
+      public? true
+
+      description "The id of the system of the asset, if it belongs to one. " <>
+                    "The system must belong to the same organisation."
+    end
+
     create_timestamp :inserted_at
     update_timestamp :updated_at
   end
@@ -91,12 +105,16 @@ defmodule ThreatShield.ThreatManagement.Asset do
       allow_nil? false
       attribute_type :integer
       public? true
+      # declared in the attributes, with a description
+      define_attribute? false
     end
 
     belongs_to :system, ThreatShield.ThreatManagement.System do
       allow_nil? true
       attribute_type :integer
       public? true
+      # declared in the attributes, with a description
+      define_attribute? false
     end
 
     has_many :threats, ThreatShield.ThreatManagement.Threat, public?: true

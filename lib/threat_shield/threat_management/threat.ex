@@ -54,6 +54,28 @@ defmodule ThreatShield.ThreatManagement.Threat do
       description "The event or action that can compromise the organisation, system or asset."
     end
 
+    attribute :organisation_id, :integer do
+      allow_nil? false
+      public? true
+      description "The id of the organisation of the threat."
+    end
+
+    attribute :system_id, :integer do
+      allow_nil? true
+      public? true
+
+      description "The id of the system that the threat concerns, if any. " <>
+                    "The system must belong to the same organisation."
+    end
+
+    attribute :asset_id, :integer do
+      allow_nil? true
+      public? true
+
+      description "The id of the asset that the threat concerns, if any. " <>
+                    "The asset must belong to the same organisation."
+    end
+
     create_timestamp :inserted_at
     update_timestamp :updated_at
   end
@@ -63,18 +85,24 @@ defmodule ThreatShield.ThreatManagement.Threat do
       allow_nil? false
       attribute_type :integer
       public? true
+      # declared in the attributes, with a description
+      define_attribute? false
     end
 
     belongs_to :system, ThreatShield.ThreatManagement.System do
       allow_nil? true
       attribute_type :integer
       public? true
+      # declared in the attributes, with a description
+      define_attribute? false
     end
 
     belongs_to :asset, ThreatShield.ThreatManagement.Asset do
       allow_nil? true
       attribute_type :integer
       public? true
+      # declared in the attributes, with a description
+      define_attribute? false
     end
 
     has_many :risks, ThreatShield.ThreatManagement.Risk, public?: true

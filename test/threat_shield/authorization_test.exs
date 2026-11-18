@@ -204,4 +204,49 @@ defmodule ThreatShield.AuthorizationTest do
              )
              |> Ash.create()
   end
+
+  describe "threat model" do
+    test "members read the context and the risk summary of their organisation",
+         %{viewer: viewer, organisation: organisation} do
+      assert {:ok, text} = ThreatManagement.threat_model_context(organisation.id, actor: viewer)
+      assert text =~ organisation.name
+
+      assert {:ok, %{risk_count: 1}} =
+               ThreatManagement.risk_summary(organisation.id, actor: viewer)
+    end
+
+    test "a member of another organisation and a call without an actor read nothing",
+         %{outsider: outsider, organisation: organisation} do
+      assert {:error, %Ash.Error.Invalid{}} =
+               ThreatManagement.threat_model_context(organisation.id, actor: outsider)
+
+      assert {:error, %Ash.Error.Invalid{}} =
+               ThreatManagement.risk_summary(organisation.id, actor: outsider)
+
+      assert {:error, %Ash.Error.Forbidden{}} =
+               ThreatManagement.threat_model_context(organisation.id)
+    end
+
+    test "a record of another organisation is not part of the context",
+         %{owner: owner, organisation: organisation, outsider: outsider} = context do
+      second = OrganisationsFixtures.organisation_fixture(owner)
+      threat = ThreatsFixtures.threat_fixture(owner, second)
+
+      assert {:error, %Ash.Error.Invalid{}} =
+               ThreatManagement.threat_model_context(
+                 organisation.id,
+                 %{threat_id: threat.id},
+                 actor: owner
+               )
+
+      foreign = ThreatsFixtures.threat_fixture(outsider, context.other_organisation)
+
+      assert {:error, _} =
+               ThreatManagement.threat_model_context(
+                 organisation.id,
+                 %{threat_id: foreign.id},
+                 actor: owner
+               )
+    end
+  end
 end
