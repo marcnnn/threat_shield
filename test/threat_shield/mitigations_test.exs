@@ -68,6 +68,32 @@ defmodule ThreatShield.MitigationsTest do
                )
     end
 
+    test "the status is required" do
+      %{user: user, risk: risk} = user_risk_fixture()
+
+      assert {:error, error} =
+               ThreatManagement.create_mitigation(
+                 %{name: "n", description: "d", risk_id: risk.id, status: nil},
+                 actor: user
+               )
+
+      assert %{status: ["can't be blank"]} = errors_on(error)
+
+      {:ok, mitigation} =
+        ThreatManagement.create_mitigation(
+          %{name: "n", description: "d", risk_id: risk.id, status: :verified},
+          actor: user
+        )
+
+      assert {:error, error} =
+               ThreatManagement.update_mitigation(mitigation, %{status: nil}, actor: user)
+
+      assert %{status: ["can't be blank"]} = errors_on(error)
+
+      assert %Mitigation{status: :verified, is_implemented: true} =
+               Repo.get!(Mitigation, mitigation.id)
+    end
+
     test "update_mitigation does not move the mitigation to another risk" do
       %{user: user, risk: risk} = user_risk_fixture()
       %{risk: foreign_risk} = user_risk_fixture()

@@ -61,6 +61,7 @@ defmodule ThreatShield.ThreatManagement.Mitigation do
       description "A link to the issue that tracks the implementation."
     end
 
+    # a nullable column with a default; the validation below requires a value
     attribute :status, ThreatShield.ThreatManagement.MitigationStatus do
       allow_nil? true
       default :open
@@ -144,6 +145,8 @@ defmodule ThreatShield.ThreatManagement.Mitigation do
   validations do
     # only when the description is valid otherwise, e.g. not too long
     validate present(:description), message: "is required", only_when_valid?: true
+    # is_implemented follows from the status
+    validate present(:status), message: "is required"
   end
 
   actions do
