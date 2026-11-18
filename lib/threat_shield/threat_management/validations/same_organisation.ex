@@ -28,6 +28,8 @@ defmodule ThreatShield.ThreatManagement.Validations.SameOrganisation do
         :ok
 
       id ->
+        # Only compares organisations, so it reads without authorization; the
+        # policies of the action check the actor.
         exists? =
           opts[:resource]
           |> Ash.Query.filter(id == ^id and organisation_id == ^org_id)
