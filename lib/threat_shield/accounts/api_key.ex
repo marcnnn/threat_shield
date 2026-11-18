@@ -54,6 +54,11 @@ defmodule ThreatShield.Accounts.ApiKey do
   actions do
     defaults [:read, :destroy]
 
+    read :expired do
+      description "Lists the keys that have expired."
+      filter expr(expires_at <= now())
+    end
+
     create :create do
       description "Create an API key for the actor."
       primary? true

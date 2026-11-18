@@ -13,6 +13,8 @@ defmodule ThreatShield.Application do
       ThreatShieldWeb.Telemetry,
       # Start the Ecto repository
       ThreatShield.Repo,
+      # Deletes the expired tokens of AshAuthentication
+      {AshAuthentication.Supervisor, otp_app: :threat_shield},
       # Start the PubSub system
       {Phoenix.PubSub, name: ThreatShield.PubSub},
       # Start Finch

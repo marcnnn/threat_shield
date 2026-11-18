@@ -381,6 +381,15 @@ defmodule ThreatShield.AccountsTest do
       assert {:error, _} = Accounts.sign_in_with_api_key(expired.__metadata__.plaintext_api_key)
     end
 
+    test "are deleted when they have expired", %{user: user, api_key: %{id: id}} do
+      expired_at = DateTime.add(DateTime.utc_now(), -1, :second)
+      {:ok, _expired} = Accounts.create_api_key(expired_at, actor: user)
+
+      Accounts.delete_expired_api_keys()
+
+      assert [%ApiKey{id: ^id}] = Ash.read!(ApiKey, actor: user)
+    end
+
     test "are visible only to their user", %{user: user, api_key: %{id: id}} do
       assert [%ApiKey{id: ^id}] = Ash.read!(ApiKey, actor: user)
       assert [] = Ash.read!(ApiKey, actor: user_fixture())

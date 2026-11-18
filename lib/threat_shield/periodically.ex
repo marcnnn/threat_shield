@@ -13,6 +13,7 @@ defmodule ThreatShield.Periodically do
 
   def handle_info(:work, state) do
     ThreatShield.Accounts.delete_expired_invites()
+    ThreatShield.Accounts.delete_expired_api_keys()
     # Reschedule once more
     schedule_work()
     {:noreply, state}

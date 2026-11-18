@@ -90,4 +90,14 @@ defmodule ThreatShield.Accounts do
     |> Ash.Query.for_read(:expired, %{}, authorize?: false)
     |> Ash.bulk_destroy!(:destroy, %{}, authorize?: false, strategy: [:atomic, :stream])
   end
+
+  @doc """
+  Deletes the expired API keys. This is a system operation of
+  `ThreatShield.Periodically` without an actor, so it is not authorized.
+  """
+  def delete_expired_api_keys do
+    ThreatShield.Accounts.ApiKey
+    |> Ash.Query.for_read(:expired, %{}, authorize?: false)
+    |> Ash.bulk_destroy!(:destroy, %{}, authorize?: false, strategy: [:atomic, :stream])
+  end
 end
