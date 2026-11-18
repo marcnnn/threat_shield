@@ -3,7 +3,7 @@ defmodule ThreatShield.Repo do
     otp_app: :threat_shield
 
   def installed_extensions do
-    ["ash-functions", "uuid-ossp", "citext"]
+    ["ash-functions", "citext"]
   end
 
   def min_pg_version do
