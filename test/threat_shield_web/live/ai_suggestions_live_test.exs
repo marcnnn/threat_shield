@@ -3,7 +3,7 @@ defmodule ThreatShieldWeb.AiSuggestionsLiveTest do
   Tests the AI suggestion flow of the list components: request suggestions,
   select one in the dialog, and create the entity.
 
-  The OpenAI client is replaced by `ThreatShield.OpenAIStub`.
+  The AI provider is replaced by `ThreatShield.AI.StubProvider`.
   """
   use ThreatShieldWeb.ConnCase
 
@@ -157,9 +157,9 @@ defmodule ThreatShieldWeb.AiSuggestionsLiveTest do
       %{view: view, path: path}
     end
 
-    test "an error from OpenAI closes the dialog with a message", %{view: view, path: path} do
-      Application.put_env(:threat_shield, :open_ai_stub_result, {:error, :timeout})
-      on_exit(fn -> Application.delete_env(:threat_shield, :open_ai_stub_result) end)
+    test "an error of the AI provider closes the dialog with a message", %{view: view, path: path} do
+      Application.put_env(:threat_shield, :ai_stub_result, {:error, :timeout})
+      on_exit(fn -> Application.delete_env(:threat_shield, :ai_stub_result) end)
 
       view |> element(~s([phx-click="suggest_threats"])) |> render_click()
 
@@ -168,8 +168,8 @@ defmodule ThreatShieldWeb.AiSuggestionsLiveTest do
     end
 
     test "an unexpected response closes the dialog with a message", %{view: view, path: path} do
-      Application.put_env(:threat_shield, :open_ai_stub_result, {:ok, %{choices: []}})
-      on_exit(fn -> Application.delete_env(:threat_shield, :open_ai_stub_result) end)
+      Application.put_env(:threat_shield, :ai_stub_result, {:ok, "no JSON"})
+      on_exit(fn -> Application.delete_env(:threat_shield, :ai_stub_result) end)
 
       view |> element(~s([phx-click="suggest_threats"])) |> render_click()
 

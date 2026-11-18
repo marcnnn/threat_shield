@@ -173,32 +173,4 @@ defmodule ThreatShield.Accounts.Organisation do
   end
 
   def list_asset_options(_), do: [{"None", nil}]
-
-  def describe(%{name: name, attributes: attributes, systems: systems}) do
-    name_string = """
-    The name of the organisation is "#{name}".
-    """
-
-    attribute_values =
-      "The organisation has the following properties:\n" <>
-        ((attributes || %{})
-         |> Enum.filter(fn {_, val} -> val != "" end)
-         |> Enum.map_join("\n", fn {key, val} -> ~s{"#{key}: ", "#{val}"} end))
-
-    attribute_description =
-      "The organisation properties have the following user-facing descriptions:\n" <>
-        (@attributes
-         |> Enum.map_join("\n", fn d -> ~s{"#{d.name}: ", "#{d.description}"} end))
-
-    systems_list = if is_list(systems), do: systems, else: []
-
-    system_description =
-      "It has the following systems:\n" <>
-        (systems_list
-         |> Enum.map(fn sys -> ThreatShield.ThreatManagement.System.describe(sys) end)
-         |> Enum.join("\n"))
-
-    [name_string, attribute_values, attribute_description, system_description]
-    |> Enum.join(" ")
-  end
 end

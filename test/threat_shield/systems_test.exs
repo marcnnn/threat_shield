@@ -27,7 +27,7 @@ defmodule ThreatShield.SystemsTest do
 
       assert system.attributes == %{}
       assert Repo.get!(System, system.id).attributes == %{}
-      assert System.describe(system) =~ "some name"
+      assert ThreatShield.ThreatManagement.Description.system(system) =~ "some name"
     end
 
     test "destroy_system deletes the assets and threats of the system" do

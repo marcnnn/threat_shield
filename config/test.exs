@@ -26,8 +26,8 @@ config :threat_shield, ThreatShieldWeb.Endpoint,
 # In test we don't send emails.
 config :threat_shield, ThreatShield.Mailer, adapter: Swoosh.Adapters.Test
 
-# In test we don't call OpenAI.
-config :threat_shield, :open_ai_client, ThreatShield.OpenAIStub
+# In test we don't call a language model.
+config :threat_shield, :ai_provider, ThreatShield.AI.StubProvider
 
 # Disable swoosh api client as it is only required for production adapters.
 config :swoosh, :api_client, false

@@ -169,24 +169,4 @@ defmodule ThreatShield.ThreatManagement.System do
   def attributes_config do
     @attributes
   end
-
-  def describe(%{name: name, description: description, attributes: attributes}) do
-    name_string = """
-    The name of the system is "#{name}". It can be described as follows: "#{description}".
-    """
-
-    attribute_values =
-      "The system has the following properties:\n" <>
-        ((attributes || %{})
-         |> Enum.filter(fn {_, val} -> val != "" end)
-         |> Enum.map_join("\n", fn {key, val} -> ~s{"#{key}: ", "#{val}"} end))
-
-    attribute_description =
-      "The system properties have the following user-facing descriptions:\n" <>
-        (@attributes
-         |> Enum.map_join("\n", fn d -> ~s{"#{d.name}: ", "#{d.description}"} end))
-
-    [name_string, attribute_values, attribute_description]
-    |> Enum.join(" ")
-  end
 end

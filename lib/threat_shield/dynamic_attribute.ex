@@ -18,9 +18,15 @@ defmodule ThreatShield.DynamicAttribute do
         suggestions
 
       [] ->
-        suggestions = AI.suggest_values(attribute)
-        :ets.insert(@table, {attribute, suggestions})
-        suggestions
+        case AI.suggest_values(attribute) do
+          suggestions when is_list(suggestions) ->
+            :ets.insert(@table, {attribute, suggestions})
+            suggestions
+
+          # not cached, so that the next form asks again
+          {:error, _reason} ->
+            []
+        end
     end
   end
 

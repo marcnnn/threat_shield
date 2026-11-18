@@ -15,10 +15,11 @@ defmodule ThreatShield.AITest do
   alias ThreatShield.ThreatManagement.Mitigation
   alias ThreatShield.ThreatManagement.Risk
   alias ThreatShield.ThreatManagement.Threat
+  alias ThreatShield.ThreatManagement.Description
 
   setup do
-    Application.put_env(:threat_shield, :open_ai_stub_listener, self())
-    on_exit(fn -> Application.delete_env(:threat_shield, :open_ai_stub_listener) end)
+    Application.put_env(:threat_shield, :ai_stub_listener, self())
+    on_exit(fn -> Application.delete_env(:threat_shield, :ai_stub_listener) end)
 
     user = AccountsFixtures.user_fixture()
     organisation = OrganisationsFixtures.organisation_fixture(user, %{name: "ACME"})
@@ -64,7 +65,7 @@ defmodule ThreatShield.AITest do
   end
 
   defp prompts() do
-    assert_received {:open_ai_request,
+    assert_received {:ai_request,
                      [
                        %{role: "system", content: system_prompt},
                        %{role: "user", content: user_prompt}
@@ -212,5 +213,66 @@ defmodule ThreatShield.AITest do
              ~s(exclusively to the risk "Fine by the authority" and the threat "Data theft".)
 
     assert user_prompt =~ ~s(The only relvant system in this context is "Web shop".)
+  end
+
+  test "an error of the provider is returned", %{user: user, organisation: organisation} do
+    Application.put_env(:threat_shield, :ai_stub_result, {:error, :timeout})
+    on_exit(fn -> Application.delete_env(:threat_shield, :ai_stub_result) end)
+
+    organisation = get_organisation!(user, organisation.id)
+    assert {:error, :timeout} = AI.suggest_threats(Scope.for(user, organisation))
+  end
+
+  test "an answer that is not the expected JSON gives no suggestions",
+       %{user: user, organisation: organisation} do
+    Application.put_env(:threat_shield, :ai_stub_result, {:ok, ~s({"other": []})})
+    on_exit(fn -> Application.delete_env(:threat_shield, :ai_stub_result) end)
+
+    organisation = get_organisation!(user, organisation.id)
+    assert [] = AI.suggest_threats(Scope.for(user, organisation))
+  end
+
+  describe "the prompts and the description need no language model" do
+    test "Prompts.threats/1 is the prompt that the provider gets",
+         %{user: user, organisation: organisation} do
+      organisation = get_organisation!(user, organisation.id)
+      scope = Scope.for(user, organisation)
+
+      assert {:threats, system_prompt, user_prompt} = AI.Prompts.threats(scope)
+      refute_received {:ai_request, _}
+
+      AI.suggest_threats(scope)
+      assert {^system_prompt, ^user_prompt} = prompts()
+    end
+
+    test "Description.threat_model/1 describes the records in focus",
+         %{user: user, organisation: organisation, risk: risk} do
+      organisation = get_organisation!(user, organisation.id)
+
+      risk =
+        ThreatManagement.get_risk!(risk.id,
+          actor: user,
+          load: [:mitigations, threat: [:system, :asset]]
+        )
+
+      text =
+        Description.threat_model(%{
+          organisation: organisation,
+          system: risk.threat.system,
+          threat: risk.threat,
+          risk: risk
+        })
+
+      assert text =~ ~s(The name of the organisation is "ACME".)
+      assert text =~ "## System in focus"
+      assert text =~ ~s(The name of the threat is "Data theft".)
+      assert text =~ ~s(The name of the risk is "Fine by the authority".)
+      assert text =~ "## Mitigations of the risk\n\n- Encrypt the database (id "
+      refute text =~ "## Threats of the organisation"
+
+      text = Description.threat_model(%{organisation: organisation})
+      assert text =~ "## Threats of the organisation\n\n- Data theft (id #{risk.threat.id})"
+      assert text =~ "## Assets of the organisation\n\n- Customer data (id "
+    end
   end
 end

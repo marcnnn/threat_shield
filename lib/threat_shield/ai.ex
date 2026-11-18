@@ -1,34 +1,30 @@
 defmodule ThreatShield.AI do
-  alias ThreatShield.DynamicAttribute
+  @moduledoc """
+  The AI assistant: suggests assets, threats, risks, mitigations and attribute
+  values.
+
+  A suggestion has three parts, and only the second one needs a language model:
+
+    1. `ThreatShield.AI.Prompts` builds the prompt from the records (pure),
+    2. the configured `ThreatShield.AI.Provider` answers it,
+    3. this module turns the answer into unsaved records. The user selects some of
+       them, and the caller stores them with the normal create actions of
+       `ThreatShield.ThreatManagement` (e.g. `create_threat/2` with `actor:`).
+  """
+
+  alias ThreatShield.AI.{Prompts, Provider}
   alias ThreatShield.Accounts.Organisation
-  alias ThreatShield.ThreatManagement.Threat
-  alias ThreatShield.ThreatManagement.Asset
-  alias ThreatShield.ThreatManagement.Risk
-  alias ThreatShield.ThreatManagement.Mitigation
-  alias ThreatShield.ThreatManagement.System
-  alias ThreatShield.Scope
+  alias ThreatShield.DynamicAttribute
   alias ThreatShield.Quotas.QuotaManager
+  alias ThreatShield.Scope
+  alias ThreatShield.ThreatManagement.{Asset, Mitigation, Risk, Threat}
 
   require Logger
-
-  @open_ai_model "gpt-3.5-turbo"
-  # @open_ai_model "gpt-4-turbo-preview"
 
   @schemas %{assets: Asset, threats: Threat, risks: Risk, mitigations: Mitigation}
 
   # The changesets of these schemas allow names of up to 60 characters
   @max_name_length 60
-
-  # The explanation of each kind of entity that is sent with a request
-  @info %{
-    assets: "  Assets are valuable resources or data, that need to be protected.\n",
-    threats:
-      "Threats are any potential event or action that can compromise the security of a system, organisation, or individual. Threats are not the negative outcome, i.e. not the loss, damage, or harm resulting from the exploitation of vulnerabilities by threats.",
-    risks:
-      "Risks are the potential negative outcome — loss, damage, or harm resulting from the exploitation of vulnerabilities by threats.\n",
-    mitigations:
-      "Mitigations are strategies and measures put in place to mitigate the risks of a particular threat.\n"
-  }
 
   @quota_ai_requests_per_month "ai_requests_per_month"
 
@@ -37,7 +33,7 @@ defmodule ThreatShield.AI do
   usage, and calls `fun`.
 
   The call blocks until `fun` has returned. Run it in a separate process, for
-  example with `ThreatShieldWeb.AiSuggestions.request/3`.
+  example a task of `ThreatShield.TaskSupervisor`.
   """
   def run_task(%Scope{organisation: %Organisation{} = org} = scope, fun)
       when is_function(fun, 0) do
@@ -52,201 +48,61 @@ defmodule ThreatShield.AI do
     end
   end
 
-  # Attribute suggestions
+  @doc """
+  Suggests typical values of a dynamic attribute.
+  """
+  def suggest_values(%DynamicAttribute{} = attribute) do
+    {system_prompt, user_prompt} = Prompts.attribute_values(attribute)
 
-  def suggest_values(%DynamicAttribute{name: name, description: description}) do
-    # {resource_name_plural}": [{"name": _, "description": _}, _ ]}."
-    system_prompt = """
-    You are a software engineer. Your answer is in valid JSON format like so {"suggestions": [{"value": _}, _ ]}.
-    """
-
-    user_prompt = """
-    Suggest 10 examples of typical values for an attribute with the name "#{name}". The user-facing description of the attribute is "#{description}".
-    """
-
-    make_chatgpt_request(system_prompt, user_prompt, &get_attribute_suggestions_from_response/1)
-  end
-
-  defp get_attribute_suggestions_from_response(response) do
-    get_content_from_reponse(response, "suggestions")
-    |> Enum.map(fn %{"value" => n} -> n end)
-  end
-
-  defp get_general_job_description(%Organisation{} = organisation) do
-    """
-    You are a threat modelling assistant at "#{organisation.name}".
-    #{Organisation.describe(organisation)}
-    """
-  end
-
-  defp get_response_format_description(resource_name_plural) do
-    """
-    Your response should comprise five response items, each item has a name and a description. The name should be up to 40 characters, the descriptions should be between 400 and 1000 characters long. The result must be valid JSON in this format:
-
-    {"#{resource_name_plural}": [{"name": _, "description": _}, _ ]}
-    """
-  end
-
-  # Suggestions for assets, threats, risks, and mitigations
-
-  def suggest_assets(%Scope{} = scope) do
-    case scope do
-      %{system: %System{} = system} ->
-        suggest(:assets, system.organisation, system.assets,
-          info:
-            "  Assets are valuable resources or data for a particular system, that need to be protected.\n",
-          focus: ~s( The assets should be specific to the system "#{system.name}".)
-        )
-
-      %{organisation: %Organisation{} = organisation} ->
-        suggest(:assets, organisation, organisation.assets)
+    with {:ok, items} <- ask(system_prompt, user_prompt, "suggestions") do
+      for %{"value" => value} <- items, do: value
     end
   end
 
-  def suggest_threats(%Scope{} = scope) do
-    # order is important here, as the most specific scope should be matched first
-    case scope do
-      %{asset: %Asset{} = asset, system: %System{} = system} ->
-        suggest(:threats, asset.organisation, asset.threats,
-          focus:
-            " The threats should be specific to the system the system '#{system.name}'  and the asset '#{asset.name}'"
+  @doc "Suggests assets of the organisation or of the system of the scope."
+  def suggest_assets(%Scope{} = scope), do: scope |> Prompts.assets() |> suggest()
+
+  @doc "Suggests threats of the organisation, the system and/or the asset of the scope."
+  def suggest_threats(%Scope{} = scope), do: scope |> Prompts.threats() |> suggest()
+
+  @doc "Suggests risks of a threat."
+  def suggest_risks_for_threat(%Scope{} = _scope, %Threat{} = threat),
+    do: threat |> Prompts.risks() |> suggest()
+
+  @doc "Suggests mitigations of a risk."
+  def suggest_mitigations_for_risk(%Scope{} = _scope, %Risk{} = risk),
+    do: risk |> Prompts.mitigations() |> suggest()
+
+  # Returns unsaved records of the kind, or `{:error, reason}`
+  defp suggest({kind, system_prompt, user_prompt}) do
+    with {:ok, items} <- ask(system_prompt, user_prompt, Atom.to_string(kind)) do
+      for %{"name" => name, "description" => description} <- items do
+        struct(@schemas[kind],
+          name: String.slice(name, 0, @max_name_length),
+          description: description
         )
-
-      %{asset: %Asset{} = asset} ->
-        suggest(:threats, asset.organisation, asset.threats,
-          focus: " The threats should be specific to the asset '#{asset.name}'"
-        )
-
-      %{system: %System{} = system} ->
-        suggest(:threats, system.organisation, system.threats,
-          focus: " The threats should be specific to the system '#{system.name}'"
-        )
-
-      %{organisation: %Organisation{} = organisation} ->
-        suggest(:threats, organisation, organisation.threats)
-    end
-  end
-
-  def suggest_risks_for_threat(%Scope{} = _scope, %Threat{} = threat) do
-    suggest(:risks, threat.organisation, threat.risks,
-      focus: ~s( The risks should relate exclusively to the threat "#{threat.name}".)
-    )
-  end
-
-  def suggest_mitigations_for_risk(%Scope{} = _scope, %Risk{} = risk) do
-    system_exclusivity =
-      if is_nil(risk.threat.system) do
-        ""
-      else
-        """
-        The only relvant system in this context is "#{risk.threat.system.name}".
-        """
       end
-
-    suggest(:mitigations, risk.threat.organisation, risk.mitigations,
-      focus:
-        ~s( The mitigations should relate exclusively to the risk "#{risk.name}" and the threat "#{risk.threat.name}".),
-      extra: system_exclusivity
-    )
+    end
   end
 
-  # Asks for five suggestions of the given kind.
-  #
-  # `existing` are the entities of this kind that are known already. Options:
-  #   * `:info` - replaces the default explanation of the kind
-  #   * `:focus` - a sentence that narrows the assignment, e.g. to one system
-  #   * `:extra` - a further part at the end of the prompt
-  defp suggest(kind, %Organisation{} = organisation, existing, opts \\ []) do
-    {system_prompt, user_prompt} = prompts(kind, organisation, existing, opts)
+  # Asks the provider and returns the list under `root_key` of the JSON answer. An
+  # answer that is not such JSON gives an empty list.
+  defp ask(system_prompt, user_prompt, root_key) do
+    messages = [
+      %{role: "system", content: system_prompt},
+      %{role: "user", content: user_prompt}
+    ]
 
-    make_chatgpt_request(system_prompt, user_prompt, &get_suggestions_from_response(&1, kind))
-  end
+    with {:ok, content} <- Provider.configured().chat(messages, []) do
+      case Jason.decode(content) do
+        {:ok, %{^root_key => items}} when is_list(items) ->
+          {:ok, items}
 
-  defp prompts(kind, %Organisation{} = organisation, existing, opts) do
-    plural = Atom.to_string(kind)
-    # a relationship that was not loaded counts as empty
-    existing = if is_list(existing), do: existing, else: []
-
-    existing_names =
-      if Enum.empty?(existing) do
-        ""
-      else
-        "I already know about the following #{plural}:\n\n" <>
-          Enum.map_join(existing, "\n", fn e -> e.name end)
+        other ->
+          Logger.error("Unexpected answer of the AI provider: #{inspect(other)}")
+          {:ok, []}
       end
-
-    assignment =
-      "Please suggest five additional #{plural} that are different from the existing ones." <>
-        Keyword.get(opts, :focus, "") <> "\n"
-
-    user_prompt =
-      ([
-         get_response_format_description(plural),
-         Keyword.get(opts, :info, @info[kind]),
-         existing_names,
-         assignment
-       ] ++ List.wrap(opts[:extra]))
-      |> Enum.join(" ")
-
-    {get_general_job_description(organisation), user_prompt}
-  end
-
-  # OpenAI
-
-  defp make_chatgpt_request(system_prompt, user_prompt, response_extractor) do
-    messages =
-      [
-        %{
-          role: "system",
-          content: system_prompt
-        },
-        %{
-          role: "user",
-          content: user_prompt
-        }
-      ]
-
-    case open_ai_client().chat_completion(
-           model: @open_ai_model,
-           messages: messages
-         ) do
-      {:ok, response} ->
-        response_extractor.(response)
-
-      {:error, %{"error" => error}} ->
-        {:error, error}
-
-      {:error, :timeout} ->
-        {:error, :timeout}
     end
-  end
-
-  # The client module can be replaced in the configuration, e.g. for tests.
-  defp open_ai_client() do
-    Application.get_env(:threat_shield, :open_ai_client, OpenAI)
-  end
-
-  defp get_content_from_reponse(response, root_key) do
-    [first_choice | _] = response.choices
-    %{"message" => message} = first_choice
-    %{"content" => raw_response_string} = message
-
-    case Jason.decode(raw_response_string) do
-      {:error, error} ->
-        Logger.error("Failed to decode response from OpenAI: #{inspect(error)}")
-        []
-
-      {:ok, data} ->
-        %{^root_key => content} = data
-        content
-    end
-  end
-
-  defp get_suggestions_from_response(response, kind) do
-    get_content_from_reponse(response, Atom.to_string(kind))
-    |> Enum.map(fn %{"name" => n, "description" => d} ->
-      struct(@schemas[kind], name: String.slice(n, 0, @max_name_length), description: d)
-    end)
   end
 
   # Quotas
