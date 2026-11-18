@@ -32,9 +32,9 @@
       "primary_key?": false,
       "references": null,
       "scale": null,
-      "size": null,
+      "size": 40,
       "source": "first_name",
-      "type": "text"
+      "type": "varchar"
     },
     {
       "allow_nil?": true,
@@ -44,9 +44,9 @@
       "primary_key?": false,
       "references": null,
       "scale": null,
-      "size": null,
+      "size": 40,
       "source": "last_name",
-      "type": "text"
+      "type": "varchar"
     },
     {
       "allow_nil?": true,
@@ -56,24 +56,24 @@
       "primary_key?": false,
       "references": null,
       "scale": null,
-      "size": null,
+      "size": 255,
       "source": "global_roles",
       "type": [
         "array",
-        "text"
+        "varchar"
       ]
     },
     {
-      "allow_nil?": true,
+      "allow_nil?": false,
       "default": "nil",
       "generated?": false,
       "precision": null,
       "primary_key?": false,
       "references": null,
       "scale": null,
-      "size": null,
+      "size": 255,
       "source": "hashed_password",
-      "type": "text"
+      "type": "varchar"
     },
     {
       "allow_nil?": true,
@@ -85,11 +85,23 @@
       "scale": null,
       "size": null,
       "source": "confirmed_at",
+      "type": "utc_datetime"
+    },
+    {
+      "allow_nil?": true,
+      "default": "nil",
+      "generated?": false,
+      "precision": null,
+      "primary_key?": false,
+      "references": null,
+      "scale": null,
+      "size": null,
+      "source": "email_change_confirmed_at",
       "type": "utc_datetime_usec"
     },
     {
       "allow_nil?": false,
-      "default": "fragment(\"(now() AT TIME ZONE 'utc')\")",
+      "default": "nil",
       "generated?": false,
       "precision": null,
       "primary_key?": false,
@@ -97,11 +109,11 @@
       "scale": null,
       "size": null,
       "source": "inserted_at",
-      "type": "utc_datetime_usec"
+      "type": "naive_datetime"
     },
     {
       "allow_nil?": false,
-      "default": "fragment(\"(now() AT TIME ZONE 'utc')\")",
+      "default": "nil",
       "generated?": false,
       "precision": null,
       "primary_key?": false,
@@ -109,7 +121,7 @@
       "scale": null,
       "size": null,
       "source": "updated_at",
-      "type": "utc_datetime_usec"
+      "type": "naive_datetime"
     }
   ],
   "base_filter": null,
@@ -118,12 +130,12 @@
   "custom_indexes": [],
   "custom_statements": [],
   "has_create_action": true,
-  "hash": "A9F42F9B1C64F68450573D30629A85E64160BEC389AD6650E49C8F1A1BDC7316",
+  "hash": "B97EA8867C4EDD836E1BDD13114DFB634EC6E18CC2B35A106CDEE4A278109351",
   "identities": [
     {
       "all_tenants?": false,
       "base_filter": null,
-      "index_name": "users_unique_email_index",
+      "index_name": "users_email_index",
       "keys": [
         {
           "type": "atom",

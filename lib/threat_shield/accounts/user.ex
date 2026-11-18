@@ -29,6 +29,16 @@ defmodule ThreatShield.Accounts.User do
     repo ThreatShield.Repo
 
     identity_index_names unique_email: "users_email_index"
+
+    # match the columns of the Ecto migrations
+    migration_types first_name: {:varchar, 40},
+                    last_name: {:varchar, 40},
+                    hashed_password: {:varchar, 255},
+                    global_roles: {:array, {:varchar, 255}},
+                    inserted_at: :naive_datetime,
+                    updated_at: :naive_datetime
+
+    migration_defaults inserted_at: "nil", updated_at: "nil"
   end
 
   authentication do
@@ -124,11 +134,11 @@ defmodule ThreatShield.Accounts.User do
     end
 
     attribute :hashed_password, :string do
-      allow_nil? true
+      allow_nil? false
       sensitive? true
     end
 
-    attribute :confirmed_at, :utc_datetime_usec do
+    attribute :confirmed_at, :utc_datetime do
       allow_nil? true
     end
 

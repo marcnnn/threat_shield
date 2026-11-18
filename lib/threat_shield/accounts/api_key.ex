@@ -16,7 +16,7 @@ defmodule ThreatShield.Accounts.ApiKey do
     repo ThreatShield.Repo
 
     references do
-      reference :user, on_delete: :delete
+      reference :user, on_delete: :delete, index?: true
     end
   end
 

@@ -147,15 +147,19 @@ See `docs/adr/0002-authorization-with-ash-policies.md`.
 
 ### Database and migrations
 
-- The migrations up to `20261007060300` were written for Ecto; `priv/resource_snapshots`
-  holds the matching Ash snapshots, and the resources describe the existing columns
-  (`migration_types`, `migration_defaults`, `index?: true` on references). Generate new
-  migrations with `mix ash.codegen <name>` and review them.
+- The migrations up to `20261118100200` were written by hand (most for Ecto);
+  `priv/resource_snapshots` holds the matching Ash snapshots, and the resources describe
+  the existing columns (`migration_types`, `migration_defaults`, `index?: true` on
+  references, `custom_indexes`). Generate new migrations with `mix ash.codegen <name>`
+  and review them.
 - Columns that are nullable in the database but required by the application keep
   `allow_nil? true` and get a `present` validation, so that the snapshots match the
   schema.
-- The `users` and `user_tokens` resources (AshAuthentication) do not match their tables
-  exactly yet; the old `users_tokens` table is unused.
+- To check a resource change against the schema, generate migrations for all resources
+  into an empty snapshot and migration path
+  (`mix ash_postgres.generate_migrations --snapshot-path ... --migration-path ...`),
+  run them on a scratch database and compare its columns, indexes and constraints with
+  a database built from `priv/repo/migrations`.
 
 ### Web layer
 

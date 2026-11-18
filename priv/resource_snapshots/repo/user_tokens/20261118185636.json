@@ -2,7 +2,7 @@
   "attributes": [
     {
       "allow_nil?": false,
-      "default": "fragment(\"(now() AT TIME ZONE 'utc')\")",
+      "default": "fragment(\"now()\")",
       "generated?": false,
       "precision": null,
       "primary_key?": false,
@@ -10,11 +10,11 @@
       "scale": null,
       "size": null,
       "source": "updated_at",
-      "type": "utc_datetime_usec"
+      "type": "naive_datetime_usec"
     },
     {
       "allow_nil?": false,
-      "default": "fragment(\"(now() AT TIME ZONE 'utc')\")",
+      "default": "fragment(\"now()\")",
       "generated?": false,
       "precision": null,
       "primary_key?": false,
@@ -22,7 +22,7 @@
       "scale": null,
       "size": null,
       "source": "created_at",
-      "type": "utc_datetime_usec"
+      "type": "naive_datetime_usec"
     },
     {
       "allow_nil?": true,
@@ -44,9 +44,9 @@
       "primary_key?": false,
       "references": null,
       "scale": null,
-      "size": null,
+      "size": 255,
       "source": "purpose",
-      "type": "text"
+      "type": "varchar"
     },
     {
       "allow_nil?": false,
@@ -68,9 +68,9 @@
       "primary_key?": false,
       "references": null,
       "scale": null,
-      "size": null,
+      "size": 255,
       "source": "subject",
-      "type": "text"
+      "type": "varchar"
     },
     {
       "allow_nil?": false,
@@ -80,18 +80,85 @@
       "primary_key?": true,
       "references": null,
       "scale": null,
-      "size": null,
+      "size": 255,
       "source": "jti",
-      "type": "text"
+      "type": "varchar"
     }
   ],
   "base_filter": null,
   "check_constraints": [],
   "create_table_options": null,
-  "custom_indexes": [],
+  "custom_indexes": [
+    {
+      "all_tenants?": false,
+      "concurrently": false,
+      "error_fields": [
+        "jti"
+      ],
+      "fields": [
+        {
+          "type": "atom",
+          "value": "jti"
+        }
+      ],
+      "include": null,
+      "message": null,
+      "name": "user_tokens_jti_index",
+      "nulls_distinct": true,
+      "prefix": null,
+      "table": null,
+      "unique": true,
+      "using": null,
+      "where": null
+    },
+    {
+      "all_tenants?": false,
+      "concurrently": false,
+      "error_fields": [
+        "subject"
+      ],
+      "fields": [
+        {
+          "type": "atom",
+          "value": "subject"
+        }
+      ],
+      "include": null,
+      "message": null,
+      "name": null,
+      "nulls_distinct": true,
+      "prefix": null,
+      "table": null,
+      "unique": false,
+      "using": null,
+      "where": null
+    },
+    {
+      "all_tenants?": false,
+      "concurrently": false,
+      "error_fields": [
+        "expires_at"
+      ],
+      "fields": [
+        {
+          "type": "atom",
+          "value": "expires_at"
+        }
+      ],
+      "include": null,
+      "message": null,
+      "name": null,
+      "nulls_distinct": true,
+      "prefix": null,
+      "table": null,
+      "unique": false,
+      "using": null,
+      "where": null
+    }
+  ],
   "custom_statements": [],
   "has_create_action": true,
-  "hash": "D3AB7BF21D289AD22FC60AE7F6E3D5C3F99B56B5680C7702D28B08BED547EFD2",
+  "hash": "8A99D0E660500003D6CEC546E28E09335B5EC47CB1FF05AF7BAD3673AF2A5164",
   "identities": [],
   "multitenancy": {
     "attribute": null,
