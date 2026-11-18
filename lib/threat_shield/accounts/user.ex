@@ -251,6 +251,7 @@ defmodule ThreatShield.Accounts.User do
     update :password_reset_with_password do
       description "Set a new password with a password reset token. Signs the user out " <>
                     "everywhere and revokes the API keys of the user."
+
       accept []
       require_atomic? false
 
@@ -293,6 +294,7 @@ defmodule ThreatShield.Accounts.User do
     update :change_password do
       description "Change the password of the user. Signs the user out everywhere and revokes " <>
                     "the API keys of the user."
+
       accept []
       require_atomic? false
 

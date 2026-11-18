@@ -5,7 +5,7 @@ defmodule ThreatShieldWeb.RiskLive.RiskBoard do
   alias ThreatShield.{Accounts, ThreatManagement}
   alias ThreatShield.ThreatManagement.{MitigationStatus, Risk, RiskStatus}
 
-  import ThreatShield.Analytics.RiskAnalytics
+  import ThreatShield.Analytics.RiskAnalytics, only: [max_cost: 1, max_frequency: 1]
   import ThreatShieldWeb.Helpers
   import ThreatShieldWeb.Gettext
   import ThreatShieldWeb.Icons
@@ -121,29 +121,25 @@ defmodule ThreatShieldWeb.RiskLive.RiskBoard do
   def mount(%{"org_id" => org_id}, _session, socket) do
     user = socket.assigns.current_user
 
-    organisation =
-      Accounts.get_organisation!(org_id,
-        actor: user,
-        load: [:memberships, :threat_count, :mitigation_count]
-      )
+    organisation = Accounts.get_organisation!(org_id, actor: user)
+    summary = ThreatManagement.risk_summary!(organisation.id, actor: user)
 
+    # every risk is a point of the chart
     risks =
       ThreatManagement.list_risks!(organisation.id,
         actor: user,
         load: [:estimated_risk_cost, threat: :system]
       )
 
-    mitigations = ThreatManagement.list_mitigations!(organisation.id, actor: user)
-
     socket
     |> assign(:organisation, organisation)
     |> assign(:risks, risks)
     |> assign(:risk_model, risk_model(risks, organisation))
-    |> assign(:top_10_severity, top_10_severity(risks))
-    |> assign(:top_10_costs, top_10_risk_costs(risks))
-    |> assign(:risks_by_status, risks_by_status(risks))
-    |> assign(:mitigations_by_status, mitigations_by_status(mitigations))
-    |> assign(:summary, summary(organisation, risks))
+    |> assign(:top_10_severity, summary.top_risks_by_severity)
+    |> assign(:top_10_costs, summary.top_risks_by_cost)
+    |> assign(:risks_by_status, risks_by_status(summary.risks_by_status))
+    |> assign(:mitigations_by_status, mitigations_by_status(summary.mitigations_by_status))
+    |> assign(:summary, summary(summary))
     |> ok()
   end
 
@@ -163,9 +159,8 @@ defmodule ThreatShieldWeb.RiskLive.RiskBoard do
 
   # internal
 
-  defp risks_by_status(risks) do
+  defp risks_by_status(counts) do
     states = RiskStatus.values()
-    counts = Enum.frequencies_by(risks, & &1.status)
 
     %{
       labels: Enum.map(states, &risk_status_label/1),
@@ -179,9 +174,8 @@ defmodule ThreatShieldWeb.RiskLive.RiskBoard do
   defp risk_status_color(:mitigated), do: "#59CE56"
   defp risk_status_color(:accepted), do: "#3664B7"
 
-  defp mitigations_by_status(mitigations) do
+  defp mitigations_by_status(counts) do
     states = MitigationStatus.values()
-    counts = Enum.frequencies_by(mitigations, & &1.status)
 
     %{
       labels: Enum.map(states, &mitigation_status_label/1),
@@ -198,32 +192,22 @@ defmodule ThreatShieldWeb.RiskLive.RiskBoard do
   defp mitigation_status_color(:deferred), do: "#6997EA"
   defp mitigation_status_color(:obsolete), do: "#6997EA"
 
-  defp summary(organisation, risks) do
-    total_cost = sum_up_risk_costs(risks)
-    mitigated_cost = sum_up_risk_costs(risks, :mitigated)
-    unmitigated_cost = sum_up_risk_costs(risks, RiskStatus.unmitigated())
-
+  defp summary(summary) do
     [
-      %{
-        label: dgettext("common", "Number of threats"),
-        value: organisation.threat_count
-      },
-      %{label: dgettext("common", "Number of risks"), value: Enum.count(risks)},
-      %{
-        label: dgettext("common", "Number of mitigations"),
-        value: organisation.mitigation_count
-      },
+      %{label: dgettext("common", "Number of threats"), value: summary.threat_count},
+      %{label: dgettext("common", "Number of risks"), value: summary.risk_count},
+      %{label: dgettext("common", "Number of mitigations"), value: summary.mitigation_count},
       %{
         label: dgettext("common", "Total risk costs"),
-        value: format_monetary_amount(total_cost)
+        value: format_monetary_amount(summary.total_risk_cost)
       },
       %{
         label: dgettext("common", "Unmitigated risk costs"),
-        value: format_monetary_amount(unmitigated_cost)
+        value: format_monetary_amount(summary.unmitigated_risk_cost)
       },
       %{
         label: dgettext("common", "Mitigated risk costs"),
-        value: format_monetary_amount(mitigated_cost)
+        value: format_monetary_amount(summary.mitigated_risk_cost)
       }
     ]
   end
@@ -253,7 +237,7 @@ defmodule ThreatShieldWeb.RiskLive.RiskBoard do
     end)
   end
 
-  defp risk_cost(%Risk{} = risk), do: risk.estimated_risk_cost
+  defp risk_cost(%{estimated_risk_cost: cost}), do: cost
 
   defp normalized_risk_cost(%Risk{} = risk, max_cost) do
     case risk.estimated_risk_cost do

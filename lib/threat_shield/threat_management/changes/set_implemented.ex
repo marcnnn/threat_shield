@@ -20,8 +20,7 @@ defmodule ThreatShield.ThreatManagement.Changes.SetImplemented do
     # false, not NULL, for a missing status (the column is NOT NULL)
     {:atomic,
      %{
-       is_implemented:
-         expr(not is_nil(^atomic_ref(:status)) and ^atomic_ref(:status) in ^states)
+       is_implemented: expr(not is_nil(^atomic_ref(:status)) and ^atomic_ref(:status) in ^states)
      }}
   end
 end
