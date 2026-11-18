@@ -15,12 +15,14 @@ assess **risks**, and plan **mitigations**. An OpenAI-backed assistant suggests 
 - **Elixir** 1.20.4 / **OTP** 29.1.1 (see `.tool-versions`; CI and the `Dockerfile` pin the
   same versions). `mix.exs` requires Elixir `~> 1.20`.
 - **Phoenix** `~> 1.7` with **LiveView** `~> 0.20` — the UI is almost entirely LiveView.
-- **Ecto** + **Postgrex** over **PostgreSQL**.
+- **Ash 3** for the domain layer: **AshPostgres** over **PostgreSQL**, **AshPhoenix**
+  (forms), **AshAuthentication** (users and tokens). Ecto is still there underneath
+  (repo, migrations, test sandbox).
 - **OpenAI** via the `openai` hex package (`gpt-3.5-turbo`, see `lib/threat_shield/ai.ex`).
 - Assets: **esbuild** + **tailwind**, run through Mix. JS dependencies (`chart.js`,
   `@popperjs/core`) come from `assets/package.json` and need `npm install` in `assets/`
   (Node.js 20, see `.tool-versions`). `choices.js` is listed there but not used.
-- Other: `bcrypt_elixir` (auth), `ex_rated` (rate limiting), `gettext` (i18n),
+- Other: `bcrypt_elixir` (passwords), `ex_rated` (rate limiting), `gettext` (i18n),
   `elixlsx` (Excel export), `swoosh`/`finch` (mail), `timex`, `logger_json`.
 
 ## Common commands
@@ -37,6 +39,9 @@ mix test path/to/test.exs:NN   # single test
 mix ecto.setup           # ecto.create + ecto.migrate + seeds
 mix ecto.reset           # ecto.drop + ecto.setup
 mix format               # format (see .formatter.exs)
+
+mix ash.codegen --check  # must report no changes: resources match the snapshots
+mix ash.codegen add_x    # after a resource change: generates a migration + snapshots
 ```
 
 Docker Compose is also supported (`docker compose up --build`); see `README.md`.
@@ -57,54 +62,100 @@ Organisation ──< System ──< Asset
               └──< Risk ──< Mitigation
 ```
 
-- **Contexts** live at `lib/threat_shield/<context>.ex` (e.g. `threats.ex`, `assets.ex`,
-  `risks.ex`, `mitigations.ex`, `systems.ex`, `organisations.ex`, `members.ex`,
-  `accounts.ex`). These are the public API for business logic.
-- **Schemas** live under `lib/threat_shield/<context>/<entity>.ex`
-  (e.g. `threats/threat.ex`). Schemas also host **composable Ecto query helpers**
-  (`from/0`, `for_user/2`, `with_system/1`, `where_organisation/2`, …) which contexts
-  pipe together. Follow this pattern when adding queries — put the query builders on the
-  schema module, compose them in the context.
+### Ash domains and resources
 
-### Scope — the central access-control value
+- **Domains** are the public API: `ThreatShield.Accounts` (`lib/threat_shield/accounts.ex`:
+  users, tokens, organisations, memberships, invites), `ThreatShield.ThreatManagement`
+  (`threat_management.ex`: systems, assets, threats, risks, mitigations) and
+  `ThreatShield.Quotas`. Each domain defines **code interfaces** (`define ...`) such as
+  `ThreatManagement.get_threat!(id, actor: user, load: [...])`,
+  `list_threats!(org_id, actor: user)`, `create_risk(attrs, actor: user)`,
+  `update_asset(asset, attrs, actor: user)`, `destroy_system(id, actor: user)`.
+  LiveViews, controllers and tests call these functions directly; there are no context
+  modules. (`ThreatShield.Members` only keeps two functions for the registration flow.)
+- **Resources** live under `lib/threat_shield/<domain>/<resource>.ex`. Actions and
+  their arguments have a `description`: they will be exposed as MCP tools (ash_ai).
+- Logic goes into the resource, not into callers: module **changes**
+  (`threat_management/changes/`, `accounts/changes/`), **validations**
+  (`validations/`, `accounts/validations/`), **calculations** (e.g.
+  `Risk.estimated_risk_cost`, `Threat.system_name`), **aggregates** (e.g.
+  `Organisation.threat_count`), and read actions with arguments for filters
+  (`:for_organisation`, `:for_system`, `:for_asset`). Filter in the database, not in
+  Elixir. Give a change an `atomic/3` callback where possible, so that updates can
+  run atomically; use `require_atomic? false` only with a comment why.
+- Multi-step writes run in one action: `after_action` hooks in changes (e.g. the owner
+  membership of a new organisation, the accepted invite), not hand-written
+  transactions.
+- **Enums** are `Ash.Type.Enum` modules stored as strings: `Accounts.Role`,
+  `ThreatManagement.RiskStatus`, `ThreatManagement.MitigationStatus`. Derive lists of
+  states from `values/0`.
+- Expression calculations (`expr(user.email)`, `expr(organisation.name)`) do not apply
+  the read policies of the related resource. They are used where a member may see a
+  field of a record they may not read (the email of a co-member, the organisation
+  name of an invite).
+
+### Scope
 
 `ThreatShield.Scope` (`lib/threat_shield/scope.ex`) is a struct carrying the current
 `user`, `organisation`, `membership`, and the relevant `system` / `asset` / `threat`.
-It is built per-request (`Scope.for/2`, `Scope.for_system/3`, `Scope.for_asset/3`, …),
-threaded through LiveViews and contexts, and is how the app scopes data and permissions to
-the acting user. Prefer passing a `Scope` rather than loose ids.
+The LiveViews build it per page and pass it to the list components and the AI module.
+It is a view helper, not an access check: the policies check access.
 
 ### Authorization
 
-Two layers, don't confuse them:
+See `docs/adr/0002-authorization-with-ash-policies.md`.
 
-- **`ThreatShield.Members.Rights`** — per-organisation, role-based action rights
-  (`:owner` / `:editor` / `:viewer`; a viewer has no action rights). The right→role map
-  is the single source of truth in `rights.ex`. In templates and LiveViews use
-  `may?(@scope, :create_threat)`; `may?/2` is imported everywhere and takes a scope or a
-  membership.
-- **`ThreatShield.Accounts.RBAC`** — global/platform permissions (e.g.
-  `:administer_platform` for platform admins).
-
-Most queries also enforce ownership at the DB level via `for_user/2` joins on the
-schema — security is in the query, not just the UI.
+- **`ThreatShield.Accounts.Rights`** maps each right (`:create_threat`,
+  `:delete_member`, ...) to the roles (`:owner` / `:editor` / `:viewer`) that have it.
+  It is the single source of truth for both layers:
+  - the **policies** of the resources authorize with
+    `{ThreatShield.Checks.OrganisationRole, right: ...}` (reads, updates, destroys; a
+    filter check with a `path:` to the organisation, e.g. `[:threat, :organisation]`
+    for risks) and `{ThreatShield.Checks.OrganisationRoleForCreate, right: ...}`
+    (creates; resolves the organisation from `organisation_id` or from the parent,
+    e.g. `parent: {:threat_id, Threat}`);
+  - **templates** use `may?(@scope, :create_threat)` (imported everywhere; takes a scope
+    or a membership) to show only allowed buttons.
+- Platform roles (`global_roles` on the user, e.g. `platform_admin`) are separate from
+  organisation rights.
 
 ### Access rules (apply to every change)
 
-- **Every context function takes the acting user** (or a `Scope`). It loads through
-  `for_user/2` to read, and through `for_user/3` with a right to change something. A
-  function without an actor is not allowed, also not for "internal" use.
+- **Every call on a user path passes the user as `actor:`.** Never call an action with
+  `authorize?: false` for a user request. It is allowed only for system operations
+  without a user (cleanup of expired invites, quota bookkeeping, the bootstrap of the
+  first owner, consuming an accepted invite, the lookups inside policy checks), each
+  with a comment why.
+- **Every action needs a policy.** An action without a matching policy is forbidden;
+  that is the intended default for internal actions (e.g. `Membership.create`).
 - **Hidden buttons are not protection.** A client can send any LiveView event with any
-  id. Each `handle_event` must end in a context function that checks the right.
-- **Do not cast foreign keys from parameters** (`organisation_id`, `risk_id`, …). Load the
-  parent with `for_user/3` and set it with `put_assoc`.
+  id. Each `handle_event` must end in a domain function called with the actor.
+- **Foreign keys are accepted attributes**, guarded by the create policy, which checks
+  the actor's role in the organisation of the parent. Forms set the parent id with
+  `transform_params`, so a client cannot move a new record elsewhere. Update actions do
+  not accept parent ids (a mitigation stays with its risk).
 - **Check references against the organisation.** When an entity points to another one
-  (a threat to a system or an asset), verify that both belong to the same organisation;
-  see `Threats.create_threat/3`.
-- **Organisation rights go through `Rights`, never through `RBAC`.** `RBAC` returns false
-  for every organisation right.
-- **Invites are matched by email address.** They are listed and accepted only for users
-  with a confirmed address.
+  (a threat to a system or an asset), the validation
+  `ThreatManagement.Validations.SameOrganisation` checks that both belong to the same
+  organisation.
+- **Invites are matched by email address.** They are listed and accepted only by users
+  with a confirmed address (`Checks.InviteAddressee`). The token of an invite link is a
+  secret: whoever has it may read the invite and join.
+- **Do not swallow errors.** A record that does not exist or belongs to another
+  organisation raises `NotFound` from `get_*!`, which ash_phoenix turns into a 404. A
+  failed write returns `{:error, error}`; show it in the form or as a flash.
+
+### Database and migrations
+
+- The migrations up to `20261007060300` were written for Ecto; `priv/resource_snapshots`
+  holds the matching Ash snapshots, and the resources describe the existing columns
+  (`migration_types`, `migration_defaults`, `index?: true` on references). Generate new
+  migrations with `mix ash.codegen <name>` and review them.
+- Columns that are nullable in the database but required by the application keep
+  `allow_nil? true` and get a `present` validation, so that the snapshots match the
+  schema.
+- The `users` and `user_tokens` resources (AshAuthentication) do not match their tables
+  exactly yet; the old `users_tokens` table is unused.
 
 ### Web layer
 
@@ -117,8 +168,11 @@ schema — security is in the query, not just the UI.
   `ts_components.ex`, `breadcrumbs.ex`, `labels.ex`, `icons.ex`, `info_vis.ex`,
   `spinner.ex`.
 - Shared building blocks — use them, do not copy the pattern again:
-  - `ThreatShieldWeb.FormHelpers` — `assign_form/2` and `handle_save_result/4` for form
-    components. A form gets its return path in the assign `:patch`.
+  - `ThreatShieldWeb.FormHelpers`: `assign_form/2`, `validate_form/2` and
+    `submit_form/5` for form components built with `AshPhoenix.Form`
+    (`for_create`/`for_update` with `actor:` and `as:`). A form gets its return path in
+    the assign `:patch`. `ThreatShieldWeb.AshErrors.normalize/2` gives Ash messages the
+    Ecto wording of `priv/gettext/errors.pot`; `translate_error/1` applies it.
   - `ThreatShieldWeb.AiSuggestions` — the AI suggestion flow of the list components
     (`request/3`, `handle_result/2`, `selected/2`).
   - `delete_menu_item/1` and `edit_menu_item/1` in `ts_components.ex` — the entries of the
@@ -154,9 +208,9 @@ only through `ThreatShield.AI`, so that tests can replace the client.
 ## Conventions
 
 - Module namespaces: `ThreatShield.*` for domain, `ThreatShieldWeb.*` for web.
-- Keep business logic in contexts; keep LiveViews thin (mount → load via context →
-  assign → render). See `live/threat_live/threat_details.ex` as the reference pattern.
-- Build queries from schema-module query helpers; always scope by user/organisation.
+- Keep business logic in the resources; keep LiveViews thin (mount → load via a domain
+  function with `actor:` and `load:` → assign → render). See
+  `live/threat_live/threat_details.ex` as the reference pattern.
 - User-facing strings go through `gettext`.
 - Run `mix format` before committing; `.formatter.exs` governs style.
 - Compile after each change and add no new compiler warnings. Elixir 1.20 infers types
@@ -178,20 +232,19 @@ the rules are defined in `docs/README.md` — read it before adding or changing 
 ## Testing
 
 - `mix test` auto-creates and migrates the test DB.
-- Tests live under `test/threat_shield/` (contexts) and `test/threat_shield_web/`
+- Tests live under `test/threat_shield/` (domains) and `test/threat_shield_web/`
   (LiveViews/controllers). Support in `test/support/` — `ConnCase`, `DataCase`, and
   fixtures under `test/support/fixtures/`. The SQL sandbox rolls back DB changes per test.
 - Add a regression test with every fix. For a new read or write path, add a test with a
   second organisation and with a `:viewer` (`MembersFixtures.membership_fixture/3`,
-  `AccountsFixtures.confirmed_user_fixture/1`).
+  `AccountsFixtures.confirmed_user_fixture/1`). `test/threat_shield/authorization_test.exs`
+  covers every ThreatManagement resource; extend it for a new resource.
 - Tests never call OpenAI: `config/test.exs` sets `ThreatShield.OpenAIStub` as the client.
-- Examples to copy from: `test/threat_shield/members_test.exs` (access rules in a
-  context), and in `test/threat_shield_web/live/`: `entity_form_live_test.exs` (forms),
-  `entity_menu_live_test.exs` (rights in the UI), `ai_suggestions_live_test.exs` (async
-  flow with `render_async`).
-- The test output shows `Ecto.ConstraintError` lines from a background task. They come
-  from a known defect (`quota_usages.user_id` references the wrong table) and are not
-  caused by your change.
+- Examples to copy from: `test/threat_shield/authorization_test.exs` and
+  `test/threat_shield/members_test.exs` (policies), and in `test/threat_shield_web/live/`:
+  `entity_form_live_test.exs` (forms), `entity_menu_live_test.exs` (rights in the UI,
+  events, 404 for other organisations), `ai_suggestions_live_test.exs` (async flow with
+  `render_async`).
 
 ## CI/CD
 
