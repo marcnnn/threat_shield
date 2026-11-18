@@ -60,10 +60,10 @@ defmodule ThreatShield.Accounts.UserNotifier do
   end
 
   @doc """
-  Deliver instructions to update a user email.
+  Deliver instructions to update a user email. They go to the new address.
   """
-  def deliver_update_email_instructions(user, url) do
-    deliver(user.email, "Update email instructions", """
+  def deliver_update_email_instructions(user, new_email, url) do
+    deliver(new_email, "Update email instructions", """
 
     ==============================
 

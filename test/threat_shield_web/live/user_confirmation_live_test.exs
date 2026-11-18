@@ -4,7 +4,7 @@ defmodule ThreatShieldWeb.UserConfirmationLiveTest do
   import Phoenix.LiveViewTest
   import ThreatShield.AccountsFixtures
 
-  alias ThreatShield.Accounts.Helpers, as: Accounts
+  alias ThreatShield.Accounts
 
   setup do
     %{user: user_fixture()}
@@ -19,7 +19,7 @@ defmodule ThreatShieldWeb.UserConfirmationLiveTest do
     test "confirms the given token once", %{conn: conn, user: user} do
       token =
         extract_user_token(fn url ->
-          Accounts.deliver_user_confirmation_instructions(user, url)
+          Accounts.request_confirmation(user.email, url_context(%{confirm: url}))
         end)
 
       {:ok, lv, _html} = live(conn, ~p"/users/confirm/#{token}")
@@ -35,7 +35,7 @@ defmodule ThreatShieldWeb.UserConfirmationLiveTest do
       assert Phoenix.Flash.get(conn.assigns.flash, :info) =~
                "User confirmed successfully"
 
-      assert Accounts.get_user!(user.id).confirmed_at
+      assert Accounts.get_user!(user.id, actor: user).confirmed_at
       refute get_session(conn, :user_token)
 
       # when not logged in
@@ -79,7 +79,7 @@ defmodule ThreatShieldWeb.UserConfirmationLiveTest do
       assert Phoenix.Flash.get(conn.assigns.flash, :error) =~
                "User confirmation link is invalid or it has expired"
 
-      refute Accounts.get_user!(user.id).confirmed_at
+      refute Accounts.get_user!(user.id, actor: user).confirmed_at
     end
   end
 end

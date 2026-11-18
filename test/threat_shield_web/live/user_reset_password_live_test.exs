@@ -4,14 +4,14 @@ defmodule ThreatShieldWeb.UserResetPasswordLiveTest do
   import Phoenix.LiveViewTest
   import ThreatShield.AccountsFixtures
 
-  alias ThreatShield.Accounts.Helpers, as: Accounts
+  alias ThreatShield.Accounts
 
   setup do
     user = user_fixture()
 
     token =
       extract_user_token(fn url ->
-        Accounts.deliver_user_reset_password_instructions(user, url)
+        Accounts.request_password_reset(user.email, url_context(%{reset_password: url}))
       end)
 
     %{token: token, user: user}
@@ -65,7 +65,11 @@ defmodule ThreatShieldWeb.UserResetPasswordLiveTest do
 
       refute get_session(conn, :user_token)
       assert Phoenix.Flash.get(conn.assigns.flash, :info) =~ "Password reset successfully"
-      assert Accounts.get_user_by_email_and_password(user.email, "new valid password")
+      assert {:ok, _} = Accounts.sign_in_user(user.email, "new valid password")
+
+      # use the reset token again
+      {:error, {:redirect, to}} = live(conn, ~p"/users/reset_password/#{token}")
+      assert to.flash == %{"error" => "Reset password link is invalid or it has expired."}
     end
 
     test "does not reset password on invalid data", %{conn: conn, token: token} do

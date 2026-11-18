@@ -2,7 +2,6 @@ defmodule ThreatShieldWeb.UserAuthTest do
   use ThreatShieldWeb.ConnCase
 
   alias Phoenix.LiveView
-  alias ThreatShield.Accounts.Helpers, as: Accounts
   alias ThreatShieldWeb.UserAuth
   import ThreatShield.AccountsFixtures
 
@@ -23,7 +22,7 @@ defmodule ThreatShieldWeb.UserAuthTest do
       assert token = get_session(conn, :user_token)
       assert get_session(conn, :live_socket_id) == "users_sessions:#{Base.url_encode64(token)}"
       assert redirected_to(conn) == ~p"/organisations"
-      assert Accounts.get_user_by_session_token(token)
+      assert user_for_token(token).id == user.id
     end
 
     test "clears everything previously stored in the session", %{conn: conn, user: user} do
@@ -48,7 +47,7 @@ defmodule ThreatShieldWeb.UserAuthTest do
 
   describe "logout_user/1" do
     test "erases session and cookies", %{conn: conn, user: user} do
-      user_token = Accounts.generate_user_session_token(user)
+      user_token = session_token(user)
 
       conn =
         conn
@@ -61,7 +60,45 @@ defmodule ThreatShieldWeb.UserAuthTest do
       refute conn.cookies[@remember_me_cookie]
       assert %{max_age: 0} = conn.resp_cookies[@remember_me_cookie]
       assert redirected_to(conn) == ~p"/"
-      # JWT tokens are stateless - token revocation would need a denylist
+      refute user_for_token(user_token)
+    end
+
+    test "revokes the token, so that the remember me cookie no longer signs in", %{
+      conn: conn,
+      user: user
+    } do
+      logged_in_conn =
+        conn |> fetch_cookies() |> UserAuth.log_in_user(user, %{"remember_me" => "true"})
+
+      %{value: signed_token} = logged_in_conn.resp_cookies[@remember_me_cookie]
+      user_token = get_session(logged_in_conn, :user_token)
+
+      assert user_for_token(user_token)
+
+      conn |> put_session(:user_token, user_token) |> fetch_cookies() |> UserAuth.log_out_user()
+
+      refute user_for_token(user_token)
+
+      conn =
+        build_conn()
+        |> Map.replace!(:secret_key_base, ThreatShieldWeb.Endpoint.config(:secret_key_base))
+        |> init_test_session(%{})
+        |> put_req_cookie(@remember_me_cookie, signed_token)
+        |> UserAuth.fetch_current_user([])
+
+      refute conn.assigns.current_user
+      refute get_session(conn, :user_token)
+    end
+
+    test "keeps the other sessions of the user", %{conn: conn, user: user} do
+      other_token = session_token(user)
+
+      conn
+      |> put_session(:user_token, session_token(user))
+      |> fetch_cookies()
+      |> UserAuth.log_out_user()
+
+      assert user_for_token(other_token).id == user.id
     end
 
     test "broadcasts to the given live_socket_id", %{conn: conn} do
@@ -85,9 +122,10 @@ defmodule ThreatShieldWeb.UserAuthTest do
 
   describe "fetch_current_user/2" do
     test "authenticates user from session", %{conn: conn, user: user} do
-      user_token = Accounts.generate_user_session_token(user)
+      user_token = session_token(user)
       conn = conn |> put_session(:user_token, user_token) |> UserAuth.fetch_current_user([])
       assert conn.assigns.current_user.id == user.id
+      assert conn.assigns.current_user.organisations == []
     end
 
     test "authenticates user from cookies", %{conn: conn, user: user} do
@@ -110,7 +148,7 @@ defmodule ThreatShieldWeb.UserAuthTest do
     end
 
     test "does not authenticate if data is missing", %{conn: conn, user: user} do
-      _ = Accounts.generate_user_session_token(user)
+      _ = session_token(user)
       conn = UserAuth.fetch_current_user(conn, [])
       refute get_session(conn, :user_token)
       refute conn.assigns.current_user
@@ -119,7 +157,7 @@ defmodule ThreatShieldWeb.UserAuthTest do
 
   describe "on_mount: mount_current_user" do
     test "assigns current_user based on a valid user_token", %{conn: conn, user: user} do
-      user_token = Accounts.generate_user_session_token(user)
+      user_token = session_token(user)
       session = conn |> put_session(:user_token, user_token) |> get_session()
 
       {:cont, updated_socket} =
@@ -150,7 +188,7 @@ defmodule ThreatShieldWeb.UserAuthTest do
 
   describe "on_mount: ensure_authenticated" do
     test "authenticates current_user based on a valid user_token", %{conn: conn, user: user} do
-      user_token = Accounts.generate_user_session_token(user)
+      user_token = session_token(user)
       session = conn |> put_session(:user_token, user_token) |> get_session()
 
       {:cont, updated_socket} =
@@ -187,7 +225,7 @@ defmodule ThreatShieldWeb.UserAuthTest do
 
   describe "on_mount: :redirect_if_user_is_authenticated" do
     test "redirects if there is an authenticated  user ", %{conn: conn, user: user} do
-      user_token = Accounts.generate_user_session_token(user)
+      user_token = session_token(user)
       session = conn |> put_session(:user_token, user_token) |> get_session()
 
       assert {:halt, _updated_socket} =
@@ -263,5 +301,12 @@ defmodule ThreatShieldWeb.UserAuthTest do
       conn = conn |> assign(:current_user, user) |> UserAuth.require_authenticated_user([])
       refute conn.halted
     end
+  end
+
+  defp user_for_token(token) do
+    {:cont, socket} =
+      UserAuth.on_mount(:mount_current_user, %{}, %{"user_token" => token}, %LiveView.Socket{})
+
+    socket.assigns.current_user
   end
 end

@@ -58,7 +58,8 @@ defmodule ThreatShieldWeb.UserRegistrationLiveTest do
 
       conn = get(conn, "/organisations")
       response = html_response(conn, 200)
-      assert response =~ "Account settings" || response =~ "Log out" || response =~ email
+      assert response =~ "Account settings"
+      assert response =~ "Log out"
     end
 
     test "renders errors for duplicated email", %{conn: conn} do

@@ -4,8 +4,6 @@ defmodule ThreatShieldWeb.UserConfirmationInstructionsLiveTest do
   import Phoenix.LiveViewTest
   import ThreatShield.AccountsFixtures
 
-  alias ThreatShield.Accounts.Helpers, as: Accounts
-
   setup do
     %{user: user_fixture()}
   end
@@ -27,10 +25,13 @@ defmodule ThreatShieldWeb.UserConfirmationInstructionsLiveTest do
 
       assert Phoenix.Flash.get(conn.assigns.flash, :info) =~
                "If your email is in our system"
+
+      assert_received {:email, %{subject: "Confirmation instructions", text_body: body}}
+      assert body =~ ~p"/users/confirm/"
     end
 
-    test "does not send confirmation token if user is confirmed", %{conn: conn, user: user} do
-      Accounts.confirm_user(user)
+    test "does not send confirmation token if user is confirmed", %{conn: conn} do
+      user = confirmed_user_fixture()
 
       {:ok, lv, _html} = live(conn, ~p"/users/confirm")
 
@@ -42,6 +43,8 @@ defmodule ThreatShieldWeb.UserConfirmationInstructionsLiveTest do
 
       assert Phoenix.Flash.get(conn.assigns.flash, :info) =~
                "If your email is in our system"
+
+      refute_received {:email, _}
     end
 
     test "does not send confirmation token if email is invalid", %{conn: conn} do
@@ -55,6 +58,8 @@ defmodule ThreatShieldWeb.UserConfirmationInstructionsLiveTest do
 
       assert Phoenix.Flash.get(conn.assigns.flash, :info) =~
                "If your email is in our system"
+
+      refute_received {:email, _}
     end
   end
 end

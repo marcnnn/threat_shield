@@ -3,8 +3,8 @@ defmodule ThreatShieldWeb.UserRegistrationLive do
 
   alias ThreatShield.Members
   alias ThreatShield.Accounts.Invite
-  alias ThreatShield.Accounts.Helpers, as: Accounts
   alias ThreatShield.Accounts.User
+  alias ThreatShieldWeb.UserAuth
 
   @impl true
   def render(assigns) do
@@ -110,19 +110,17 @@ defmodule ThreatShieldWeb.UserRegistrationLive do
       trigger_submit: false,
       check_errors: false
     )
-    |> ok(temporary_assigns: [form: nil], layout: {ThreatShieldWeb.Layouts, :unauthenticated})
+    |> ok(layout: {ThreatShieldWeb.Layouts, :unauthenticated})
   end
 
   @impl true
   def handle_params(%{"token" => token}, _url, socket) when is_binary(token) do
     case Members.get_invite_by_token(token) do
       %Invite{} = invite ->
-        changeset = Accounts.change_user_registration(%User{email: invite.email})
-
         socket
         |> assign(:token, token)
         |> assign(:invite, invite)
-        |> assign_form(changeset)
+        |> assign(:form, registration_form(%{"email" => to_string(invite.email)}))
         |> noreply()
 
       nil ->
@@ -135,51 +133,51 @@ defmodule ThreatShieldWeb.UserRegistrationLive do
   end
 
   def handle_params(_params, _url, socket) do
-    changeset = Accounts.change_user_registration(%User{})
-
     socket
-    |> assign_form(changeset)
+    |> assign(:form, registration_form(%{}))
     |> noreply()
   end
 
   @impl true
   def handle_event("save", %{"user" => user_params}, socket) do
-    case Accounts.register_user(user_params) do
+    case AshPhoenix.Form.submit(socket.assigns.form, params: user_params) do
       {:ok, user} ->
         maybe_join_organisation(user, socket.assigns[:token])
 
-        {:ok, _} =
-          Accounts.deliver_user_confirmation_instructions(
-            user,
-            &url(~p"/users/confirm/#{&1}")
-          )
+        # The form now posts the address and the password to the session
+        # controller, which signs the user in.
+        form = AshPhoenix.Form.validate(socket.assigns.form, user_params, errors: false)
 
-        changeset = Accounts.change_user_registration(user)
-        {:noreply, socket |> assign(trigger_submit: true) |> assign_form(changeset)}
+        socket
+        |> assign(trigger_submit: true, check_errors: false, form: form)
+        |> noreply()
 
-      {:error, %Ecto.Changeset{} = changeset} ->
-        {:noreply, socket |> assign(check_errors: true) |> assign_form(changeset)}
+      {:error, form} ->
+        socket
+        |> assign(check_errors: true, form: form)
+        |> noreply()
     end
   end
 
   def handle_event("validate", %{"user" => user_params}, socket) do
-    changeset = Accounts.change_user_registration(%User{}, user_params)
+    form = AshPhoenix.Form.validate(socket.assigns.form, user_params)
 
     socket
-    |> assign_form(Map.put(changeset, :action, :validate))
+    |> assign(form: form)
+    |> assign(check_errors: socket.assigns.check_errors and not form.source.valid?)
     |> noreply()
   end
 
-  defp assign_form(socket, %Ecto.Changeset{} = changeset) do
-    form = to_form(changeset, as: "user")
-
-    if changeset.valid? do
-      socket
-      |> assign(form: form, check_errors: false)
-    else
-      socket
-      |> assign(form: form)
-    end
+  # The registration sends the confirmation instructions, with links built by the
+  # URL builders in the context.
+  defp registration_form(params) do
+    User
+    |> AshPhoenix.Form.for_create(:register_with_password,
+      as: "user",
+      params: params,
+      context: UserAuth.account_urls_context()
+    )
+    |> to_form()
   end
 
   defp maybe_join_organisation(%User{} = user, token) do

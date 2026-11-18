@@ -29,9 +29,10 @@ branches start no test run. Use `"**"` or remove the branch filter.
 
 ## Login with OpenID Connect (Microsoft 365 / Entra ID)
 
-Users log in with email and password only (`bcrypt_elixir`, `ThreatShieldWeb.UserAuth`).
-Add login through an OpenID Connect provider. The first provider to support is
-Microsoft Entra ID, so that users can log in with their Microsoft 365 account.
+Users log in with email and password only (AshAuthentication password strategy on
+`ThreatShield.Accounts.User`, sessions in `ThreatShieldWeb.UserAuth`). Add login through
+an OpenID Connect provider. The first provider to support is Microsoft Entra ID, so that
+users can log in with their Microsoft 365 account.
 
 Open points: how an external identity maps to an existing user and to an organisation
 membership, and whether an organisation can require this login for its members.
@@ -42,8 +43,11 @@ The app has no API. The router defines an `:api` pipeline, but no route uses it.
 REST API for the domain objects (organisations, systems, assets, threats, risks,
 mitigations).
 
-Open points: authentication for API clients (for example API tokens), and how the
-existing access control (`Scope`, `Members.Rights`) applies to API requests.
+Users can authenticate with a personal API key (`Accounts.create_api_key/2`,
+`Accounts.sign_in_with_api_key/1`), but no plug or route accepts one yet.
+
+Open points: how API clients send the key, and how the existing access control (`Scope`,
+`Members.Rights`) applies to API requests.
 
 ## Component hierarchy for systems
 

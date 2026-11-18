@@ -1,7 +1,8 @@
 defmodule ThreatShieldWeb.UserForgotPasswordLive do
   use ThreatShieldWeb, :live_view
 
-  alias ThreatShield.Accounts.Helpers, as: Accounts
+  alias ThreatShield.Accounts
+  alias ThreatShieldWeb.UserAuth
 
   def render(assigns) do
     ~H"""
@@ -36,12 +37,8 @@ defmodule ThreatShieldWeb.UserForgotPasswordLive do
   end
 
   def handle_event("send_email", %{"user" => %{"email" => email}}, socket) do
-    if user = Accounts.get_user_by_email(email) do
-      Accounts.deliver_user_reset_password_instructions(
-        user,
-        &url(~p"/users/reset_password/#{&1}")
-      )
-    end
+    # Does not tell whether the address is registered
+    _ = Accounts.request_password_reset(email, context: UserAuth.account_urls_context())
 
     info =
       "If your email is in our system, you will receive instructions to reset your password shortly."
