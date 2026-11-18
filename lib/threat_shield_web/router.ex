@@ -17,16 +17,38 @@ defmodule ThreatShieldWeb.Router do
     plug :accepts, ["json"]
   end
 
+  # Chat agents authenticate with a personal API key in the header
+  # "Authorization: Bearer <key>". The plug sets the user of the key as the actor
+  # and answers 401 without a valid key.
+  pipeline :mcp do
+    plug AshAuthentication.Strategy.ApiKey.Plug,
+      resource: ThreatShield.Accounts.User,
+      required?: true
+  end
+
   scope "/", ThreatShieldWeb do
     pipe_through :browser
 
     get "/", WelcomeController, :home
   end
 
-  # Other scopes may use custom stacks.
-  # scope "/api", ThreatShieldWeb do
-  #   pipe_through :api
-  # end
+  # The MCP server for chat agents (docs/specs/mcp.md). The tools are the `tools` of
+  # the domains of :threat_shield.
+  scope "/mcp" do
+    pipe_through :mcp
+
+    forward "/", AshAi.Mcp.Router,
+      otp_app: :threat_shield,
+      mcp_name: "ThreatShield",
+      instructions: """
+      ThreatShield holds the threat models of the organisations of the user: systems, \
+      assets, threats, risks and mitigations. Start with list_organisations. Before you \
+      suggest or create entities, read threat_model_context of the organisation (and \
+      of the system, asset, threat or risk in focus), so that new entities fit the \
+      model and do not repeat known ones. Ask the user before creating or changing \
+      entities.\
+      """
+  end
 
   # Enable LiveDashboard and Swoosh mailbox preview in development
   if Application.compile_env(:threat_shield, :dev_routes) do

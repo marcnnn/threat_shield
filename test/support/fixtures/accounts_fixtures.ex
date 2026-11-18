@@ -83,4 +83,14 @@ defmodule ThreatShield.AccountsFixtures do
     {:ok, token, _claims} = AshAuthentication.Jwt.token_for_user(user)
     token
   end
+
+  @doc """
+  Creates an API key of the user and returns the key itself. It expires after
+  `valid_for` seconds (negative for a key that has expired already).
+  """
+  def api_key_fixture(user, valid_for \\ 3600) do
+    expires_at = DateTime.add(DateTime.utc_now(), valid_for, :second)
+    {:ok, api_key} = ThreatShield.Accounts.create_api_key(expires_at, actor: user)
+    api_key.__metadata__.plaintext_api_key
+  end
 end

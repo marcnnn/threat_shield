@@ -6,7 +6,60 @@ defmodule ThreatShield.ThreatManagement do
   do (see `ThreatShield.Accounts.Rights`).
   """
   use Ash.Domain,
-    otp_app: :threat_shield
+    otp_app: :threat_shield,
+    extensions: [AshAi]
+
+  alias ThreatShield.ThreatManagement.{Asset, Mitigation, Risk, System, Threat, ThreatModel}
+
+  # The tools of chat agents over MCP (see docs/specs/mcp.md). They run with the
+  # user of the API key as the actor, so the policies apply. Deleting is left to the
+  # web application.
+  tools do
+    tool(:threat_model_context, ThreatModel, :context)
+    tool(:risk_summary, ThreatModel, :risk_summary)
+
+    tool(:list_systems, System, :for_organisation)
+    tool(:create_system, System, :create)
+    tool(:update_system, System, :update)
+
+    tool :list_assets, Asset, :for_organisation do
+      description "Lists the assets of an organisation. Filter by system_id for the " <>
+                    "assets of one system."
+    end
+
+    tool(:create_asset, Asset, :create)
+    tool(:update_asset, Asset, :update)
+
+    tool :list_threats, Threat, :for_organisation do
+      description "Lists the threats of an organisation with the names of their system " <>
+                    "and asset. Filter by system_id or asset_id for the threats of one " <>
+                    "system or asset."
+
+      load [:system_name, :asset_name]
+    end
+
+    tool(:create_threat, Threat, :create)
+    tool(:update_threat, Threat, :update)
+
+    tool :list_risks, Risk, :for_organisation do
+      description "Lists the risks of an organisation with the name of their threat and " <>
+                    "the estimated risk cost per year. Filter by threat_id for the risks " <>
+                    "of one threat."
+
+      load [:threat_name, :estimated_risk_cost]
+    end
+
+    tool(:create_risk, Risk, :create)
+    tool(:update_risk, Risk, :update)
+
+    tool :list_mitigations, Mitigation, :for_organisation do
+      description "Lists the mitigations of an organisation. Filter by risk_id for the " <>
+                    "mitigations of one risk."
+    end
+
+    tool(:create_mitigation, Mitigation, :create)
+    tool(:update_mitigation, Mitigation, :update)
+  end
 
   resources do
     resource ThreatShield.ThreatManagement.System do

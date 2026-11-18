@@ -27,7 +27,7 @@ defmodule ThreatShield.Checks.OrganisationRoleForCreate do
 
     case organisation_id(changeset, opts[:parent]) do
       nil ->
-        false
+        tool_listing?(changeset)
 
       org_id ->
         # This check is the authorization, so it reads without it.
@@ -40,6 +40,13 @@ defmodule ThreatShield.Checks.OrganisationRoleForCreate do
   end
 
   def match?(_actor, _context, _opts), do: false
+
+  # ash_ai lists an MCP tool only if the actor may call it, and asks with an empty
+  # input and this private context, which a client cannot set. The organisation of
+  # the new record is unknown then; the call of the tool is authorized with its
+  # input like any other create.
+  defp tool_listing?(changeset),
+    do: changeset.context[:private][:ash_ai_pre_check?] == true
 
   defp organisation_id(changeset, nil),
     do: Ash.Changeset.get_attribute(changeset, :organisation_id)

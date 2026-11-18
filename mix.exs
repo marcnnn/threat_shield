@@ -37,6 +37,8 @@ defmodule ThreatShield.MixProject do
       {:ash_authentication, "~> 4.0"},
       {:ash_authentication_phoenix, "~> 2.0"},
       {:ash_phoenix, "~> 2.0"},
+      # 1.0.3 and later need ash 3.33, which needs ecto 3.14
+      {:ash_ai, "~> 1.0.2"},
       {:picosat_elixir, "~> 0.2"},
       {:bcrypt_elixir, "~> 3.1"},
       {:phoenix, "~> 1.7.11"},

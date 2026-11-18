@@ -5,7 +5,20 @@ defmodule ThreatShield.Accounts do
   resources decide what the actor may do.
   """
   use Ash.Domain,
-    otp_app: :threat_shield
+    otp_app: :threat_shield,
+    extensions: [AshAi]
+
+  # The tools of chat agents over MCP (see docs/specs/mcp.md). Members, invites and
+  # API keys are managed only in the web application.
+  tools do
+    tool :list_organisations, ThreatShield.Accounts.Organisation, :read do
+      description "Lists the organisations of which the user is a member, with the " <>
+                    "numbers of their threats, risks and mitigations. The ids are the " <>
+                    "organisation_id of the other tools."
+
+      load [:threat_count, :risk_count, :mitigation_count]
+    end
+  end
 
   resources do
     resource ThreatShield.Accounts.User do
@@ -62,7 +75,9 @@ defmodule ThreatShield.Accounts do
     end
 
     resource ThreatShield.Accounts.ApiKey do
+      define :list_api_keys, action: :read
       define :create_api_key, action: :create, args: [:expires_at]
+      define :revoke_api_key, action: :destroy
     end
   end
 
