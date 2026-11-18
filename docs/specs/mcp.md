@@ -38,6 +38,8 @@ On **Account Settings** (`/users/settings`), section **API keys**:
   shown once; copy it then.
 - the table lists the keys of the user with creation and expiry dates; **Revoke**
   deletes a key, and requests with it get `401` from then on.
+- changing or resetting the password deletes all keys of the user.
+- expired keys are deleted by `ThreatShield.Periodically`.
 
 Domain functions: `Accounts.create_api_key/2`, `Accounts.list_api_keys/1`,
 `Accounts.revoke_api_key/2` (by id), each with `actor:`.

@@ -217,6 +217,21 @@ defmodule ThreatShield.AccountsTest do
       assert {:ok, nil} = Accounts.get_user_by_reset_token(token)
     end
 
+    test "revokes the API keys of the user", %{user: user, token: token} do
+      api_key = api_key_fixture(user)
+      other_key = api_key_fixture(user_fixture())
+
+      {:ok, _} =
+        Accounts.reset_user_password(user, %{
+          reset_token: token,
+          password: "new valid password",
+          password_confirmation: "new valid password"
+        })
+
+      assert {:error, _} = Accounts.sign_in_with_api_key(api_key)
+      assert {:ok, _} = Accounts.sign_in_with_api_key(other_key)
+    end
+
     test "validates the token and the password", %{user: user, token: token} do
       {:error, error} =
         Accounts.reset_user_password(user, %{
@@ -290,6 +305,25 @@ defmodule ThreatShield.AccountsTest do
       assert {:ok, _} = Accounts.sign_in_user(user.email, "new valid password")
       assert {:error, _} = Accounts.sign_in_user(user.email, valid_user_password())
       refute token_valid?(session)
+    end
+
+    test "revokes the API keys of the user", %{user: user} do
+      api_key = api_key_fixture(user)
+      other_key = api_key_fixture(user_fixture())
+
+      {:ok, _user} =
+        Accounts.change_user_password(
+          user,
+          %{
+            current_password: valid_user_password(),
+            password: "new valid password",
+            password_confirmation: "new valid password"
+          },
+          actor: user
+        )
+
+      assert {:error, _} = Accounts.sign_in_with_api_key(api_key)
+      assert {:ok, _} = Accounts.sign_in_with_api_key(other_key)
     end
   end
 

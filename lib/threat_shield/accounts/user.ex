@@ -249,7 +249,8 @@ defmodule ThreatShield.Accounts.User do
     end
 
     update :password_reset_with_password do
-      description "Set a new password with a password reset token."
+      description "Set a new password with a password reset token. Signs the user out " <>
+                    "everywhere and revokes the API keys of the user."
       accept []
       require_atomic? false
 
@@ -267,8 +268,10 @@ defmodule ThreatShield.Accounts.User do
       validate User.Validations.ResetTokenSubject
       validate User.Validations.PasswordConfirmation
 
-      # The password change revokes all tokens of the user, the reset token too
+      # The password change revokes all tokens of the user, the reset token too,
+      # and all API keys
       change Password.HashPasswordChange
+      change User.Changes.RevokeApiKeys
       change AshAuthentication.GenerateTokenChange
 
       metadata :token, :string, allow_nil?: false
@@ -288,7 +291,8 @@ defmodule ThreatShield.Accounts.User do
     end
 
     update :change_password do
-      description "Change the password of the user. Signs the user out everywhere."
+      description "Change the password of the user. Signs the user out everywhere and revokes " <>
+                    "the API keys of the user."
       accept []
       require_atomic? false
 
@@ -306,6 +310,7 @@ defmodule ThreatShield.Accounts.User do
       validate {User.Validations.CurrentPassword, argument: :current_password}
 
       change {Password.HashPasswordChange, strategy_name: :password}
+      change User.Changes.RevokeApiKeys
     end
 
     update :change_email do
