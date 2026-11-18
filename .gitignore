@@ -54,3 +54,6 @@ tmp/
 
 # Local audit reports (see docs/README.md)
 /docs/audit/
+
+# Local Claude Code settings and worktrees
+.claude/
