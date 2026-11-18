@@ -89,10 +89,10 @@ Organisation ──< System ──< Asset
 - **Enums** are `Ash.Type.Enum` modules stored as strings: `Accounts.Role`,
   `ThreatManagement.RiskStatus`, `ThreatManagement.MitigationStatus`. Derive lists of
   states from `values/0`.
-- Expression calculations (`expr(user.email)`, `expr(organisation.name)`) do not apply
-  the read policies of the related resource. They are used where a member may see a
-  field of a record they may not read (the email of a co-member, the organisation
-  name of an invite).
+- Expression calculations (`expr(organisation.name)`) do not apply the read policies of
+  the related resource. They are used where a user may see a field of a record they may
+  not read (the organisation name of an invite). Users read themselves and the members
+  of their organisations, so memberships load `:user`.
 
 ### Scope
 

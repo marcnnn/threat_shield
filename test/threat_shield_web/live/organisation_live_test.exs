@@ -73,4 +73,20 @@ defmodule ThreatShieldWeb.OrganisationLiveTest do
       assert Repo.get(Invite, invite.id)
     end
   end
+
+  describe "members page" do
+    setup [:create_organisation]
+
+    test "a viewer sees the email addresses of the other members",
+         %{conn: conn, user: owner, organisation: organisation} do
+      viewer = AccountsFixtures.user_fixture()
+      MembersFixtures.membership_fixture(organisation, viewer, :viewer)
+
+      {:ok, _view, html} =
+        conn |> log_in_user(viewer) |> live(~p"/organisations/#{organisation.id}/members")
+
+      assert html =~ to_string(owner.email)
+      assert html =~ to_string(viewer.email)
+    end
+  end
 end

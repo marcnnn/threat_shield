@@ -10,7 +10,7 @@ defmodule ThreatShieldWeb.MembersLive.RoleForm do
     ~H"""
     <div class="md:w-[800px]">
       <.header>
-        <%= dgettext("organisation", "Edit role for") %> <%= @membership.email %>
+        <%= dgettext("organisation", "Edit role for") %> <%= @membership.user.email %>
       </.header>
 
       <.simple_form

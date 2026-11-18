@@ -137,7 +137,7 @@ defmodule ThreatShieldWeb.MembersLive.Index do
   end
 
   defp get_organisation!(user, id) do
-    Accounts.get_organisation!(id, actor: user, load: [:invites, memberships: [:email]])
+    Accounts.get_organisation!(id, actor: user, load: [:invites, memberships: [:user]])
   end
 
   defp owner_count(%Organisation{memberships: memberships}) do

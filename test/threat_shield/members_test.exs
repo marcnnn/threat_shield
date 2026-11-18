@@ -224,6 +224,23 @@ defmodule ThreatShield.MembersTest do
       assert %Membership{role: :viewer} = Repo.get(Membership, membership.id)
     end
 
+    test "members read the users of their organisation, others do not",
+         %{owner: owner, organisation: organisation, member: member} do
+      organisation =
+        Accounts.get_organisation!(organisation.id, actor: member, load: [memberships: :user])
+
+      assert organisation.memberships |> Enum.map(& &1.user.id) |> Enum.sort() ==
+               Enum.sort([owner.id, member.id])
+
+      assert Accounts.get_user!(owner.id, actor: member).id == owner.id
+
+      stranger = AccountsFixtures.user_fixture()
+      OrganisationsFixtures.organisation_fixture(stranger)
+
+      assert {:error, %Ash.Error.Invalid{}} = Accounts.get_user(owner.id, actor: stranger)
+      assert {:error, %Ash.Error.Invalid{}} = Accounts.get_user(stranger.id, actor: member)
+    end
+
     test "an owner of another organisation cannot see, remove or change a member",
          %{membership: membership} do
       other_owner = AccountsFixtures.user_fixture()

@@ -54,15 +54,6 @@ defmodule ThreatShield.Accounts.Membership do
     end
   end
 
-  calculations do
-    # The members of an organisation see each other's addresses. An expression does
-    # not need the read policy of the user.
-    calculate :email, :ci_string, expr(user.email) do
-      public? true
-      description "The email address of the member."
-    end
-  end
-
   identities do
     identity :unique_membership, [:user_id, :organisation_id],
       message: "is already a member of this organisation"
