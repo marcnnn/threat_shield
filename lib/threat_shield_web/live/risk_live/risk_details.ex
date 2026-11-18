@@ -2,7 +2,7 @@ defmodule ThreatShieldWeb.RiskLive.RiskDetails do
   use ThreatShieldWeb, :live_view
 
   alias ThreatShield.ThreatManagement.Threat
-  alias ThreatShield.Risks
+  alias ThreatShield.ThreatManagement
   alias ThreatShield.ThreatManagement.Risk
   alias ThreatShield.ThreatManagement.Mitigation
   import ThreatShieldWeb.ScopeUrlBinding
@@ -24,7 +24,7 @@ defmodule ThreatShieldWeb.RiskLive.RiskDetails do
   @impl true
   def handle_params(%{"risk_id" => risk_id} = params, url, socket) do
     user = socket.assigns.current_user
-    risk = %Risk{} = Risks.get_risk!(user, risk_id)
+    risk = %Risk{} = get_risk!(user, risk_id)
     threat = %Threat{} = risk.threat
     organisation = threat.organisation
 
@@ -62,20 +62,25 @@ defmodule ThreatShieldWeb.RiskLive.RiskDetails do
 
   @impl true
   def handle_event("delete", %{"risk_id" => id}, socket) do
-    current_user = socket.assigns.current_user
     threat = socket.assigns.threat
 
-    {1, [_risk | _]} = Risks.delete_risk_by_id!(current_user, id)
+    case ThreatManagement.destroy_risk(id, actor: socket.assigns.current_user) do
+      :ok ->
+        socket
+        |> push_navigate(to: get_path_prefix(socket.assigns) <> "/threats/#{threat.id}")
+        |> noreply()
 
-    socket
-    |> push_navigate(to: get_path_prefix(socket.assigns) <> "/threats/#{threat.id}")
-    |> noreply()
+      {:error, _error} ->
+        socket
+        |> put_flash(:error, dgettext("risks", "The risk could not be deleted."))
+        |> noreply()
+    end
   end
 
   @impl true
   def handle_info({ThreatShieldWeb.RiskLive.RiskForm, {:saved, risk}}, socket) do
     user = socket.assigns.current_user
-    risk = Risks.get_risk!(user, risk.id)
+    risk = get_risk!(user, risk.id)
 
     socket
     |> assign(risk: risk)
@@ -89,6 +94,17 @@ defmodule ThreatShieldWeb.RiskLive.RiskDetails do
   def handle_info({ThreatShieldWeb.MitigationLive.MitigationForm, {:saved, _mitigation}}, socket) do
     socket
     |> noreply()
+  end
+
+  defp get_risk!(user, id) do
+    ThreatManagement.get_risk!(id,
+      actor: user,
+      load: [
+        :estimated_risk_cost,
+        :mitigations,
+        threat: [:system, :asset, organisation: [:systems, :memberships]]
+      ]
+    )
   end
 
   defp page_title(:show), do: "Show Risk"

@@ -68,7 +68,7 @@
     </.h1>
     <.table id="invites" rows={@open_invitations}>
       <:col :let={invite} label={dgettext("common", "Organisation")}>
-        <%= invite.organisation.name %>
+        <%= invite.organisation_name %>
       </:col>
       <:col :let={invite} label={dgettext("common", "Valid until")}>
         <%= format_datetime(ThreatShield.Accounts.Invite.expiration_point(invite)) %>

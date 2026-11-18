@@ -1,16 +1,15 @@
 defmodule ThreatShield.Analytics.RiskAnalytics do
-  alias ThreatShield.ThreatManagement.Risk
-
   @moduledoc """
-  This module provides analytics functions for risks.
+  Analytics functions for risks. The risks need the calculation
+  `:estimated_risk_cost` loaded.
   """
+
+  alias ThreatShield.ThreatManagement.Risk
 
   def sum_up_risk_costs(risks) do
     risks
-    |> Enum.filter(&(Risk.estimated_risk_cost(&1) != nil))
-    |> Enum.reduce(0, fn risk, acc ->
-      acc + Risk.estimated_risk_cost(risk)
-    end)
+    |> costs()
+    |> Enum.sum()
   end
 
   def sum_up_risk_costs(risks, status) when is_atom(status) do
@@ -27,34 +26,36 @@ defmodule ThreatShield.Analytics.RiskAnalytics do
 
   def top_10_severity(risks) do
     risks
-    |> Enum.sort_by(& &1.severity)
-    |> Enum.reverse()
+    |> Enum.sort_by(& &1.severity, :desc)
     |> Enum.take(10)
   end
 
   def top_10_risk_costs(risks) do
     risks
-    |> Enum.filter(&(Risk.estimated_risk_cost(&1) != nil))
-    |> Enum.sort_by(fn risk -> Risk.estimated_risk_cost(risk) end)
-    |> Enum.reverse()
+    |> Enum.reject(&is_nil(&1.estimated_risk_cost))
+    |> Enum.sort_by(& &1.estimated_risk_cost, :desc)
     |> Enum.take(10)
   end
 
   def max_cost(risks) do
     risks
-    |> Enum.filter(&(Risk.estimated_risk_cost(&1) != nil))
-    |> Enum.map(&Risk.estimated_risk_cost/1)
+    |> costs()
     |> max_value()
   end
 
   def max_frequency(risks) do
     risks
-    |> Enum.filter(&(Risk.frequency_per_year(&1) != nil))
     |> Enum.map(&Risk.frequency_per_year/1)
     |> max_value()
   end
 
   # internal
+
+  defp costs(risks) do
+    risks
+    |> Enum.map(& &1.estimated_risk_cost)
+    |> Enum.reject(&is_nil/1)
+  end
 
   defp max_value(values) do
     Enum.max(values, &>=/2, fn -> 0 end)

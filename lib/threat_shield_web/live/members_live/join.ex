@@ -1,7 +1,8 @@
 defmodule ThreatShieldWeb.MembersLive.Join do
   use ThreatShieldWeb, :live_view
 
-  alias ThreatShield.Members
+  alias ThreatShield.Accounts
+  alias ThreatShield.Accounts.Errors.InviteError
   alias ThreatShield.Accounts.User
 
   @impl true
@@ -13,7 +14,7 @@ defmodule ThreatShieldWeb.MembersLive.Join do
     {:ok, _} = ExRated.check_rate(current_user.email <> "_join_org", 10_000, 10)
 
     socket
-    |> assign(invite: Members.get_invite_by_token(token))
+    |> assign(invite: Accounts.get_invite_by_token!(token, load: [:organisation_name]))
     |> ok()
   end
 
@@ -45,7 +46,7 @@ defmodule ThreatShieldWeb.MembersLive.Join do
 
     {:ok, _} = ExRated.check_rate(socket.assigns.current_user.email <> "_join_org", 10_000, 10)
 
-    case Members.join_with_token(user, token) do
+    case join_with_token(user, token) do
       {:ok, membership} ->
         push_navigate(socket,
           to: ~p"/organisations/" <> Integer.to_string(membership.organisation_id)
@@ -58,11 +59,18 @@ defmodule ThreatShieldWeb.MembersLive.Join do
         |> push_navigate(to: ~p"/organisations")
         |> noreply()
 
-      {:error, :invalid_token} ->
+      {:error, _reason} ->
         socket
         |> put_flash(:error, dgettext("accounts", "This token is not valid (anymore)."))
         |> push_navigate(to: "/", clear_flash: true)
         |> noreply()
+    end
+  end
+
+  defp join_with_token(user, token) do
+    case Accounts.join_with_token(token, actor: user) do
+      {:ok, membership} -> {:ok, membership}
+      {:error, error} -> {:error, InviteError.reason(error)}
     end
   end
 end

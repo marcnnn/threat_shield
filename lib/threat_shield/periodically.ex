@@ -1,8 +1,6 @@
 defmodule ThreatShield.Periodically do
   use GenServer
 
-  alias ThreatShield.Members
-
   def start_link(_opts) do
     GenServer.start_link(__MODULE__, %{})
   end
@@ -14,7 +12,7 @@ defmodule ThreatShield.Periodically do
   end
 
   def handle_info(:work, state) do
-    Members.delete_expired_invites()
+    ThreatShield.Accounts.delete_expired_invites()
     # Reschedule once more
     schedule_work()
     {:noreply, state}

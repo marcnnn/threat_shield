@@ -5,6 +5,7 @@ defmodule ThreatShield.Accounts.Organisation do
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer]
 
+  alias ThreatShield.Checks.OrganisationRole
   alias ThreatShield.DynamicAttribute
 
   @attributes [
@@ -39,22 +40,29 @@ defmodule ThreatShield.Accounts.Organisation do
       allow_nil? false
       public? true
       constraints max_length: 255
+      description "The name of the organisation."
     end
 
     attribute :location, :string do
       allow_nil? true
       public? true
       constraints max_length: 255
+      description "The country where the organisation is located."
     end
 
     attribute :attributes, :map do
-      allow_nil? true
+      allow_nil? false
+      default %{}
       public? true
+
+      description "Properties of the organisation such as industry, legal form, size and " <>
+                    "work from home regime, as a map of names to texts."
     end
 
     attribute :quotas, :map do
       default %{ai_requests_per_month: 100}
       public? true
+      description "The quotas of the organisation, e.g. the AI requests per month."
     end
 
     create_timestamp :inserted_at
@@ -68,11 +76,28 @@ defmodule ThreatShield.Accounts.Organisation do
       destination_attribute_on_join_resource :user_id
     end
 
-    has_many :memberships, ThreatShield.Accounts.Membership
-    has_many :systems, ThreatShield.ThreatManagement.System
-    has_many :threats, ThreatShield.ThreatManagement.Threat
-    has_many :assets, ThreatShield.ThreatManagement.Asset
-    has_many :invites, ThreatShield.Accounts.Invite
+    has_many :memberships, ThreatShield.Accounts.Membership, public?: true
+    has_many :systems, ThreatShield.ThreatManagement.System, public?: true
+    has_many :threats, ThreatShield.ThreatManagement.Threat, public?: true
+    has_many :assets, ThreatShield.ThreatManagement.Asset, public?: true
+    has_many :invites, ThreatShield.Accounts.Invite, public?: true
+  end
+
+  aggregates do
+    count :threat_count, :threats do
+      public? true
+      description "The number of threats of the organisation."
+    end
+
+    count :risk_count, [:threats, :risks] do
+      public? true
+      description "The number of risks of the organisation."
+    end
+
+    count :mitigation_count, [:threats, :risks, :mitigations] do
+      public? true
+      description "The number of mitigations of the organisation."
+    end
   end
 
   validations do
@@ -80,36 +105,40 @@ defmodule ThreatShield.Accounts.Organisation do
   end
 
   actions do
-    defaults [:read, :destroy]
+    defaults [:destroy]
+
+    read :read do
+      primary? true
+      description "Lists the organisations of which the actor is a member."
+    end
 
     create :create do
+      description "Creates an organisation. The actor becomes its first owner."
       accept [:name, :location, :attributes]
+      change ThreatShield.Accounts.Changes.AddOwnerMembership
     end
 
     update :update do
+      description "Changes the name, the location or the properties of an organisation."
       accept [:name, :location, :attributes]
-      require_atomic? false
-    end
-
-    read :for_user do
-      argument :user_id, :integer, allow_nil?: false
-      argument :roles, {:array, :atom}, allow_nil?: false
-
-      filter expr(exists(memberships, user_id == ^arg(:user_id) and role in ^arg(:roles)))
     end
   end
 
   policies do
     policy action_type(:read) do
-      authorize_if relates_to_actor_via([:memberships, :user])
+      authorize_if {OrganisationRole, right: :view_organisation, path: []}
     end
 
     policy action_type(:create) do
-      authorize_if always()
+      authorize_if actor_present()
     end
 
-    policy action_type([:update, :destroy]) do
-      authorize_if actor_attribute_equals(:__struct__, ThreatShield.Accounts.User)
+    policy action_type(:update) do
+      authorize_if {OrganisationRole, right: :edit_organisation, path: []}
+    end
+
+    policy action_type(:destroy) do
+      authorize_if {OrganisationRole, right: :delete_organisation, path: []}
     end
   end
 

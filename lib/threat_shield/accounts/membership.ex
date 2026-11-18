@@ -1,13 +1,24 @@
 defmodule ThreatShield.Accounts.Membership do
+  @moduledoc """
+  The membership of a user in an organisation, with a role. Users join an
+  organisation by accepting an invite; the creator of an organisation becomes its
+  first owner.
+  """
   use Ash.Resource,
     otp_app: :threat_shield,
     domain: ThreatShield.Accounts,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer]
 
+  alias ThreatShield.Accounts.Changes.AcceptInvite
+  alias ThreatShield.Accounts.Validations.KeepsOwner
+  alias ThreatShield.Checks.OrganisationRole
+
   postgres do
     table "memberships"
     repo ThreatShield.Repo
+
+    identity_index_names unique_membership: "memberships_user_id_organisation_id_index"
 
     references do
       reference :user, on_delete: :delete
@@ -18,10 +29,11 @@ defmodule ThreatShield.Accounts.Membership do
   attributes do
     integer_primary_key :id
 
-    attribute :role, :atom do
-      constraints one_of: [:owner, :editor, :viewer]
+    attribute :role, ThreatShield.Accounts.Role do
       allow_nil? false
+      default :viewer
       public? true
+      description "The role of the member in the organisation: owner, editor or viewer."
     end
   end
 
@@ -29,58 +41,97 @@ defmodule ThreatShield.Accounts.Membership do
     belongs_to :user, ThreatShield.Accounts.User do
       allow_nil? false
       attribute_type :integer
+      public? true
     end
 
     belongs_to :organisation, ThreatShield.Accounts.Organisation do
       allow_nil? false
       attribute_type :integer
+      public? true
     end
   end
 
+  calculations do
+    # The members of an organisation see each other's addresses. An expression does
+    # not need the read policy of the user.
+    calculate :email, :ci_string, expr(user.email) do
+      public? true
+      description "The email address of the member."
+    end
+  end
+
+  identities do
+    identity :unique_membership, [:user_id, :organisation_id],
+      message: "is already a member of this organisation"
+  end
+
   actions do
-    defaults [:read, :destroy]
+    defaults [:read]
 
     create :create do
-      accept [:role]
+      description "Adds a user to an organisation. No actor is allowed to call it directly; " <>
+                    "users join through invites."
 
-      argument :user_id, :integer, allow_nil?: false
-      argument :organisation_id, :integer, allow_nil?: false
+      accept [:role, :user_id, :organisation_id]
+    end
 
-      change manage_relationship(:user_id, :user, type: :append_and_remove)
-      change manage_relationship(:organisation_id, :organisation, type: :append_and_remove)
+    create :accept_invite do
+      description "Accepts an invite that was sent to the confirmed email address of the " <>
+                    "actor. The actor becomes a viewer of the organisation."
+
+      argument :invite_id, :integer do
+        allow_nil? false
+        description "The id of the invite."
+      end
+
+      change {AcceptInvite, by: :id}
+    end
+
+    create :join_with_token do
+      description "Joins the organisation of an invite link. The actor becomes a viewer."
+
+      argument :token, :string do
+        allow_nil? false
+        sensitive? true
+        description "The token of the invite link."
+      end
+
+      change {AcceptInvite, by: :token}
     end
 
     update :update_role do
+      description "Changes the role of a member. The last owner stays an owner."
       accept [:role]
+      # the validation counts the owners of the organisation
+      require_atomic? false
+      validate KeepsOwner
     end
 
-    read :for_user do
-      argument :user_id, :integer, allow_nil?: false
-      argument :roles, {:array, :atom}, allow_nil?: false
-
-      filter expr(
-               exists(
-                 organisation.memberships,
-                 user_id == ^arg(:user_id) and role in ^arg(:roles)
-               )
-             )
+    destroy :destroy do
+      primary? true
+      description "Removes a member from an organisation. The last owner cannot be removed."
+      # the validation counts the members of the organisation
+      require_atomic? false
+      validate {KeepsOwner, members: true}
     end
   end
 
   policies do
     policy action_type(:read) do
-      authorize_if relates_to_actor_via(:user)
-      authorize_if expr(exists(organisation.memberships, user_id == ^actor(:id)))
+      authorize_if expr(user_id == ^actor(:id))
+      authorize_if {OrganisationRole, right: :view_organisation}
     end
 
-    policy action_type(:create) do
-      authorize_if always()
+    policy action([:accept_invite, :join_with_token]) do
+      authorize_if actor_present()
     end
 
-    policy action_type([:update, :destroy]) do
-      authorize_if expr(
-                     exists(organisation.memberships, user_id == ^actor(:id) and role == :owner)
-                   )
+    policy action(:update_role) do
+      authorize_if {OrganisationRole, right: :edit_membership}
+    end
+
+    policy action_type(:destroy) do
+      authorize_if {OrganisationRole, right: :delete_member}
     end
   end
 end

@@ -10,7 +10,7 @@ defmodule ThreatShield.AITest do
 
   alias ThreatShield.AI
   alias ThreatShield.Scope
-  alias ThreatShield.{Assets, Organisations, Risks, Systems, Threats}
+  alias ThreatShield.{Accounts, ThreatManagement}
   alias ThreatShield.ThreatManagement.Asset
   alias ThreatShield.ThreatManagement.Mitigation
   alias ThreatShield.ThreatManagement.Risk
@@ -23,8 +23,8 @@ defmodule ThreatShield.AITest do
     user = AccountsFixtures.user_fixture()
     organisation = OrganisationsFixtures.organisation_fixture(user, %{name: "ACME"})
 
-    {:ok, system} =
-      Systems.create_system(user, organisation, %{
+    system =
+      ThreatShield.SystemsFixtures.system_fixture(user, organisation, %{
         name: "Web shop",
         description: "Sells products",
         attributes: %{"Database" => "Postgres"}
@@ -56,6 +56,13 @@ defmodule ThreatShield.AITest do
     }
   end
 
+  defp get_organisation!(user, id) do
+    Accounts.get_organisation!(id,
+      actor: user,
+      load: [:memberships, :systems, threats: [:system, :asset], assets: [:system]]
+    )
+  end
+
   defp prompts() do
     assert_received {:open_ai_request,
                      [
@@ -68,7 +75,7 @@ defmodule ThreatShield.AITest do
 
   test "run_task/2 records the usage and refuses a request above the quota",
        %{user: user, organisation: organisation} do
-    organisation = Organisations.get_organisation!(user, organisation.id)
+    organisation = get_organisation!(user, organisation.id)
     scope = Scope.for(user, organisation)
 
     assert {:ok, :done} = AI.run_task(scope, fn -> :done end)
@@ -80,12 +87,12 @@ defmodule ThreatShield.AITest do
       set: [quotas: %{"ai_requests_per_month" => 1}]
     )
 
-    organisation = Organisations.get_organisation!(user, organisation.id)
+    organisation = get_organisation!(user, organisation.id)
     assert {:error, :quota_exceeded} = AI.run_task(Scope.for(user, organisation), fn -> :done end)
   end
 
   test "suggest_assets/1 for an organisation", %{user: user, organisation: organisation} do
-    organisation = Organisations.get_organisation!(user, organisation.id)
+    organisation = get_organisation!(user, organisation.id)
 
     assert [%Asset{name: "Suggestion 1", description: "Description 1"}, %Asset{}] =
              AI.suggest_assets(Scope.for(user, organisation))
@@ -102,8 +109,13 @@ defmodule ThreatShield.AITest do
   end
 
   test "suggest_assets/1 for a system", %{user: user, organisation: organisation, system: system} do
-    organisation = Organisations.get_organisation!(user, organisation.id)
-    system = Systems.get_system!(user, system.id)
+    organisation = get_organisation!(user, organisation.id)
+
+    system =
+      ThreatManagement.get_system!(system.id,
+        actor: user,
+        load: [:assets, :threats, organisation: [:systems]]
+      )
 
     assert [%Asset{}, %Asset{}] = AI.suggest_assets(Scope.for(user, organisation, system: system))
 
@@ -116,9 +128,19 @@ defmodule ThreatShield.AITest do
 
   test "suggest_threats/1 for an organisation, a system, and an asset",
        %{user: user, organisation: organisation, system: system, asset: asset} do
-    organisation = Organisations.get_organisation!(user, organisation.id)
-    system = Systems.get_system!(user, system.id)
-    asset = Assets.get_asset!(user, asset.id)
+    organisation = get_organisation!(user, organisation.id)
+
+    system =
+      ThreatManagement.get_system!(system.id,
+        actor: user,
+        load: [:assets, :threats, organisation: [:systems]]
+      )
+
+    asset =
+      ThreatManagement.get_asset!(asset.id,
+        actor: user,
+        load: [:system, :threats, organisation: [:systems]]
+      )
 
     assert [%Threat{name: "Suggestion 1"}, %Threat{}] =
              AI.suggest_threats(Scope.for(user, organisation))
@@ -148,8 +170,13 @@ defmodule ThreatShield.AITest do
   end
 
   test "suggest_risks_for_threat/2", %{user: user, organisation: organisation, threat: threat} do
-    organisation = Organisations.get_organisation!(user, organisation.id)
-    threat = Threats.get_threat!(user, threat.id)
+    organisation = get_organisation!(user, organisation.id)
+
+    threat =
+      ThreatManagement.get_threat!(threat.id,
+        actor: user,
+        load: [risks: :mitigations, organisation: [:systems]]
+      )
 
     assert [%Risk{name: "Suggestion 1"}, %Risk{}] =
              AI.suggest_risks_for_threat(Scope.for(user, organisation), threat)
@@ -163,8 +190,13 @@ defmodule ThreatShield.AITest do
   end
 
   test "suggest_mitigations_for_risk/2", %{user: user, organisation: organisation, risk: risk} do
-    organisation = Organisations.get_organisation!(user, organisation.id)
-    risk = Risks.get_risk!(user, risk.id)
+    organisation = get_organisation!(user, organisation.id)
+
+    risk =
+      ThreatManagement.get_risk!(risk.id,
+        actor: user,
+        load: [:mitigations, threat: [:system, organisation: [:systems]]]
+      )
 
     assert [%Mitigation{name: "Suggestion 1"}, %Mitigation{}] =
              AI.suggest_mitigations_for_risk(Scope.for(user, organisation), risk)

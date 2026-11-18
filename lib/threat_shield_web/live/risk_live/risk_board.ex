@@ -2,14 +2,15 @@ defmodule ThreatShieldWeb.RiskLive.RiskBoard do
   use ThreatShieldWeb, :live_view
 
   alias ThreatShield.Accounts.Organisation
-  alias ThreatShield.{Risks, Threats, Mitigations, Members}
-  alias ThreatShield.ThreatManagement.Risk
+  alias ThreatShield.{Accounts, ThreatManagement}
+  alias ThreatShield.ThreatManagement.{MitigationStatus, Risk, RiskStatus}
 
   import ThreatShield.Analytics.RiskAnalytics
   import ThreatShieldWeb.Helpers
   import ThreatShieldWeb.Gettext
   import ThreatShieldWeb.Icons
   import ThreatShieldWeb.InfoVis
+  import ThreatShieldWeb.Labels, only: [risk_status_label: 1, mitigation_status_label: 1]
 
   @moduledoc """
   See an overview of all risks in the organisation.
@@ -119,10 +120,20 @@ defmodule ThreatShieldWeb.RiskLive.RiskBoard do
   @impl true
   def mount(%{"org_id" => org_id}, _session, socket) do
     user = socket.assigns.current_user
-    organisation = Members.get_organisation!(user, org_id)
 
-    risks = Risks.get_all_risks(user, organisation.id)
-    mitigations = Mitigations.get_all_mitigations(user, organisation.id)
+    organisation =
+      Accounts.get_organisation!(org_id,
+        actor: user,
+        load: [:memberships, :threat_count, :mitigation_count]
+      )
+
+    risks =
+      ThreatManagement.list_risks!(organisation.id,
+        actor: user,
+        load: [:estimated_risk_cost, threat: :system]
+      )
+
+    mitigations = ThreatManagement.list_mitigations!(organisation.id, actor: user)
 
     socket
     |> assign(:organisation, organisation)
@@ -153,80 +164,54 @@ defmodule ThreatShieldWeb.RiskLive.RiskBoard do
   # internal
 
   defp risks_by_status(risks) do
-    groups = %{identified: 0, assessed: 0, mitigated: 0, accepted: 0}
-
-    groups =
-      risks
-      |> Enum.reduce(groups, fn risk, acc ->
-        Map.update(acc, risk.status, 1, &(&1 + 1))
-      end)
+    states = RiskStatus.values()
+    counts = Enum.frequencies_by(risks, & &1.status)
 
     %{
-      labels: [
-        dgettext("risks", "State:identified"),
-        dgettext("risks", "State:assessed"),
-        dgettext("risks", "State:mitigated"),
-        dgettext("risks", "State:accepted")
-      ],
-      data: [groups[:identified], groups[:assessed], groups[:mitigated], groups[:accepted]],
-      colors: ["#E23D47", "#E89E2E", "#59CE56", "#3664B7"]
+      labels: Enum.map(states, &risk_status_label/1),
+      data: Enum.map(states, &Map.get(counts, &1, 0)),
+      colors: Enum.map(states, &risk_status_color/1)
     }
   end
+
+  defp risk_status_color(:identified), do: "#E23D47"
+  defp risk_status_color(:assessed), do: "#E89E2E"
+  defp risk_status_color(:mitigated), do: "#59CE56"
+  defp risk_status_color(:accepted), do: "#3664B7"
 
   defp mitigations_by_status(mitigations) do
-    groups = %{
-      open: 0,
-      in_progress: 0,
-      implemented: 0,
-      verified: 0,
-      failed: 0,
-      deferred: 0,
-      obsolete: 0
-    }
-
-    groups =
-      mitigations
-      |> Enum.reduce(groups, fn m, acc ->
-        Map.update(acc, m.status, 1, &(&1 + 1))
-      end)
+    states = MitigationStatus.values()
+    counts = Enum.frequencies_by(mitigations, & &1.status)
 
     %{
-      labels: [
-        dgettext("mitigations", "State:open"),
-        dgettext("mitigations", "State:in_progress"),
-        dgettext("mitigations", "State:implemented"),
-        dgettext("mitigations", "State:verified"),
-        dgettext("mitigations", "State:failed"),
-        dgettext("mitigations", "State:deferred"),
-        dgettext("mitigations", "State:obsolete")
-      ],
-      data: [
-        groups[:open],
-        groups[:in_progress],
-        groups[:implemented],
-        groups[:verified],
-        groups[:failed],
-        groups[:deferred],
-        groups[:obsolete]
-      ],
-      colors: ["#E89E2E", "#CCCC10", "#59CE56", "#47A545", "#B53139", "#6997EA", "#6997EA"]
+      labels: Enum.map(states, &mitigation_status_label/1),
+      data: Enum.map(states, &Map.get(counts, &1, 0)),
+      colors: Enum.map(states, &mitigation_status_color/1)
     }
   end
+
+  defp mitigation_status_color(:open), do: "#E89E2E"
+  defp mitigation_status_color(:in_progress), do: "#CCCC10"
+  defp mitigation_status_color(:implemented), do: "#59CE56"
+  defp mitigation_status_color(:verified), do: "#47A545"
+  defp mitigation_status_color(:failed), do: "#B53139"
+  defp mitigation_status_color(:deferred), do: "#6997EA"
+  defp mitigation_status_color(:obsolete), do: "#6997EA"
 
   defp summary(organisation, risks) do
     total_cost = sum_up_risk_costs(risks)
     mitigated_cost = sum_up_risk_costs(risks, :mitigated)
-    unmitigated_cost = sum_up_risk_costs(risks, [:identified, :assessed, :accepted])
+    unmitigated_cost = sum_up_risk_costs(risks, RiskStatus.unmitigated())
 
     [
       %{
         label: dgettext("common", "Number of threats"),
-        value: Threats.count_all_threats(organisation)
+        value: organisation.threat_count
       },
       %{label: dgettext("common", "Number of risks"), value: Enum.count(risks)},
       %{
         label: dgettext("common", "Number of mitigations"),
-        value: Mitigations.count_all_mitigations(organisation)
+        value: organisation.mitigation_count
       },
       %{
         label: dgettext("common", "Total risk costs"),
@@ -268,10 +253,10 @@ defmodule ThreatShieldWeb.RiskLive.RiskBoard do
     end)
   end
 
-  defp risk_cost(%Risk{} = risk), do: Risk.estimated_risk_cost(risk)
+  defp risk_cost(%Risk{} = risk), do: risk.estimated_risk_cost
 
   defp normalized_risk_cost(%Risk{} = risk, max_cost) do
-    case Risk.estimated_risk_cost(risk) do
+    case risk.estimated_risk_cost do
       nil -> 0.05
       cost -> 0.1 + cost / max_cost
     end

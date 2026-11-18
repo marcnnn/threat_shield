@@ -34,4 +34,8 @@ defmodule ThreatShield.Validations.AttributeValues do
         end
     end
   end
+
+  # The value comes from the input, so it can be checked before the atomic update.
+  @impl true
+  def atomic(changeset, opts, context), do: validate(changeset, opts, context)
 end

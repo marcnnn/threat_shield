@@ -3,6 +3,9 @@ defmodule ThreatShield.Quotas.QuotaManager do
   Responsible for managing quotas for organisations and users.
   """
 
+  # Quota bookkeeping is a system operation: it counts and records the usage of an
+  # organisation for any member, so it runs without authorization.
+
   alias ThreatShield.Quotas.QuotaUsage
   alias ThreatShield.Accounts.Organisation
 

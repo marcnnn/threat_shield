@@ -1,6 +1,7 @@
 defmodule ThreatShieldWeb.FormHelpers do
   @moduledoc """
-  Shared functions for the form components.
+  Shared functions for the form components, which edit Ash resources with
+  `AshPhoenix.Form`.
 
   A form component gets the assign `:patch` from its parent: the path to return to
   after a successful save.
@@ -10,19 +11,34 @@ defmodule ThreatShieldWeb.FormHelpers do
   import Phoenix.LiveView, only: [put_flash: 3, push_patch: 2]
 
   @doc """
-  Assigns the changeset as `:form`.
+  Assigns the form as `:form`.
   """
-  def assign_form(socket, %Ecto.Changeset{} = changeset) do
-    assign(socket, :form, to_form(changeset))
+  def assign_form(socket, %AshPhoenix.Form{} = form), do: assign(socket, :form, to_form(form))
+  def assign_form(socket, %Phoenix.HTML.Form{} = form), do: assign(socket, :form, form)
+
+  @doc """
+  Validates the form in the assign `:form` with the parameters.
+  """
+  def validate_form(socket, params) do
+    assign_form(socket, AshPhoenix.Form.validate(socket.assigns.form, params))
   end
 
   @doc """
-  Handles the result of a create or update function of a context.
+  Submits the form in the assign `:form` with the parameters and handles the result
+  with `handle_save_result/4`. `action_opts` go to the action, e.g. `load:`. Returns
+  the socket and the result.
+  """
+  def submit_form(socket, params, form_module, message, action_opts \\ []) do
+    result = AshPhoenix.Form.submit(socket.assigns.form, params: params, action_opts: action_opts)
+    {handle_save_result(socket, result, form_module, message), result}
+  end
+
+  @doc """
+  Handles the result of a submitted form.
 
   On success, it sends `{form_module, {:saved, entity}}` to the parent LiveView,
-  shows the message, and returns to the path in the assign `:patch`. On a
-  validation error, it shows the changeset, or the errors of the Ash action, in the
-  form.
+  shows the message, and returns to the path in the assign `:patch`. On an error,
+  it shows the form with the errors.
   """
   def handle_save_result(socket, {:ok, entity}, form_module, message) do
     send(self(), {form_module, {:saved, entity}})
@@ -32,13 +48,7 @@ defmodule ThreatShieldWeb.FormHelpers do
     |> push_patch(to: socket.assigns.patch)
   end
 
-  def handle_save_result(socket, {:error, %Ecto.Changeset{} = changeset}, _form_module, _message) do
-    assign_form(socket, changeset)
-  end
-
-  # The contexts call Ash actions. Their errors are shown in the changeset of the form.
-  def handle_save_result(socket, {:error, %Ash.Error.Invalid{} = error}, _form_module, _message) do
-    changeset = ThreatShieldWeb.AshErrors.add_to_changeset(socket.assigns.form.source, error)
-    assign_form(socket, changeset)
+  def handle_save_result(socket, {:error, form}, _form_module, _message) do
+    assign_form(socket, form)
   end
 end

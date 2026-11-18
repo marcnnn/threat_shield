@@ -1,16 +1,27 @@
 defmodule ThreatShieldWeb.ExportController do
   use ThreatShieldWeb, :controller
 
-  alias ThreatShield.Organisations
+  alias ThreatShield.{Accounts, ThreatManagement}
   alias ThreatShield.Accounts.Organisation
   alias ThreatShield.Exporters.ExcelExporter
 
   def export_to_excel(conn, %{"org_id" => org_id} = _params) do
     user = conn.assigns.current_user
 
-    org = %Organisation{} = Organisations.get_organisation!(user, org_id)
-    risks = ThreatShield.Risks.get_all_risks(user, org_id)
-    mitigations = ThreatShield.Mitigations.get_all_mitigations(user, org_id)
+    org =
+      %Organisation{} =
+      Accounts.get_organisation!(org_id,
+        actor: user,
+        load: [:systems, threats: [:system_name, :asset_name], assets: [:system_name]]
+      )
+
+    risks =
+      ThreatManagement.list_risks!(org.id,
+        actor: user,
+        load: [:threat_name, :estimated_risk_cost]
+      )
+
+    mitigations = ThreatManagement.list_mitigations!(org.id, actor: user, load: [:risk_name])
 
     case ExcelExporter.export(org.systems, org.threats, org.assets, risks, mitigations) do
       {:ok, content} ->

@@ -1,19 +1,19 @@
 defmodule ThreatShieldWeb.SystemLive.SystemDetails do
+  alias ThreatShield.Accounts
   alias ThreatShield.Accounts.Organisation
-  alias ThreatShield.Organisations
   alias ThreatShield.Accounts.User
   use ThreatShieldWeb, :live_view
 
   alias ThreatShield.Scope
-  alias ThreatShield.Systems
+  alias ThreatShield.ThreatManagement
   alias ThreatShield.ThreatManagement.System
   import ThreatShieldWeb.Helpers, only: [add_breadcrumbs: 2, link_to: 1]
 
   @impl true
   def mount(%{"sys_id" => id}, _session, socket) do
     %User{} = user = socket.assigns.current_user
-    %System{} = system = Systems.get_system!(user, id)
-    %Organisation{} = organisation = Organisations.get_organisation!(user, system.organisation.id)
+    %System{} = system = get_system!(user, id)
+    %Organisation{} = organisation = get_organisation!(user, system.organisation_id)
 
     socket
     |> assign(:current_tab, :assets)
@@ -51,7 +51,7 @@ defmodule ThreatShieldWeb.SystemLive.SystemDetails do
         socket
       ) do
     user = socket.assigns.current_user
-    system = Systems.get_system!(user, system.id)
+    system = get_system!(user, system.id)
 
     {:noreply,
      socket
@@ -78,14 +78,17 @@ defmodule ThreatShieldWeb.SystemLive.SystemDetails do
 
   @impl true
   def handle_event("delete", %{"sys_id" => id}, socket) do
-    current_user = socket.assigns.current_user
+    case ThreatManagement.destroy_system(id, actor: socket.assigns.current_user) do
+      :ok ->
+        socket
+        |> push_navigate(to: ~p"/organisations/#{socket.assigns.organisation.id}")
+        |> noreply()
 
-    {1, [_sys | _]} = Systems.delete_sys_by_id!(current_user, id)
-
-    {:noreply,
-     push_navigate(socket,
-       to: "/organisations/#{socket.assigns.organisation.id}"
-     )}
+      {:error, _error} ->
+        socket
+        |> put_flash(:error, dgettext("systems", "The system could not be deleted."))
+        |> noreply()
+    end
   end
 
   @impl true
@@ -93,5 +96,19 @@ defmodule ThreatShieldWeb.SystemLive.SystemDetails do
     socket
     |> assign(current_tab: String.to_existing_atom(tab))
     |> noreply()
+  end
+
+  defp get_system!(user, id) do
+    ThreatManagement.get_system!(id,
+      actor: user,
+      load: [:assets, :threats, organisation: [:systems, :memberships]]
+    )
+  end
+
+  defp get_organisation!(user, id) do
+    Accounts.get_organisation!(id,
+      actor: user,
+      load: [:memberships, :systems, assets: [:system], threats: [:system, :asset]]
+    )
   end
 end

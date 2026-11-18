@@ -2,12 +2,9 @@ defmodule ThreatShieldWeb.OrganisationLive.OrganisationDetails do
   alias ThreatShield.Accounts.Organisation
   use ThreatShieldWeb, :live_view
 
-  alias ThreatShield.Organisations
+  alias ThreatShield.Accounts
   alias ThreatShield.Const.Locations
-
-  alias ThreatShield.Systems
-
-  alias ThreatShield.Threats
+  alias ThreatShield.ThreatManagement
 
   import ThreatShield.Accounts.Organisation,
     only: [attributes_config: 0]
@@ -20,10 +17,11 @@ defmodule ThreatShieldWeb.OrganisationLive.OrganisationDetails do
   def mount(%{"org_id" => org_id} = _params, _session, socket) do
     user = socket.assigns.current_user
 
-    organisation = Organisations.get_organisation!(user, org_id)
+    organisation = get_organisation!(user, org_id)
     membership = Organisation.get_membership(organisation, user)
 
-    systems = Systems.list_systems(user, organisation)
+    systems =
+      ThreatManagement.list_systems!(organisation.id, actor: user, load: [:assets, :threats])
 
     socket
     |> assign(:attributes, attributes_config())
@@ -60,7 +58,7 @@ defmodule ThreatShieldWeb.OrganisationLive.OrganisationDetails do
         socket
       ) do
     user = socket.assigns.current_user
-    organisation = Organisations.get_organisation!(user, organisation.id)
+    organisation = get_organisation!(user, organisation.id)
 
     socket
     |> assign(:organisation, organisation)
@@ -94,7 +92,9 @@ defmodule ThreatShieldWeb.OrganisationLive.OrganisationDetails do
     stale_org = socket.assigns.organisation
     user = socket.assigns.current_user
 
-    new_threat_with_system = Threats.get_threat!(user, threat.id)
+    new_threat_with_system =
+      ThreatManagement.get_threat!(threat.id, actor: user, load: [:system, :asset])
+
     updated_org = %{stale_org | threats: stale_org.threats ++ [new_threat_with_system]}
 
     socket
@@ -105,13 +105,17 @@ defmodule ThreatShieldWeb.OrganisationLive.OrganisationDetails do
 
   @impl true
   def handle_event("delete", %{"organisation_id" => id}, socket) do
-    current_user = socket.assigns.current_user
+    case Accounts.destroy_organisation(id, actor: socket.assigns.current_user) do
+      :ok ->
+        socket
+        |> push_navigate(to: ~p"/organisations")
+        |> noreply()
 
-    {1, [_org | _]} = Organisations.delete_org_by_id!(current_user, id)
-
-    socket
-    |> push_navigate(to: ~p"/organisations")
-    |> noreply()
+      {:error, _error} ->
+        socket
+        |> put_flash(:error, dgettext("organisation", "The organisation could not be deleted."))
+        |> noreply()
+    end
   end
 
   @impl true
@@ -122,6 +126,13 @@ defmodule ThreatShieldWeb.OrganisationLive.OrganisationDetails do
   end
 
   # internal
+
+  defp get_organisation!(user, id) do
+    Accounts.get_organisation!(id,
+      actor: user,
+      load: [:memberships, :systems, assets: [:system], threats: [:system, :asset]]
+    )
+  end
 
   defp show_tab(socket, tab) do
     socket

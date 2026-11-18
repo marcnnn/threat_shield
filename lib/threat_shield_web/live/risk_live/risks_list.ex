@@ -4,7 +4,7 @@ defmodule ThreatShieldWeb.RiskLive.RisksList do
   alias ThreatShield.AI
   alias ThreatShield.Scope
   alias ThreatShieldWeb.AiSuggestions
-  alias ThreatShield.Risks
+  alias ThreatShield.ThreatManagement
   alias ThreatShield.ThreatManagement.Threat
   alias ThreatShield.Accounts.User
   import ThreatShieldWeb.Helpers
@@ -133,7 +133,8 @@ defmodule ThreatShieldWeb.RiskLive.RisksList do
   end
 
   defp create_risk(%User{} = user, %Threat{} = threat, %{name: name, description: desc}) do
-    {:ok, risk} = Risks.create_risk(user, threat.id, %{name: name, description: desc})
-    risk
+    ThreatManagement.create_risk!(%{name: name, description: desc, threat_id: threat.id},
+      actor: user
+    )
   end
 end

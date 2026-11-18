@@ -1,8 +1,8 @@
 defmodule ThreatShieldWeb.OrganisationLive.MyOrganisations do
   use ThreatShieldWeb, :live_view
 
-  alias ThreatShield.Organisations
-  alias ThreatShield.Members
+  alias ThreatShield.Accounts
+  alias ThreatShield.Accounts.Errors.InviteError
   alias ThreatShield.Accounts.Organisation
   alias ThreatShield.Const.Locations
 
@@ -52,7 +52,14 @@ defmodule ThreatShieldWeb.OrganisationLive.MyOrganisations do
 
   @impl true
   def handle_event("reject_invitation", %{"invite_id" => invite_id}, socket) do
-    Members.reject_invite(socket.assigns.current_user, invite_id)
+    socket =
+      case Accounts.reject_invite(invite_id, actor: socket.assigns.current_user) do
+        :ok ->
+          socket
+
+        {:error, _error} ->
+          put_flash(socket, :error, dgettext("members", "This invitation is not valid any more."))
+      end
 
     socket
     |> assign_open_invitations()
@@ -63,7 +70,7 @@ defmodule ThreatShieldWeb.OrganisationLive.MyOrganisations do
   def handle_event("accept_invitation", %{"invite_id" => invite_id}, socket) do
     user = socket.assigns.current_user
 
-    case Members.accept_invite(user, invite_id) do
+    case accept_invite(user, invite_id) do
       {:ok, membership} ->
         socket
         |> stream_insert(:organisations, membership.organisation)
@@ -86,7 +93,7 @@ defmodule ThreatShieldWeb.OrganisationLive.MyOrganisations do
         )
         |> noreply()
 
-      {:error, :invalid_invite} ->
+      {:error, _reason} ->
         socket
         |> put_flash(:error, dgettext("members", "This invitation is not valid any more."))
         |> assign_open_invitations()
@@ -94,8 +101,15 @@ defmodule ThreatShieldWeb.OrganisationLive.MyOrganisations do
     end
   end
 
+  defp accept_invite(user, invite_id) do
+    case Accounts.accept_invite(invite_id, actor: user, load: [:organisation]) do
+      {:ok, membership} -> {:ok, membership}
+      {:error, error} -> {:error, InviteError.reason(error)}
+    end
+  end
+
   defp stream_organisations(socket) do
-    organisations = Organisations.list_organisations(socket.assigns.current_user)
+    organisations = Accounts.list_organisations!(actor: socket.assigns.current_user)
 
     socket
     |> assign(:has_memberships, not Enum.empty?(organisations))
@@ -103,7 +117,7 @@ defmodule ThreatShieldWeb.OrganisationLive.MyOrganisations do
   end
 
   defp assign_open_invitations(%{assigns: %{current_user: user}} = socket) do
-    open_invitations = Members.get_invites_by_user(user)
+    open_invitations = Accounts.list_received_invites!(actor: user, load: [:organisation_name])
 
     socket
     |> assign(:open_invitations, open_invitations)

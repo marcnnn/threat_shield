@@ -1,7 +1,7 @@
 defmodule ThreatShieldWeb.SystemLive.SystemsList do
   use ThreatShieldWeb, :live_component
 
-  alias ThreatShield.Systems
+  alias ThreatShield.ThreatManagement
   alias ThreatShield.ThreatManagement.System
   alias ThreatShield.Accounts.Organisation
 
@@ -94,7 +94,11 @@ defmodule ThreatShieldWeb.SystemLive.SystemsList do
     old_systems = socket.assigns[:systems] || []
 
     # reload to resolve associations
-    system = Systems.get_system!(socket.assigns.scope.user, system.id)
+    system =
+      ThreatManagement.get_system!(system.id,
+        actor: socket.assigns.scope.user,
+        load: [:assets, :threats]
+      )
 
     socket
     |> assign(:show_modal, false)

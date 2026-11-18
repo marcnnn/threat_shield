@@ -4,7 +4,7 @@ defmodule ThreatShieldWeb.ThreatLive.ThreatForm do
   import ThreatShieldWeb.FormHelpers
 
   alias ThreatShield.Scope
-  alias ThreatShield.Threats
+  alias ThreatShield.ThreatManagement.Threat
 
   import ThreatShieldWeb.Gettext
 
@@ -62,44 +62,51 @@ defmodule ThreatShieldWeb.ThreatLive.ThreatForm do
   end
 
   @impl true
-  def update(%{threat: threat} = assigns, socket) do
-    changeset = Threats.change_threat(threat)
-
+  def update(assigns, socket) do
     socket
     |> assign(assigns)
-    |> assign_form(changeset)
+    |> assign_form(build_form(assigns))
     |> ok()
   end
 
   @impl true
   def handle_event("validate", %{"threat" => threat_params}, socket) do
-    changeset =
-      socket.assigns.threat
-      |> Threats.change_threat(threat_params)
-      |> Map.put(:action, :validate)
-
-    {:noreply, assign_form(socket, changeset)}
+    {:noreply, validate_form(socket, threat_params)}
   end
 
   def handle_event("save", %{"threat" => threat_params}, socket) do
     save_threat(socket, socket.assigns.action, threat_params)
   end
 
+  defp build_form(%{action: :edit_threat, threat: threat, scope: %Scope{user: user}}) do
+    AshPhoenix.Form.for_update(threat, :update, actor: user, as: "threat")
+  end
+
+  defp build_form(%{action: :new_threat, scope: %Scope{user: user, organisation: org} = scope}) do
+    AshPhoenix.Form.for_create(Threat, :create,
+      actor: user,
+      as: "threat",
+      params: %{
+        "system_id" => scope.system && scope.system.id,
+        "asset_id" => scope.asset && scope.asset.id
+      },
+      # the threat belongs to the organisation of the page, whatever the client sends
+      transform_params: fn params, _type -> Map.put(params, "organisation_id", org.id) end
+    )
+  end
+
   defp save_threat(socket, :edit_threat, threat_params) do
-    scope = %Scope{} = socket.assigns.scope
+    {socket, _result} =
+      submit_form(socket, threat_params, __MODULE__, "Threat updated successfully")
 
-    result = Threats.update_threat(scope.user, socket.assigns.threat, threat_params)
-
-    socket
-    |> handle_save_result(result, __MODULE__, "Threat updated successfully")
-    |> noreply()
+    noreply(socket)
   end
 
   defp save_threat(socket, :new_threat, threat_params) do
-    scope = %Scope{} = socket.assigns.scope
-
-    result = Threats.create_threat(scope.user, scope.organisation, threat_params)
-    socket = handle_save_result(socket, result, __MODULE__, "Threat created successfully")
+    {socket, result} =
+      submit_form(socket, threat_params, __MODULE__, "Threat created successfully",
+        load: [:system, :asset]
+      )
 
     with {:ok, threat} <- result do
       notify_threat_list(id: socket.assigns.parent_id, added_threat: threat)

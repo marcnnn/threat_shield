@@ -16,7 +16,7 @@ defmodule ThreatShieldWeb.EntityMenuLiveTest do
   alias ThreatShield.ThreatsFixtures
 
   alias ThreatShield.Repo
-  alias ThreatShield.Systems
+  alias ThreatShield.SystemsFixtures
   alias ThreatShield.ThreatManagement.Mitigation
   alias ThreatShield.ThreatManagement.Risk
   alias ThreatShield.ThreatManagement.Threat
@@ -26,8 +26,8 @@ defmodule ThreatShieldWeb.EntityMenuLiveTest do
   setup %{user: user} do
     organisation = OrganisationsFixtures.organisation_fixture(user)
 
-    {:ok, system} =
-      Systems.create_system(user, organisation, %{
+    system =
+      SystemsFixtures.system_fixture(user, organisation, %{
         name: "Web shop",
         description: "Sells products",
         attributes: %{}
@@ -100,6 +100,41 @@ defmodule ThreatShieldWeb.EntityMenuLiveTest do
 
       assert_redirect(view)
       refute Repo.get(schema, id)
+    end
+  end
+
+  test "a viewer cannot delete with a LiveView event",
+       %{
+         conn: conn,
+         organisation: organisation,
+         threat: threat,
+         risk: risk,
+         mitigation: mitigation,
+         paths: paths
+       } do
+    viewer = AccountsFixtures.user_fixture()
+    MembersFixtures.membership_fixture(organisation, viewer, :viewer)
+    conn = log_in_user(conn, viewer)
+
+    for {path, event, schema, id} <- [
+          {paths.mitigation, %{"mitigation_id" => mitigation.id}, Mitigation, mitigation.id},
+          {paths.risk, %{"risk_id" => risk.id}, Risk, risk.id},
+          {paths.threat, %{"threat_id" => threat.id}, Threat, threat.id}
+        ] do
+      {:ok, view, _html} = live(conn, path)
+      assert render_hook(view, "delete", event) =~ "could not be deleted"
+      assert Repo.get(schema, id)
+    end
+  end
+
+  test "a member of another organisation gets a 404 on every detail page",
+       %{conn: conn, paths: paths} do
+    outsider = AccountsFixtures.user_fixture()
+    OrganisationsFixtures.organisation_fixture(outsider)
+    conn = log_in_user(conn, outsider)
+
+    for {_entity, path} <- paths do
+      assert_error_sent :not_found, fn -> get(conn, path) end
     end
   end
 end

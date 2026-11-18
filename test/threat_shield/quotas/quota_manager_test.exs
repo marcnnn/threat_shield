@@ -5,7 +5,7 @@ defmodule ThreatShield.Quotas.QuotaManagerTest do
   alias ThreatShield.OrganisationsFixtures
 
   alias ThreatShield.Repo
-  alias ThreatShield.Organisations
+  alias ThreatShield.Accounts
   alias ThreatShield.Quotas.{QuotaManager, QuotaUsage}
 
   @quota "ai_requests_per_month"
@@ -15,7 +15,7 @@ defmodule ThreatShield.Quotas.QuotaManagerTest do
     organisation = OrganisationsFixtures.organisation_fixture(user)
     # a second user, so that the user id differs from the organisation id for sure
     other_user = AccountsFixtures.user_fixture()
-    organisation = Organisations.get_organisation!(user, organisation.id)
+    organisation = Accounts.get_organisation!(organisation.id, actor: user)
 
     %{user: other_user, organisation: organisation}
   end

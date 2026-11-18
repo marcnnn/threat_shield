@@ -3,7 +3,7 @@ defmodule ThreatShieldWeb.MembersLive.InviteForm do
 
   import ThreatShieldWeb.FormHelpers
 
-  alias ThreatShield.Members
+  alias ThreatShield.Accounts.Invite
 
   @impl true
   def render(assigns) do
@@ -41,37 +41,34 @@ defmodule ThreatShieldWeb.MembersLive.InviteForm do
   end
 
   @impl true
-  def update(%{invite: invite} = assigns, socket) do
-    changeset = Members.change_invite(invite)
+  def update(%{organisation: organisation, current_user: user} = assigns, socket) do
+    form =
+      AshPhoenix.Form.for_create(Invite, :create,
+        actor: user,
+        as: "invite",
+        # the invite is for the organisation of the page, whatever the client sends
+        transform_params: fn params, _type ->
+          Map.put(params, "organisation_id", organisation.id)
+        end
+      )
 
     {:ok,
      socket
      |> assign(assigns)
-     |> assign_form(changeset)}
+     |> assign_form(form)}
   end
 
   @impl true
   def handle_event("validate", %{"invite" => invite_params}, socket) do
-    changeset =
-      socket.assigns.invite
-      |> Members.change_invite(invite_params)
-      |> Map.put(:action, :validate)
-
-    {:noreply, assign_form(socket, changeset)}
+    {:noreply, validate_form(socket, invite_params)}
   end
 
   def handle_event("save", %{"invite" => invite_params}, socket) do
-    save_invite(socket, socket.assigns.action, invite_params)
-  end
+    {socket, _result} =
+      submit_form(socket, invite_params, __MODULE__, "Invite created successfully",
+        load: [:organisation]
+      )
 
-  defp save_invite(socket, :new_invite, invite_params) do
-    organisation = socket.assigns.organisation
-    user = socket.assigns.current_user
-
-    result = Members.create_invite(user, organisation, invite_params)
-
-    socket
-    |> handle_save_result(result, __MODULE__, "Invite created successfully")
-    |> noreply()
+    noreply(socket)
   end
 end

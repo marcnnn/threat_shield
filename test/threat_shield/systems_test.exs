@@ -1,38 +1,39 @@
 defmodule ThreatShield.SystemsTest do
-  use ExUnit.Case
   use ThreatShield.DataCase
 
-  alias ThreatShield.Systems
-  alias ThreatShield.ThreatManagement.System
   alias ThreatShield.AccountsFixtures
   alias ThreatShield.AssetsFixtures
   alias ThreatShield.OrganisationsFixtures
   alias ThreatShield.RisksFixtures
+  alias ThreatShield.SystemsFixtures
   alias ThreatShield.ThreatsFixtures
-  alias ThreatShield.ThreatManagement.Asset
-  alias ThreatShield.ThreatManagement.Risk
-  alias ThreatShield.ThreatManagement.Threat
+  alias ThreatShield.ThreatManagement
+  alias ThreatShield.ThreatManagement.{Asset, Risk, System, Threat}
 
   describe "systems" do
-    test "create_system/3 with valid data creates a system" do
+    test "create_system with valid data creates a system" do
       user = AccountsFixtures.user_fixture()
       organisation = OrganisationsFixtures.organisation_fixture(user)
-      valid_attrs = %{name: "some name", description: "some description"}
 
-      assert {:ok, %System{} = system} = Systems.create_system(user, organisation, valid_attrs)
+      assert {:ok, %System{} = system} =
+               ThreatManagement.create_system(
+                 %{
+                   name: "some name",
+                   description: "some description",
+                   organisation_id: organisation.id
+                 },
+                 actor: user
+               )
 
       assert system.attributes == %{}
       assert Repo.get!(System, system.id).attributes == %{}
       assert System.describe(system) =~ "some name"
     end
 
-    test "delete_sys_by_id!/2 deletes the assets and threats of the system" do
+    test "destroy_system deletes the assets and threats of the system" do
       user = AccountsFixtures.user_fixture()
       organisation = OrganisationsFixtures.organisation_fixture(user)
-
-      {:ok, system} =
-        Systems.create_system(user, organisation, %{name: "a system", description: "d"})
-
+      system = SystemsFixtures.system_fixture(user, organisation, %{name: "a system"})
       asset = AssetsFixtures.asset_fixture(user, organisation, %{system_id: system.id})
 
       threat =
@@ -44,7 +45,7 @@ defmodule ThreatShield.SystemsTest do
       risk = RisksFixtures.risk_fixture(user, threat.id)
       other_threat = ThreatsFixtures.threat_fixture(user, organisation, %{name: "other"})
 
-      assert {1, _} = Systems.delete_sys_by_id!(user, system.id)
+      assert :ok = ThreatManagement.destroy_system(system.id, actor: user)
 
       refute Repo.get(System, system.id)
       refute Repo.get(Asset, asset.id)

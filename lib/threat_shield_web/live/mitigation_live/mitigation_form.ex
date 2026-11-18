@@ -3,7 +3,7 @@ defmodule ThreatShieldWeb.MitigationLive.MitigationForm do
 
   import ThreatShieldWeb.FormHelpers
 
-  alias ThreatShield.Mitigations
+  alias ThreatShield.ThreatManagement.Mitigation
   alias ThreatShieldWeb.Labels
 
   @impl true
@@ -77,27 +77,23 @@ defmodule ThreatShieldWeb.MitigationLive.MitigationForm do
   end
 
   @impl true
-  def update(%{mitigation: mitigation} = assigns, socket) do
-    changeset = Mitigations.change_mitigation(mitigation)
-
+  def update(assigns, socket) do
     socket
     |> assign(assigns)
-    |> assign_form(changeset)
+    |> assign_form(build_form(assigns))
     |> ok()
   end
 
   @impl true
   def handle_event("validate", %{"mitigation" => mitigation_params}, socket) do
-    changeset =
-      socket.assigns.mitigation
-      |> Mitigations.change_mitigation(mitigation_params)
-      |> Map.put(:action, :validate)
-
-    {:noreply, assign_form(socket, changeset)}
+    {:noreply, validate_form(socket, mitigation_params)}
   end
 
   def handle_event("save", %{"mitigation" => mitigation_params}, socket) do
-    save_mitigation(socket, socket.assigns.action, mitigation_params)
+    {socket, _result} =
+      submit_form(socket, mitigation_params, __MODULE__, success_message(socket.assigns.action))
+
+    noreply(socket)
   end
 
   def status_options() do
@@ -105,23 +101,19 @@ defmodule ThreatShieldWeb.MitigationLive.MitigationForm do
     |> Enum.map(fn {key, label} -> {label, key} end)
   end
 
-  defp save_mitigation(socket, :edit_mitigation, mitigation_params) do
-    user = socket.assigns.current_user
-
-    result = Mitigations.update_mitigation(user, socket.assigns.mitigation, mitigation_params)
-
-    socket
-    |> handle_save_result(result, __MODULE__, "Mitigation updated successfully")
-    |> noreply()
+  defp build_form(%{action: :edit_mitigation, mitigation: mitigation, current_user: user}) do
+    AshPhoenix.Form.for_update(mitigation, :update, actor: user, as: "mitigation")
   end
 
-  defp save_mitigation(socket, :new_mitigation, mitigation_params) do
-    %{user: user, risk: risk} = socket.assigns
-
-    result = Mitigations.create_mitigation(user, risk, mitigation_params)
-
-    socket
-    |> handle_save_result(result, __MODULE__, "Mitigation created successfully")
-    |> noreply()
+  defp build_form(%{action: :new_mitigation, risk: risk, user: user}) do
+    AshPhoenix.Form.for_create(Mitigation, :create,
+      actor: user,
+      as: "mitigation",
+      # the mitigation belongs to the risk of the page, whatever the client sends
+      transform_params: fn params, _type -> Map.put(params, "risk_id", risk.id) end
+    )
   end
+
+  defp success_message(:edit_mitigation), do: "Mitigation updated successfully"
+  defp success_message(:new_mitigation), do: "Mitigation created successfully"
 end

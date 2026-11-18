@@ -1,13 +1,12 @@
 defmodule ThreatShield.Exporters.ExcelExporter do
-  alias ThreatShield.ThreatManagement.Mitigation
+  @moduledoc """
+  Exports the threat model of an organisation to Excel. The threats need the
+  calculations `:system_name` and `:asset_name`, the assets `:system_name`, the
+  risks `:threat_name` and `:estimated_risk_cost`, and the mitigations `:risk_name`.
+  """
+
   alias Elixlsx.Workbook
   alias Elixlsx.Sheet
-
-  alias ThreatShield.ThreatManagement.Threat
-  alias ThreatShield.ThreatManagement.System
-  alias ThreatShield.ThreatManagement.Asset
-  alias ThreatShield.ThreatManagement.Risk
-  alias ThreatShield.ThreatManagement.Mitigation
 
   def export(systems, threats, assets, risks, mitigations) do
     sheets = [
@@ -38,8 +37,8 @@ defmodule ThreatShield.Exporters.ExcelExporter do
   def sheet_with_threats(threats) do
     columns = [
       [title: "Name", width: 50, content: & &1.name],
-      [title: "System", width: 25, content: &system_name/1],
-      [title: "Asset", width: 25, content: &asset_name/1],
+      [title: "System", width: 25, content: & &1.system_name],
+      [title: "Asset", width: 25, content: & &1.asset_name],
       [title: "Description", width: 200, content: & &1.description]
     ]
 
@@ -49,7 +48,7 @@ defmodule ThreatShield.Exporters.ExcelExporter do
   def sheet_with_assets(assets) do
     colums = [
       [title: "Name", width: 50, content: & &1.name],
-      [title: "System", width: 25, content: &system_name/1],
+      [title: "System", width: 25, content: & &1.system_name],
       [title: "Criticality Loss", width: 25, content: & &1.criticality_loss],
       [title: "Criticality Theft", width: 25, content: & &1.criticality_theft],
       [title: "Criticality Publication", width: 25, content: & &1.criticality_publication],
@@ -63,11 +62,11 @@ defmodule ThreatShield.Exporters.ExcelExporter do
   def sheet_with_risks(risks) do
     colums = [
       [title: "Name", width: 50, content: & &1.name],
-      [title: "Threat", width: 25, content: &threat_name/1],
+      [title: "Threat", width: 25, content: & &1.threat_name],
       [title: "Severity", width: 25, content: & &1.severity],
       [title: "Probability", width: 25, content: & &1.probability],
       [title: "Estimated_cost_per_incidence", width: 25, content: & &1.estimated_cost],
-      [title: "Estimated_cost_per_year", width: 25, content: &Risk.estimated_risk_cost/1],
+      [title: "Estimated_cost_per_year", width: 25, content: & &1.estimated_risk_cost],
       [title: "Description", width: 200, content: & &1.description]
     ]
 
@@ -77,7 +76,7 @@ defmodule ThreatShield.Exporters.ExcelExporter do
   def sheet_with_mitigations(mitigations) do
     columns = [
       [title: "Name", width: 50, content: & &1.name],
-      [title: "Risk", width: 50, content: &risk_name/1],
+      [title: "Risk", width: 50, content: & &1.risk_name],
       [title: "Description", width: 200, content: & &1.description]
     ]
 
@@ -106,32 +105,6 @@ defmodule ThreatShield.Exporters.ExcelExporter do
       col_widths: col_widths
     }
   end
-
-  # labels
-
-  def system_name(%Threat{} = threat), do: system_name(threat.system)
-
-  def system_name(%System{} = system), do: system.name
-
-  def system_name(_), do: nil
-
-  def asset_name(%Threat{} = threat), do: asset_name(threat.asset)
-
-  def asset_name(%Asset{} = asset), do: asset.name
-
-  def asset_name(_), do: nil
-
-  def threat_name(%Risk{} = risk), do: threat_name(risk.threat)
-
-  def threat_name(%Threat{} = threat), do: threat.name
-
-  def threat_name(_), do: nil
-
-  def risk_name(%Mitigation{} = mitigaton), do: risk_name(mitigaton.risk)
-
-  def risk_name(%Risk{} = risk), do: risk.name
-
-  def risk_name(_), do: nil
 
   # utilities
 

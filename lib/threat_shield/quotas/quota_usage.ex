@@ -5,7 +5,8 @@ defmodule ThreatShield.Quotas.QuotaUsage do
   use Ash.Resource,
     otp_app: :threat_shield,
     domain: ThreatShield.Quotas,
-    data_layer: AshPostgres.DataLayer
+    data_layer: AshPostgres.DataLayer,
+    authorizers: [Ash.Policy.Authorizer]
 
   postgres do
     table "quota_usages"
@@ -46,11 +47,13 @@ defmodule ThreatShield.Quotas.QuotaUsage do
     belongs_to :organisation, ThreatShield.Accounts.Organisation do
       allow_nil? false
       attribute_type :integer
+      public? true
     end
 
     belongs_to :user, ThreatShield.Accounts.User do
       allow_nil? true
       attribute_type :integer
+      public? true
     end
   end
 
@@ -58,13 +61,7 @@ defmodule ThreatShield.Quotas.QuotaUsage do
     defaults [:read]
 
     create :create do
-      accept [:quota_type, :amount, :message, :timestamp]
-
-      argument :organisation_id, :integer, allow_nil?: false
-      argument :user_id, :integer, allow_nil?: true
-
-      change set_attribute(:organisation_id, arg(:organisation_id))
-      change set_attribute(:user_id, arg(:user_id))
+      accept [:quota_type, :amount, :message, :timestamp, :organisation_id, :user_id]
     end
 
     read :get_usage do
@@ -77,6 +74,14 @@ defmodule ThreatShield.Quotas.QuotaUsage do
                  quota_type == ^arg(:quota_type) and
                  timestamp >= ^arg(:since)
              )
+    end
+  end
+
+  # Quota bookkeeping is a system operation of `ThreatShield.Quotas.QuotaManager`,
+  # which calls the actions without authorization. No actor may call them.
+  policies do
+    policy always() do
+      forbid_if always()
     end
   end
 end

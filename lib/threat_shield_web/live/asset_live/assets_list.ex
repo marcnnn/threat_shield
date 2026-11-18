@@ -4,7 +4,7 @@ defmodule ThreatShieldWeb.AssetLive.AssetsList do
   alias ThreatShield.AI
   alias ThreatShield.Scope
   alias ThreatShieldWeb.AiSuggestions
-  alias ThreatShield.Assets
+  alias ThreatShield.ThreatManagement
 
   alias ThreatShield.Accounts.Organisation
   alias ThreatShield.ThreatManagement.System
@@ -124,7 +124,6 @@ defmodule ThreatShieldWeb.AssetLive.AssetsList do
           title={dgettext("assets", "New Asset")}
           action={:new_asset}
           system_options={systems_of_organisaton(@scope.organisation)}
-          asset={prepare_asset(assigns)}
           patch={@origin}
         />
       </.modal>
@@ -212,10 +211,10 @@ defmodule ThreatShieldWeb.AssetLive.AssetsList do
     assets =
       case scope do
         %Scope{system: %System{} = system} ->
-          Assets.find_by_system(user, system)
+          ThreatManagement.list_assets_of_system!(system.id, actor: user, load: [:threats])
 
         _ ->
-          Assets.list_assets(user, org)
+          ThreatManagement.list_assets!(org.id, actor: user, load: [:threats])
       end
 
     socket
@@ -226,14 +225,16 @@ defmodule ThreatShieldWeb.AssetLive.AssetsList do
     Organisation.list_system_options(organisation)
   end
 
-  defp prepare_asset(%{system: %System{} = system}) do
-    Assets.prepare_asset(system.id)
-  end
-
-  defp prepare_asset(_other), do: Assets.prepare_asset()
-
-  defp create_asset(scope, %{name: name, description: desc}) do
-    {:ok, asset} = Assets.add_asset_with_name_and_description(scope, name, desc)
-    asset
+  defp create_asset(%Scope{} = scope, %{name: name, description: desc}) do
+    ThreatManagement.create_asset!(
+      %{
+        name: name,
+        description: desc,
+        organisation_id: scope.organisation.id,
+        system_id: scope.system && scope.system.id
+      },
+      actor: scope.user,
+      load: [:threats]
+    )
   end
 end

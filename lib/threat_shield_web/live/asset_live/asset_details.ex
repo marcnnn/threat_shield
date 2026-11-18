@@ -1,7 +1,7 @@
 defmodule ThreatShieldWeb.AssetLive.AssetDetails do
   use ThreatShieldWeb, :live_view
 
-  alias ThreatShield.{Assets, Threats}
+  alias ThreatShield.ThreatManagement
   alias ThreatShield.ThreatManagement.Asset
 
   import ThreatShieldWeb.ScopeUrlBinding
@@ -16,8 +16,8 @@ defmodule ThreatShieldWeb.AssetLive.AssetDetails do
   @impl true
   def mount(%{"asset_id" => asset_id} = params, _session, socket) do
     current_user = socket.assigns.current_user
-    asset = Assets.get_asset!(current_user, asset_id)
-    threats = Threats.find_by_asset(asset)
+    asset = get_asset!(current_user, asset_id)
+    threats = asset.threats
 
     scope = asset_scope_from_params(current_user, asset, params)
 
@@ -43,12 +43,17 @@ defmodule ThreatShieldWeb.AssetLive.AssetDetails do
 
   @impl true
   def handle_event("delete", %{"asset_id" => asset_id}, socket) do
-    user = socket.assigns.current_user
-    {1, [_asset]} = Assets.delete_asset_by_id(user, asset_id)
+    case ThreatManagement.destroy_asset(asset_id, actor: socket.assigns.current_user) do
+      :ok ->
+        socket
+        |> push_navigate(to: get_path_prefix(socket.assigns))
+        |> noreply()
 
-    socket
-    |> push_navigate(to: get_path_prefix(socket.assigns))
-    |> noreply()
+      {:error, _error} ->
+        socket
+        |> put_flash(:error, dgettext("assets", "The asset could not be deleted."))
+        |> noreply()
+    end
   end
 
   @impl true
@@ -65,7 +70,7 @@ defmodule ThreatShieldWeb.AssetLive.AssetDetails do
         {ThreatShieldWeb.AssetLive.AssetForm, {:saved, asset}},
         socket
       ) do
-    asset = Assets.get_asset!(socket.assigns.current_user, asset.id)
+    asset = get_asset!(socket.assigns.current_user, asset.id)
 
     socket
     |> assign(asset: asset)
@@ -73,6 +78,13 @@ defmodule ThreatShieldWeb.AssetLive.AssetDetails do
     |> assign(system: asset.system)
     |> assign(page_title: "Show Asset")
     |> noreply()
+  end
+
+  defp get_asset!(user, id) do
+    ThreatManagement.get_asset!(id,
+      actor: user,
+      load: [:system, threats: [:system, :asset], organisation: [:systems, :assets, :memberships]]
+    )
   end
 
   defp page_title(:show), do: "Show Asset"

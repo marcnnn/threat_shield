@@ -3,7 +3,7 @@ defmodule ThreatShieldWeb.SystemLive.SystemForm do
 
   import ThreatShieldWeb.FormHelpers
 
-  alias ThreatShield.Systems
+  alias ThreatShield.ThreatManagement.System
   alias ThreatShield.DynamicAttribute
 
   import ThreatShield.ThreatManagement.System, only: [attributes_config: 0]
@@ -54,36 +54,38 @@ defmodule ThreatShieldWeb.SystemLive.SystemForm do
 
   @impl true
   def update(%{system: system} = assigns, socket) do
-    changeset =
-      Systems.change_system(system)
-
-    attribute_map =
-      case system.attributes do
-        nil -> Map.new()
-        map -> map
-      end
+    attribute_map = system.attributes || %{}
 
     socket
     |> assign(assigns)
-    |> assign_form(changeset)
+    |> assign_form(build_form(assigns))
     |> assign(:attribute_map, attribute_map)
     |> ok()
   end
 
   @impl true
   def handle_event("validate", %{"system" => system_params}, socket) do
-    changeset =
-      socket.assigns.system
-      |> Systems.change_system(system_params)
-      |> Map.put(:action, :validate)
-
-    {:noreply, assign_form(socket, changeset)}
+    {:noreply, validate_form(socket, system_params)}
   end
 
   def handle_event("save", %{"system" => system_params} = params, socket) do
     attributes = extract_attributes_from_params(params)
-
     save_system(socket, socket.assigns.action, Map.put(system_params, "attributes", attributes))
+  end
+
+  defp build_form(%{action: :edit_system, system: system, current_user: user}) do
+    AshPhoenix.Form.for_update(system, :update, actor: user, as: "system")
+  end
+
+  defp build_form(%{action: :new_system, organisation: organisation, current_user: user}) do
+    AshPhoenix.Form.for_create(System, :create,
+      actor: user,
+      as: "system",
+      # the system belongs to the organisation of the page, whatever the client sends
+      transform_params: fn params, _type ->
+        Map.put(params, "organisation_id", organisation.id)
+      end
+    )
   end
 
   defp extract_attributes_from_params(params) do
@@ -93,21 +95,15 @@ defmodule ThreatShieldWeb.SystemLive.SystemForm do
   end
 
   defp save_system(socket, :edit_system, system_params) do
-    user = socket.assigns.current_user
+    {socket, _result} =
+      submit_form(socket, system_params, __MODULE__, "System updated successfully")
 
-    result = Systems.update_system(user, socket.assigns.system, system_params)
-
-    socket
-    |> handle_save_result(result, __MODULE__, "System updated successfully")
-    |> noreply()
+    noreply(socket)
   end
 
   defp save_system(socket, :new_system, system_params) do
-    user = socket.assigns.current_user
-    organisation = socket.assigns.organisation
-
-    result = Systems.create_system(user, organisation, system_params)
-    socket = handle_save_result(socket, result, __MODULE__, "System created successfully")
+    {socket, result} =
+      submit_form(socket, system_params, __MODULE__, "System created successfully")
 
     with {:ok, system} <- result do
       notify_systems_list(id: socket.assigns.parent_id, added_system: system)

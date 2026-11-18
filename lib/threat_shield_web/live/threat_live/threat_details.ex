@@ -2,7 +2,7 @@ defmodule ThreatShieldWeb.ThreatLive.ThreatDetails do
   use ThreatShieldWeb, :live_view
 
   alias ThreatShield.Scope
-  alias ThreatShield.Threats
+  alias ThreatShield.ThreatManagement
   alias ThreatShield.ThreatManagement.Threat
   alias ThreatShield.ThreatManagement.Risk
 
@@ -16,7 +16,7 @@ defmodule ThreatShieldWeb.ThreatLive.ThreatDetails do
   @impl true
   def mount(%{"threat_id" => threat_id} = params, _session, socket) do
     user = socket.assigns.current_user
-    threat = %Threat{} = Threats.get_threat!(user, threat_id)
+    threat = %Threat{} = get_threat!(user, threat_id)
     scope = %Scope{} = threat_scope_from_params(user, threat, params)
 
     socket
@@ -57,12 +57,15 @@ defmodule ThreatShieldWeb.ThreatLive.ThreatDetails do
 
   @impl true
   def handle_event("delete", %{"threat_id" => id}, socket) do
-    user =
-      socket.assigns.current_user
+    case ThreatManagement.destroy_threat(id, actor: socket.assigns.current_user) do
+      :ok ->
+        {:noreply, push_navigate(socket, to: get_path_prefix(socket.assigns))}
 
-    {:ok, _} = Threats.delete_threat_by_id(user, id)
-
-    {:noreply, push_navigate(socket, to: get_path_prefix(socket.assigns))}
+      {:error, _error} ->
+        socket
+        |> put_flash(:error, dgettext("threats", "The threat could not be deleted."))
+        |> noreply()
+    end
   end
 
   @impl true
@@ -75,13 +78,25 @@ defmodule ThreatShieldWeb.ThreatLive.ThreatDetails do
   @impl true
   def handle_info({ThreatShieldWeb.ThreatLive.ThreatForm, {:saved, threat}}, socket) do
     current_user = socket.assigns.current_user
-    threat = Threats.get_threat!(current_user, threat.id)
+    threat = get_threat!(current_user, threat.id)
 
     socket
     |> assign(:threat, threat)
     |> assign(:organisation, threat.organisation)
     |> assign(:page_title, page_title(socket.assigns.live_action))
     |> noreply()
+  end
+
+  defp get_threat!(user, id) do
+    ThreatManagement.get_threat!(id,
+      actor: user,
+      load: [
+        :system,
+        :asset,
+        risks: :mitigations,
+        organisation: [:systems, :assets, :memberships]
+      ]
+    )
   end
 
   defp page_title(:show), do: "Show Threat"

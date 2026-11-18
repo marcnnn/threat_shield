@@ -7,7 +7,6 @@ defmodule ThreatShieldWeb.OrganisationLiveTest do
   alias ThreatShield.MembersFixtures
   alias ThreatShield.OrganisationsFixtures
   alias ThreatShield.Accounts.Organisation
-  alias ThreatShield.Members
   alias ThreatShield.Accounts.Invite
   alias ThreatShield.Repo
 
@@ -65,7 +64,7 @@ defmodule ThreatShieldWeb.OrganisationLiveTest do
 
     test "a user cannot reject an invite that was sent to another address",
          %{conn: conn, user: owner, organisation: organisation} do
-      {:ok, invite} = Members.create_invite(owner, organisation, %{email: "invited@example.com"})
+      invite = MembersFixtures.invite_fixture(owner, organisation, "invited@example.com")
       other_user = AccountsFixtures.confirmed_user_fixture()
 
       {:ok, view, _html} = conn |> log_in_user(other_user) |> live(~p"/organisations")

@@ -1,13 +1,16 @@
 defmodule ThreatShield.ThreatManagement.Risk do
+  @moduledoc """
+  A risk is a potential negative outcome of a threat: loss, damage, or harm. It is the
+  result of a risk assessment.
+  """
   use Ash.Resource,
     otp_app: :threat_shield,
     domain: ThreatShield.ThreatManagement,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer]
 
-  @moduledoc """
-  A risk is a combination of a threat and an asset. It is the result of a risk assessment.
-  """
+  alias ThreatShield.Checks.{OrganisationRole, OrganisationRoleForCreate}
+  alias ThreatShield.ThreatManagement.Threat
 
   postgres do
     table "risks"
@@ -25,12 +28,14 @@ defmodule ThreatShield.ThreatManagement.Risk do
       allow_nil? false
       public? true
       constraints max_length: 60
+      description "The name of the risk."
     end
 
     attribute :description, :string do
       allow_nil? false
       public? true
       constraints max_length: 4000
+      description "The loss, damage or harm that the threat can cause."
     end
 
     # an integer column
@@ -38,24 +43,28 @@ defmodule ThreatShield.ThreatManagement.Risk do
       allow_nil? true
       public? true
       constraints min: 0, max: 2_147_483_647
+      description "The estimated cost of one incident in EUR."
     end
 
     attribute :probability, :float do
       allow_nil? true
       public? true
       constraints min: 0
+      description "The expected number of incidents per year."
     end
 
     attribute :severity, :float do
       allow_nil? true
       public? true
       constraints min: 0, max: 5
+      description "The severity of an incident, from 0 to 5."
     end
 
-    attribute :status, :atom do
-      constraints one_of: [:identified, :assessed, :mitigated, :accepted]
+    attribute :status, ThreatShield.ThreatManagement.RiskStatus do
+      allow_nil? true
       default :identified
       public? true
+      description "The status of the risk."
     end
 
     create_timestamp :inserted_at
@@ -66,74 +75,94 @@ defmodule ThreatShield.ThreatManagement.Risk do
     belongs_to :threat, ThreatShield.ThreatManagement.Threat do
       allow_nil? false
       attribute_type :integer
+      public? true
     end
 
-    has_many :mitigations, ThreatShield.ThreatManagement.Mitigation
+    has_many :mitigations, ThreatShield.ThreatManagement.Mitigation, public?: true
+  end
+
+  calculations do
+    calculate :organisation_id, :integer, expr(threat.organisation_id) do
+      public? true
+      description "The id of the organisation of the risk."
+    end
+
+    calculate :estimated_risk_cost,
+              :integer,
+              expr(
+                if is_nil(estimated_cost) or is_nil(probability) do
+                  nil
+                else
+                  fragment("round(?)", estimated_cost * probability)
+                end
+              ) do
+      public? true
+
+      description "The estimated cost per year in EUR: the cost of an incident times the " <>
+                    "number of incidents per year."
+    end
+
+    calculate :threat_name, :string, expr(threat.name) do
+      public? true
+      description "The name of the threat of the risk."
+    end
   end
 
   actions do
-    defaults [:read, :destroy]
+    defaults [:destroy]
+
+    read :read do
+      primary? true
+      description "Lists the risks of the organisations of the actor."
+    end
+
+    read :for_organisation do
+      description "Lists the risks of an organisation."
+
+      argument :organisation_id, :integer do
+        allow_nil? false
+        description "The id of the organisation."
+      end
+
+      filter expr(threat.organisation_id == ^arg(:organisation_id))
+    end
 
     create :create do
-      accept [:name, :description, :estimated_cost, :probability, :severity, :status]
-
-      argument :threat_id, :integer, allow_nil?: false
-      change manage_relationship(:threat_id, :threat, type: :append_and_remove)
+      description "Creates a risk of a threat."
+      accept [:name, :description, :estimated_cost, :probability, :severity, :status, :threat_id]
     end
 
     update :update do
+      description "Changes a risk."
       accept [:name, :description, :estimated_cost, :probability, :severity, :status]
-    end
-
-    read :for_user do
-      argument :user_id, :integer, allow_nil?: false
-      argument :roles, {:array, :atom}, allow_nil?: false
-
-      filter expr(
-               exists(
-                 threat.organisation.memberships,
-                 user_id == ^arg(:user_id) and role in ^arg(:roles)
-               )
-             )
     end
   end
 
   policies do
     policy action_type(:read) do
-      authorize_if expr(exists(threat.organisation.memberships, user_id == ^actor(:id)))
+      authorize_if {OrganisationRole, right: :view_organisation, path: [:threat, :organisation]}
     end
 
-    policy action_type([:create, :update, :destroy]) do
-      authorize_if expr(
-                     exists(
-                       threat.organisation.memberships,
-                       user_id == ^actor(:id) and role in [:owner, :editor]
-                     )
-                   )
+    policy action_type(:create) do
+      authorize_if {OrganisationRoleForCreate, right: :create_risk, parent: {:threat_id, Threat}}
     end
-  end
 
-  def frequency_per_year(%{probability: probability}) do
-    case probability do
-      nil -> 0
-      p -> p
+    policy action_type(:update) do
+      authorize_if {OrganisationRole, right: :edit_risk, path: [:threat, :organisation]}
+    end
+
+    policy action_type(:destroy) do
+      authorize_if {OrganisationRole, right: :delete_risk, path: [:threat, :organisation]}
     end
   end
 
-  def severity(%{severity: severity}) do
-    case severity do
-      nil -> 0
-      s -> s
-    end
-  end
+  @doc """
+  The number of incidents per year, 0 if it is not estimated.
+  """
+  def frequency_per_year(%{probability: probability}), do: probability || 0
 
-  def estimated_risk_cost(%{estimated_cost: estimated_cost, probability: probability}),
-    do: estimated_risk_cost(estimated_cost, probability)
-
-  def estimated_risk_cost(estimated_cost, probability)
-      when is_number(estimated_cost) and is_number(probability) do
-    round(estimated_cost * probability)
-  end
-
-  def estimated_risk_cost(_estimated_cost, _probability), do: nil
+  @doc """
+  The severity, 0 if it is not estimated.
+  """
+  def severity(%{severity: severity}), do: severity || 0
 end

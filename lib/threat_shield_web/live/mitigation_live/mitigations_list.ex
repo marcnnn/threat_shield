@@ -7,7 +7,7 @@ defmodule ThreatShieldWeb.MitigationLive.MitigationsList do
 
   alias ThreatShield.Accounts.User
   alias ThreatShield.ThreatManagement.Risk
-  alias ThreatShield.Mitigations
+  alias ThreatShield.ThreatManagement
 
   @moduledoc """
   This component renders a list of mitigations for a given risk.
@@ -141,9 +141,8 @@ defmodule ThreatShieldWeb.MitigationLive.MitigationsList do
   end
 
   defp create_mitigation(%User{} = user, %Risk{} = risk, %{name: name, description: desc}) do
-    {:ok, mitigation} =
-      Mitigations.create_mitigation(user, risk, %{name: name, description: desc})
-
-    mitigation
+    ThreatManagement.create_mitigation!(%{name: name, description: desc, risk_id: risk.id},
+      actor: user
+    )
   end
 end

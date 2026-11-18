@@ -1,22 +1,11 @@
 defmodule ThreatShield.MitigationsFixtures do
   @moduledoc """
-  This module defines test helpers for creating
-  entities via the `ThreatShield.Mitigations` context.
+  This module defines test helpers for creating mitigations.
   """
 
-  @doc """
-  Generate a mitigation.
-  """
   def mitigation_fixture(user, risk, attrs \\ %{}) do
-    attrs =
-      attrs
-      |> Enum.into(%{
-        name: "some name",
-        description: "some description"
-      })
-
-    {:ok, mitigation} = ThreatShield.Mitigations.create_mitigation(user, risk, attrs)
-
-    mitigation
+    attrs
+    |> Enum.into(%{name: "some name", description: "some description", risk_id: risk.id})
+    |> ThreatShield.ThreatManagement.create_mitigation!(actor: user)
   end
 end

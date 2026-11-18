@@ -1,7 +1,7 @@
 defmodule ThreatShieldWeb.AdminLive.OrganisationsManagement do
   use ThreatShieldWeb, :live_view
 
-  alias ThreatShield.Organisations
+  alias ThreatShield.Accounts
   alias ThreatShield.Const.Locations
 
   import ThreatShield.Accounts.Organisation, only: [attributes_config: 0]
@@ -10,7 +10,7 @@ defmodule ThreatShieldWeb.AdminLive.OrganisationsManagement do
   def mount(_params, _session, socket) do
     locations_options = Locations.list_locations()
 
-    organisations = Organisations.list_organisations(socket.assigns.current_user)
+    organisations = Accounts.list_organisations!(actor: socket.assigns.current_user)
 
     socket
     |> assign(locations_options: locations_options)

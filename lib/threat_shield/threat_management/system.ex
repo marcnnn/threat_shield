@@ -1,10 +1,15 @@
 defmodule ThreatShield.ThreatManagement.System do
+  @moduledoc """
+  A system of an organisation, e.g. an application or a piece of infrastructure.
+  Deleting a system deletes its assets and threats.
+  """
   use Ash.Resource,
     otp_app: :threat_shield,
     domain: ThreatShield.ThreatManagement,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer]
 
+  alias ThreatShield.Checks.{OrganisationRole, OrganisationRoleForCreate}
   alias ThreatShield.DynamicAttribute
 
   @attributes [
@@ -55,18 +60,23 @@ defmodule ThreatShield.ThreatManagement.System do
       allow_nil? false
       public? true
       constraints max_length: 60
+      description "The name of the system, unique in its organisation."
     end
 
     attribute :description, :string do
       allow_nil? false
       public? true
       constraints max_length: 4000
+      description "What the system does, its context and purpose."
     end
 
     attribute :attributes, :map do
       allow_nil? false
       default %{}
       public? true
+
+      description "Properties of the system such as application type, audience, framework, " <>
+                    "database and infrastructure, as a map of names to texts."
     end
 
     create_timestamp :inserted_at
@@ -77,10 +87,11 @@ defmodule ThreatShield.ThreatManagement.System do
     belongs_to :organisation, ThreatShield.Accounts.Organisation do
       allow_nil? false
       attribute_type :integer
+      public? true
     end
 
-    has_many :threats, ThreatShield.ThreatManagement.Threat
-    has_many :assets, ThreatShield.ThreatManagement.Asset
+    has_many :threats, ThreatShield.ThreatManagement.Threat, public?: true
+    has_many :assets, ThreatShield.ThreatManagement.Asset, public?: true
   end
 
   validations do
@@ -95,45 +106,50 @@ defmodule ThreatShield.ThreatManagement.System do
   end
 
   actions do
-    defaults [:read, :destroy]
+    defaults [:destroy]
+
+    read :read do
+      primary? true
+      description "Lists the systems of the organisations of the actor."
+    end
+
+    read :for_organisation do
+      description "Lists the systems of an organisation."
+
+      argument :organisation_id, :integer do
+        allow_nil? false
+        description "The id of the organisation."
+      end
+
+      filter expr(organisation_id == ^arg(:organisation_id))
+    end
 
     create :create do
-      accept [:name, :description, :attributes]
-
-      argument :organisation_id, :integer, allow_nil?: false
-      change manage_relationship(:organisation_id, :organisation, type: :append_and_remove)
+      description "Creates a system of an organisation."
+      accept [:name, :description, :attributes, :organisation_id]
     end
 
     update :update do
+      description "Changes the name, the description or the properties of a system."
       accept [:name, :description, :attributes]
-      require_atomic? false
-    end
-
-    read :for_user do
-      argument :user_id, :integer, allow_nil?: false
-      argument :roles, {:array, :atom}, allow_nil?: false
-
-      filter expr(
-               exists(
-                 organisation.memberships,
-                 user_id == ^arg(:user_id) and role in ^arg(:roles)
-               )
-             )
     end
   end
 
   policies do
     policy action_type(:read) do
-      authorize_if expr(exists(organisation.memberships, user_id == ^actor(:id)))
+      authorize_if {OrganisationRole, right: :view_organisation}
     end
 
-    policy action_type([:create, :update, :destroy]) do
-      authorize_if expr(
-                     exists(
-                       organisation.memberships,
-                       user_id == ^actor(:id) and role in [:owner, :editor]
-                     )
-                   )
+    policy action_type(:create) do
+      authorize_if {OrganisationRoleForCreate, right: :create_system}
+    end
+
+    policy action_type(:update) do
+      authorize_if {OrganisationRole, right: :edit_system}
+    end
+
+    policy action_type(:destroy) do
+      authorize_if {OrganisationRole, right: :delete_system}
     end
   end
 

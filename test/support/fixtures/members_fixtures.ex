@@ -1,30 +1,25 @@
 defmodule ThreatShield.MembersFixtures do
   @moduledoc """
-  This module defines test helpers for creating
-  entities via the `ThreatShield.Members` context.
+  This module defines test helpers for memberships and invites.
   """
 
   @doc """
-  Generate a invites.
+  Invites an email address to the organisation, as the given owner.
   """
-  def invites_fixture(user, attrs \\ %{}) do
-    attrs =
-      attrs
-      |> Enum.into(%{
-        token: "some token",
-        email: "some email"
-      })
-
-    {:ok, invites} = ThreatShield.Members.create_invite(user, attrs)
-
-    invites
+  def invite_fixture(owner, organisation, email) do
+    ThreatShield.Accounts.create_invite!(organisation.id, %{email: email}, actor: owner)
   end
 
   @doc """
   Adds the user to the organisation with the given role.
   """
   def membership_fixture(organisation, user, role) do
-    %ThreatShield.Accounts.Membership{organisation: organisation, user: user, role: role}
-    |> ThreatShield.Repo.insert!()
+    ThreatShield.Accounts.Membership
+    |> Ash.Changeset.for_create(
+      :create,
+      %{organisation_id: organisation.id, user_id: user.id, role: role},
+      authorize?: false
+    )
+    |> Ash.create!()
   end
 end

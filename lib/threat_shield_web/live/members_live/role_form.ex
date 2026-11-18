@@ -3,25 +3,19 @@ defmodule ThreatShieldWeb.MembersLive.RoleForm do
 
   import ThreatShieldWeb.FormHelpers
 
-  alias ThreatShield.Members
-
-  @role_options [
-    {:owner, "owner"},
-    {:editor, "editor"},
-    {:viewer, "viewer"}
-  ]
+  @role_options Enum.map(ThreatShield.Accounts.Role.values(), &{&1, Atom.to_string(&1)})
 
   @impl true
   def render(assigns) do
     ~H"""
     <div class="md:w-[800px]">
       <.header>
-        <%= dgettext("organisation", "Edit role for") %> <%= @membership.user.email %>
+        <%= dgettext("organisation", "Edit role for") %> <%= @membership.email %>
       </.header>
 
       <.simple_form
         for={@form}
-        id={"role-form-for-user-#{@membership.user.id}"}
+        id={"role-form-for-user-#{@membership.user_id}"}
         phx-target={@myself}
         phx-change="validate"
         phx-submit="save"
@@ -50,45 +44,25 @@ defmodule ThreatShieldWeb.MembersLive.RoleForm do
   end
 
   @impl true
-  def update(%{membership: membership} = assigns, socket) do
-    changeset = Members.change_membership(membership)
+  def update(%{membership: membership, current_user: user} = assigns, socket) do
+    form = AshPhoenix.Form.for_update(membership, :update_role, actor: user, as: "membership")
 
     {:ok,
      socket
      |> assign(assigns)
      |> assign(:role_options, @role_options)
-     |> assign_form(changeset)}
+     |> assign_form(form)}
   end
 
   @impl true
   def handle_event("validate", %{"membership" => membership_params}, socket) do
-    changeset =
-      socket.assigns.membership
-      |> Members.change_membership(membership_params)
-      |> Map.put(:action, :validate)
-
-    {:noreply, assign_form(socket, changeset)}
+    {:noreply, validate_form(socket, membership_params)}
   end
 
   def handle_event("save", %{"membership" => membership_params}, socket) do
-    membership = socket.assigns.membership
-    user = socket.assigns.current_user
+    {socket, _result} =
+      submit_form(socket, membership_params, __MODULE__, "Role updated successfully")
 
-    {role, _} =
-      Enum.find(@role_options, fn {_, v} -> v == Map.get(membership_params, "role") end)
-
-    result = Members.update_role(user, membership, role)
-
-    case result do
-      {:error, :last_owner} ->
-        socket
-        |> put_flash(:error, "Cannot change role: this is the last owner")
-        |> noreply()
-
-      result ->
-        socket
-        |> handle_save_result(result, __MODULE__, "Role updated successfully")
-        |> noreply()
-    end
+    noreply(socket)
   end
 end

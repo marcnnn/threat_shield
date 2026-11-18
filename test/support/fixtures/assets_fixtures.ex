@@ -1,21 +1,11 @@
 defmodule ThreatShield.AssetsFixtures do
   @moduledoc """
-  This module defines test helpers for creating
-  entities via the `ThreatShield.Assets` context.
+  This module defines test helpers for creating assets.
   """
 
-  @doc """
-  Generate a asset.
-  """
   def asset_fixture(user, organisation, attrs \\ %{}) do
-    default_attrs = %{
-      name: "some name",
-      description: "some description"
-    }
-
-    merged_attrs = Map.merge(default_attrs, attrs)
-
-    {:ok, asset} = ThreatShield.Assets.create_asset(user, organisation, merged_attrs)
-    asset
+    %{name: "some name", description: "some description", organisation_id: organisation.id}
+    |> Map.merge(attrs)
+    |> ThreatShield.ThreatManagement.create_asset!(actor: user)
   end
 end

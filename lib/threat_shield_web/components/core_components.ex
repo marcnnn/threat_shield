@@ -980,6 +980,9 @@ defmodule ThreatShieldWeb.CoreComponents do
   Translates an error message using gettext.
   """
   def translate_error({msg, opts}) do
+    # Ash words some messages differently from Ecto; use the wording of the translations
+    {msg, opts} = ThreatShieldWeb.AshErrors.normalize(msg, opts)
+
     # When using gettext, we typically pass the strings we want
     # to translate as a static argument:
     #

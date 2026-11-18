@@ -1,10 +1,16 @@
 defmodule ThreatShield.ThreatManagement.Asset do
+  @moduledoc """
+  An asset is a valuable resource or data of an organisation, optionally of one of
+  its systems. Deleting an asset keeps its threats.
+  """
   use Ash.Resource,
     otp_app: :threat_shield,
     domain: ThreatShield.ThreatManagement,
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer]
 
+  alias ThreatShield.Checks.{OrganisationRole, OrganisationRoleForCreate}
+  alias ThreatShield.ThreatManagement.Changes.OverallCriticality
   alias ThreatShield.ThreatManagement.Validations.SameOrganisation
 
   postgres do
@@ -25,36 +31,44 @@ defmodule ThreatShield.ThreatManagement.Asset do
       allow_nil? false
       public? true
       constraints max_length: 60
+      description "The name of the asset."
     end
 
     attribute :description, :string do
       allow_nil? true
       public? true
       constraints max_length: 4000
+      description "What the asset is and why it is valuable."
     end
 
     attribute :criticality_loss, :float do
       allow_nil? true
       public? true
       constraints min: 0, max: 5
+      description "How critical a loss of the asset is, from 0 to 5."
     end
 
     attribute :criticality_theft, :float do
       allow_nil? true
       public? true
       constraints min: 0, max: 5
+      description "How critical a theft of the asset is, from 0 to 5."
     end
 
     attribute :criticality_publication, :float do
       allow_nil? true
       public? true
       constraints min: 0, max: 5
+      description "How critical a publication of the asset is, from 0 to 5."
     end
 
     attribute :criticality_overall, :float do
       allow_nil? true
       public? true
       constraints min: 0, max: 5
+
+      description "The overall criticality, from 0 to 5. It is at least the average of " <>
+                    "the other three criticalities."
     end
 
     create_timestamp :inserted_at
@@ -65,44 +79,80 @@ defmodule ThreatShield.ThreatManagement.Asset do
     belongs_to :organisation, ThreatShield.Accounts.Organisation do
       allow_nil? false
       attribute_type :integer
+      public? true
     end
 
     belongs_to :system, ThreatShield.ThreatManagement.System do
       allow_nil? true
       attribute_type :integer
+      public? true
     end
 
-    has_many :threats, ThreatShield.ThreatManagement.Threat
+    has_many :threats, ThreatShield.ThreatManagement.Threat, public?: true
+  end
+
+  calculations do
+    calculate :system_name, :string, expr(system.name) do
+      public? true
+      description "The name of the system of the asset."
+    end
   end
 
   actions do
-    defaults [:read, :destroy]
+    defaults [:destroy]
+
+    read :read do
+      primary? true
+      description "Lists the assets of the organisations of the actor."
+    end
+
+    read :for_organisation do
+      description "Lists the assets of an organisation."
+
+      argument :organisation_id, :integer do
+        allow_nil? false
+        description "The id of the organisation."
+      end
+
+      filter expr(organisation_id == ^arg(:organisation_id))
+    end
+
+    read :for_system do
+      description "Lists the assets of a system."
+
+      argument :system_id, :integer do
+        allow_nil? false
+        description "The id of the system."
+      end
+
+      filter expr(system_id == ^arg(:system_id))
+    end
 
     create :create do
+      description "Creates an asset of an organisation, optionally of one of its systems."
+
       accept [
         :name,
         :description,
+        :organisation_id,
         :system_id,
         :criticality_loss,
         :criticality_theft,
         :criticality_publication,
         :criticality_overall
       ]
-
-      argument :organisation_id, :integer, allow_nil?: false
-      change set_attribute(:organisation_id, arg(:organisation_id))
 
       # an asset may only belong to a system of its own organisation
       validate {SameOrganisation,
                 attribute: :system_id, resource: ThreatShield.ThreatManagement.System},
                where: [changing(:system_id)]
 
-      change fn changeset, _context ->
-        update_overall_criticality(changeset)
-      end
+      change OverallCriticality
     end
 
     update :update do
+      description "Changes an asset."
+
       accept [
         :name,
         :description,
@@ -113,71 +163,32 @@ defmodule ThreatShield.ThreatManagement.Asset do
         :criticality_overall
       ]
 
+      # the validation reads the system
       require_atomic? false
 
       validate {SameOrganisation,
                 attribute: :system_id, resource: ThreatShield.ThreatManagement.System},
                where: [changing(:system_id)]
 
-      change fn changeset, _context ->
-        update_overall_criticality(changeset)
-      end
-    end
-
-    read :for_user do
-      argument :user_id, :integer, allow_nil?: false
-      argument :roles, {:array, :atom}, allow_nil?: false
-
-      filter expr(
-               exists(
-                 organisation.memberships,
-                 user_id == ^arg(:user_id) and role in ^arg(:roles)
-               )
-             )
+      change OverallCriticality
     end
   end
 
   policies do
     policy action_type(:read) do
-      authorize_if expr(exists(organisation.memberships, user_id == ^actor(:id)))
+      authorize_if {OrganisationRole, right: :view_organisation}
     end
 
-    policy action_type([:create, :update, :destroy]) do
-      authorize_if expr(
-                     exists(
-                       organisation.memberships,
-                       user_id == ^actor(:id) and role in [:owner, :editor]
-                     )
-                   )
+    policy action_type(:create) do
+      authorize_if {OrganisationRoleForCreate, right: :create_asset}
     end
-  end
 
-  def calc_overall_criticality(%{
-        criticality_loss: loss,
-        criticality_theft: theft,
-        criticality_publication: publication,
-        criticality_overall: overall
-      }) do
-    if not is_nil(loss) and not is_nil(theft) and not is_nil(publication) do
-      calc = (loss + theft + publication) / 3
-      max(calc, overall || 0.0)
-    else
-      overall
+    policy action_type(:update) do
+      authorize_if {OrganisationRole, right: :edit_asset}
     end
-  end
 
-  defp update_overall_criticality(changeset) do
-    loss = Ash.Changeset.get_attribute(changeset, :criticality_loss)
-    theft = Ash.Changeset.get_attribute(changeset, :criticality_theft)
-    publication = Ash.Changeset.get_attribute(changeset, :criticality_publication)
-    overall = Ash.Changeset.get_attribute(changeset, :criticality_overall)
-
-    if not is_nil(loss) and not is_nil(theft) and not is_nil(publication) do
-      calc = (loss + theft + publication) / 3
-      new_overall = max(calc, overall || 0.0)
-      Ash.Changeset.change_attribute(changeset, :criticality_overall, new_overall)
-    else
-      changeset
+    policy action_type(:destroy) do
+      authorize_if {OrganisationRole, right: :delete_asset}
     end
   end
 end

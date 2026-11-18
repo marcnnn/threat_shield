@@ -1,10 +1,10 @@
 defmodule ThreatShieldWeb.WelcomeController do
   use ThreatShieldWeb, :controller
 
-  alias ThreatShield.Organisations
+  alias ThreatShield.Accounts
 
   def home(conn, _params) do
-    case Organisations.list_organisations(conn.assigns.current_user) do
+    case Accounts.list_organisations!(actor: conn.assigns.current_user) do
       [single_org] ->
         conn
         |> redirect(to: ~p"/organisations/#{single_org.id}")

@@ -38,7 +38,7 @@
     </div>
     <div>
       <.label><%= dgettext("risks", "Risk costs per year") %></.label>
-      <p><%= format_monetary_amount(Risk.estimated_risk_cost(@risk)) %></p>
+      <p><%= format_monetary_amount(@risk.estimated_risk_cost) %></p>
     </div>
     <div>
       <.label><%= dgettext("risks", "Severity") %></.label>

@@ -4,18 +4,11 @@ defmodule ThreatShield.OrganisationsFixtures do
   """
 
   @doc """
-  Generate an organisation.
+  Generates an organisation with the user as its owner.
   """
-  alias ThreatShield.Organisations
-
   def organisation_fixture(user, attrs \\ %{}) do
-    {:ok, organisation} =
-      attrs
-      |> Enum.into(%{
-        name: "some name"
-      })
-      |> Organisations.create_organisation(user)
-
-    organisation
+    attrs
+    |> Enum.into(%{name: "some name"})
+    |> ThreatShield.Accounts.create_organisation!(actor: user)
   end
 end

@@ -1,7 +1,7 @@
 defmodule ThreatShieldWeb.MitigationLive.MitigationDetails do
   use ThreatShieldWeb, :live_view
 
-  alias ThreatShield.Mitigations
+  alias ThreatShield.ThreatManagement
   alias ThreatShield.Accounts.Organisation
 
   import ThreatShieldWeb.Helpers, only: [add_breadcrumbs: 2, get_path_prefix: 1]
@@ -9,7 +9,7 @@ defmodule ThreatShieldWeb.MitigationLive.MitigationDetails do
   @impl true
   def mount(%{"mitigation_id" => mitigation_id} = _params, _session, socket) do
     user = socket.assigns.current_user
-    mitigation = Mitigations.get_mitigation!(user, mitigation_id)
+    mitigation = get_mitigation!(user, mitigation_id)
 
     socket
     |> assign(mitigation: mitigation)
@@ -34,16 +34,21 @@ defmodule ThreatShieldWeb.MitigationLive.MitigationDetails do
 
   @impl true
   def handle_event("delete", %{"mitigation_id" => id}, socket) do
-    current_user = socket.assigns.current_user
     risk = socket.assigns.risk
     threat = socket.assigns.threat
 
-    {1, [_mitigation | _]} = Mitigations.delete_mitigation_by_id!(current_user, id)
+    case ThreatManagement.destroy_mitigation(id, actor: socket.assigns.current_user) do
+      :ok ->
+        {:noreply,
+         push_navigate(socket,
+           to: get_path_prefix(socket.assigns) <> "/threats/#{threat.id}/risks/#{risk.id}"
+         )}
 
-    {:noreply,
-     push_navigate(socket,
-       to: get_path_prefix(socket.assigns) <> "/threats/#{threat.id}/risks/#{risk.id}"
-     )}
+      {:error, _error} ->
+        socket
+        |> put_flash(:error, dgettext("mitigations", "The mitigation could not be deleted."))
+        |> noreply()
+    end
   end
 
   @impl true
@@ -51,12 +56,19 @@ defmodule ThreatShieldWeb.MitigationLive.MitigationDetails do
         {ThreatShieldWeb.MitigationLive.MitigationForm, {:saved, mitigation}},
         socket
       ) do
-    mitigation = Mitigations.get_mitigation!(socket.assigns.current_user, mitigation.id)
+    mitigation = get_mitigation!(socket.assigns.current_user, mitigation.id)
 
     {:noreply,
      socket
      |> assign(mitigation: mitigation)
      |> assign(page_title: "Show Mitigation")}
+  end
+
+  defp get_mitigation!(user, id) do
+    ThreatManagement.get_mitigation!(id,
+      actor: user,
+      load: [risk: [threat: [:system, organisation: [:memberships]]]]
+    )
   end
 
   defp page_title(:show), do: "Show Mitigation"

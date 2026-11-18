@@ -5,9 +5,7 @@ defmodule ThreatShieldWeb.ThreatLive.ThreatsList do
   alias ThreatShield.Scope
   alias ThreatShieldWeb.AiSuggestions
 
-  alias ThreatShield.Threats
-  alias ThreatShield.ThreatManagement.Threat
-  alias ThreatShield.ThreatManagement.Asset
+  alias ThreatShield.ThreatManagement
   alias ThreatShield.Accounts.Organisation
   alias ThreatShield.ThreatManagement.System
 
@@ -15,6 +13,8 @@ defmodule ThreatShieldWeb.ThreatLive.ThreatsList do
   import ThreatShieldWeb.Helpers
 
   require Logger
+
+  @load [:system, :asset, :risks]
 
   @moduledoc """
   This component renders a list of threats for a given system or for the organization.
@@ -105,7 +105,6 @@ defmodule ThreatShieldWeb.ThreatLive.ThreatsList do
           scope={@scope}
           system_options={systems_of_organisaton(@scope.organisation)}
           asset_options={assets_of_organisaton(@scope.organisation)}
-          threat={prepare_threat(@scope)}
           patch={@origin}
         />
       </.modal>
@@ -133,7 +132,7 @@ defmodule ThreatShieldWeb.ThreatLive.ThreatsList do
     old_threats = socket.assigns[:threats] || []
 
     # reload to resolve associations
-    threat = Threats.get_threat!(socket.assigns.scope.user, threat.id)
+    threat = get_threat!(socket.assigns.scope.user, threat.id)
 
     socket
     |> assign(:show_create_dialog, false)
@@ -198,10 +197,10 @@ defmodule ThreatShieldWeb.ThreatLive.ThreatsList do
     threats =
       case scope do
         %Scope{system: %System{} = system} ->
-          Threats.find_by_system(user, system)
+          ThreatManagement.list_threats_of_system!(system.id, actor: user, load: @load)
 
         _ ->
-          Threats.list_threats(user, org)
+          ThreatManagement.list_threats!(org.id, actor: user, load: @load)
       end
 
     socket
@@ -216,24 +215,19 @@ defmodule ThreatShieldWeb.ThreatLive.ThreatsList do
     Organisation.list_asset_options(organisation)
   end
 
-  defp prepare_threat(%{asset: %Asset{} = asset, system: %System{} = system}) do
-    %Threat{asset: asset, asset_id: asset.id, system: system, system_id: system.id}
+  defp create_threat(%Scope{} = scope, %{name: name, description: desc}) do
+    ThreatManagement.create_threat!(
+      %{
+        name: name,
+        description: desc,
+        organisation_id: scope.organisation.id,
+        system_id: scope.system && scope.system.id,
+        asset_id: scope.asset && scope.asset.id
+      },
+      actor: scope.user,
+      load: @load
+    )
   end
 
-  defp prepare_threat(%{asset: %Asset{} = asset}) do
-    %Threat{asset: asset, asset_id: asset.id}
-  end
-
-  defp prepare_threat(%{system: %System{} = system}) do
-    %Threat{system: system, system_id: system.id}
-  end
-
-  defp prepare_threat(_other), do: %Threat{}
-
-  defp create_threat(scope, %{name: name, description: desc}) do
-    {:ok, threat} = Threats.add_threat_with_name_and_description(scope, name, desc)
-
-    # reload to resolve associations
-    Threats.get_threat!(scope.user, threat.id)
-  end
+  defp get_threat!(user, id), do: ThreatManagement.get_threat!(id, actor: user, load: @load)
 end

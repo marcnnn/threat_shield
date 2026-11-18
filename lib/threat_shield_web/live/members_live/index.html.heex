@@ -18,7 +18,7 @@
     </.header>
 
     <.table id="memberships" rows={@organisation.memberships}>
-      <:col :let={membership} label="E-mail"><%= membership.user.email %></:col>
+      <:col :let={membership} label="E-mail"><%= membership.email %></:col>
       <:col :let={membership} label="Role">
         <%= role_label(membership.role) %>
       </:col>
@@ -29,9 +29,9 @@
               :if={may?(@current_org_membership, :delete_member)}
               phx-click="delete_membership"
               phx-value-membership_id={membership.id}
-              data-confirm={"Do you really want to remove #{membership.user.email} from #{@organisation.name}?"}
+              data-confirm={"Do you really want to remove #{membership.email} from #{@organisation.name}?"}
             >
-              <%= if membership.user.id == @current_user.id do %>
+              <%= if membership.user_id == @current_user.id do %>
                 <%= dgettext("common", "Leave") %>
               <% else %>
                 <%= dgettext("common", "Delete") %>

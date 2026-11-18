@@ -1,89 +1,67 @@
 defmodule ThreatShield.ThreatsTest do
-  use ExUnit.Case
   use ThreatShield.DataCase
 
-  alias ThreatShield.OrganisationsFixtures
   alias ThreatShield.AccountsFixtures
   alias ThreatShield.AssetsFixtures
   alias ThreatShield.MembersFixtures
-  alias ThreatShield.Systems
-  alias ThreatShield.Threats
+  alias ThreatShield.OrganisationsFixtures
+  alias ThreatShield.SystemsFixtures
+  alias ThreatShield.ThreatManagement
   alias ThreatShield.ThreatManagement.Threat
 
-  describe "threats" do
-    test "create_threat/3 with valid data creates a threat" do
-      user = AccountsFixtures.user_fixture()
-      organisation = OrganisationsFixtures.organisation_fixture(user)
+  @valid_attrs %{name: "some name", description: "some description"}
 
-      valid_attrs = %{
-        name: "some name",
-        description: "some description"
-      }
-
-      assert {:ok, %Threat{}} = Threats.create_threat(user, organisation, valid_attrs)
-    end
+  defp create_threat(user, organisation, attrs) do
+    attrs
+    |> Map.put(:organisation_id, organisation.id)
+    |> ThreatManagement.create_threat(actor: user)
   end
 
-  describe "add_threat_with_name_and_description/3" do
-    alias ThreatShield.Scope
-
-    setup do
+  describe "threats" do
+    test "create_threat with valid data creates a threat" do
       user = AccountsFixtures.user_fixture()
       organisation = OrganisationsFixtures.organisation_fixture(user)
 
-      {:ok, system} =
-        Systems.create_system(user, organisation, %{
-          name: "some system",
-          description: "some description",
-          attributes: %{}
-        })
-
-      asset = AssetsFixtures.asset_fixture(user, organisation)
-      organisation = ThreatShield.Organisations.get_organisation!(user, organisation.id)
-
-      %{user: user, organisation: organisation, system: system, asset: asset}
-    end
-
-    test "creates a threat for the organisation, the system, and the asset of the scope",
-         %{user: user, organisation: organisation, system: system, asset: asset} do
-      assert {:ok, %Threat{system_id: nil, asset_id: nil}} =
-               Threats.add_threat_with_name_and_description(
-                 Scope.for(user, organisation),
-                 "a name",
-                 "a description"
-               )
-
-      scope = Scope.for(user, organisation, system: system, asset: asset)
-
-      assert {:ok, %Threat{name: "a name", description: "a description"} = threat} =
-               Threats.add_threat_with_name_and_description(scope, "a name", "a description")
-
+      assert {:ok, %Threat{} = threat} = create_threat(user, organisation, @valid_attrs)
       assert threat.organisation_id == organisation.id
-      assert threat.system_id == system.id
-      assert threat.asset_id == asset.id
     end
 
-    test "is not allowed for a viewer", %{organisation: organisation} do
+    test "is not allowed for a viewer" do
+      user = AccountsFixtures.user_fixture()
+      organisation = OrganisationsFixtures.organisation_fixture(user)
       viewer = AccountsFixtures.user_fixture()
       MembersFixtures.membership_fixture(organisation, viewer, :viewer)
 
-      assert_not_found(fn ->
-        Threats.add_threat_with_name_and_description(
-          Scope.for(viewer, organisation),
-          "a name",
-          "a description"
-        )
-      end)
+      assert {:error, %Ash.Error.Forbidden{}} = create_threat(viewer, organisation, @valid_attrs)
+    end
+
+    test "list_threats_of_system and list_threats_of_asset filter in the database" do
+      user = AccountsFixtures.user_fixture()
+      organisation = OrganisationsFixtures.organisation_fixture(user)
+      system = SystemsFixtures.system_fixture(user, organisation)
+      asset = AssetsFixtures.asset_fixture(user, organisation)
+
+      {:ok, of_system} =
+        create_threat(user, organisation, Map.put(@valid_attrs, :system_id, system.id))
+
+      {:ok, of_asset} =
+        create_threat(user, organisation, Map.put(@valid_attrs, :asset_id, asset.id))
+
+      {:ok, _other} = create_threat(user, organisation, @valid_attrs)
+
+      assert [%Threat{id: id}] = ThreatManagement.list_threats_of_system!(system.id, actor: user)
+      assert id == of_system.id
+      assert [%Threat{id: id}] = ThreatManagement.list_threats_of_asset!(asset.id, actor: user)
+      assert id == of_asset.id
+      assert length(ThreatManagement.list_threats!(organisation.id, actor: user)) == 3
     end
   end
 
   describe "references of a threat" do
-    @valid_attrs %{name: "some name", description: "some description"}
-
     setup do
       user = AccountsFixtures.user_fixture()
       organisation = OrganisationsFixtures.organisation_fixture(user)
-      {:ok, threat} = Threats.create_threat(user, organisation, @valid_attrs)
+      {:ok, threat} = create_threat(user, organisation, @valid_attrs)
 
       other_user = AccountsFixtures.user_fixture()
       other_organisation = OrganisationsFixtures.organisation_fixture(other_user)
@@ -102,7 +80,7 @@ defmodule ThreatShield.ThreatsTest do
       asset = AssetsFixtures.asset_fixture(user, organisation)
 
       assert {:ok, %Threat{} = updated} =
-               Threats.update_threat(user, threat, %{asset_id: asset.id})
+               ThreatManagement.update_threat(threat, %{asset_id: asset.id}, actor: user)
 
       assert updated.asset_id == asset.id
     end
@@ -117,7 +95,7 @@ defmodule ThreatShield.ThreatsTest do
       foreign_asset = AssetsFixtures.asset_fixture(other_user, other_organisation)
 
       assert {:error, error} =
-               Threats.create_threat(
+               create_threat(
                  user,
                  organisation,
                  Map.put(@valid_attrs, :asset_id, foreign_asset.id)
@@ -125,7 +103,9 @@ defmodule ThreatShield.ThreatsTest do
 
       assert %{asset_id: ["must belong to the same organisation"]} = errors_on(error)
 
-      assert {:error, error} = Threats.update_threat(user, threat, %{asset_id: foreign_asset.id})
+      assert {:error, error} =
+               ThreatManagement.update_threat(threat, %{asset_id: foreign_asset.id}, actor: user)
+
       assert %{asset_id: ["must belong to the same organisation"]} = errors_on(error)
 
       assert Repo.get!(Threat, threat.id).asset_id == nil
@@ -139,17 +119,11 @@ defmodule ThreatShield.ThreatsTest do
            other_user: other_user,
            other_organisation: other_organisation
          } do
-      {:ok, foreign_system} =
-        Systems.create_system(other_user, other_organisation, %{
-          name: "some system",
-          description: "some description",
-          attributes: %{}
-        })
-
+      foreign_system = SystemsFixtures.system_fixture(other_user, other_organisation)
       MembersFixtures.membership_fixture(other_organisation, user, :viewer)
 
       assert {:error, error} =
-               Threats.create_threat(
+               create_threat(
                  user,
                  organisation,
                  Map.put(@valid_attrs, :system_id, foreign_system.id)
@@ -158,11 +132,19 @@ defmodule ThreatShield.ThreatsTest do
       assert %{system_id: ["must belong to the same organisation"]} = errors_on(error)
 
       assert {:error, error} =
-               Threats.update_threat(user, threat, %{system_id: foreign_system.id})
+               ThreatManagement.update_threat(threat, %{system_id: foreign_system.id},
+                 actor: user
+               )
 
       assert %{system_id: ["must belong to the same organisation"]} = errors_on(error)
 
       assert Repo.get!(Threat, threat.id).system_id == nil
+    end
+
+    test "a threat cannot be created in another organisation",
+         %{user: user, other_organisation: other_organisation} do
+      assert {:error, %Ash.Error.Forbidden{}} =
+               create_threat(user, other_organisation, @valid_attrs)
     end
   end
 end

@@ -9,6 +9,7 @@ defmodule ThreatShield.ThreatManagement.Threat do
   A threat is a potential danger to an organisation, a system or an asset.
   """
 
+  alias ThreatShield.Checks.{OrganisationRole, OrganisationRoleForCreate}
   alias ThreatShield.ThreatManagement.{Asset, System}
   alias ThreatShield.ThreatManagement.Validations.SameOrganisation
 
@@ -31,12 +32,14 @@ defmodule ThreatShield.ThreatManagement.Threat do
       allow_nil? false
       public? true
       constraints max_length: 60
+      description "The name of the threat."
     end
 
     attribute :description, :string do
       allow_nil? false
       public? true
       constraints max_length: 4000
+      description "The event or action that can compromise the organisation, system or asset."
     end
 
     create_timestamp :inserted_at
@@ -47,29 +50,82 @@ defmodule ThreatShield.ThreatManagement.Threat do
     belongs_to :organisation, ThreatShield.Accounts.Organisation do
       allow_nil? false
       attribute_type :integer
+      public? true
     end
 
     belongs_to :system, ThreatShield.ThreatManagement.System do
       allow_nil? true
       attribute_type :integer
+      public? true
     end
 
     belongs_to :asset, ThreatShield.ThreatManagement.Asset do
       allow_nil? true
       attribute_type :integer
+      public? true
     end
 
-    has_many :risks, ThreatShield.ThreatManagement.Risk
+    has_many :risks, ThreatShield.ThreatManagement.Risk, public?: true
+  end
+
+  calculations do
+    calculate :system_name, :string, expr(system.name) do
+      public? true
+      description "The name of the system of the threat."
+    end
+
+    calculate :asset_name, :string, expr(asset.name) do
+      public? true
+      description "The name of the asset of the threat."
+    end
   end
 
   actions do
-    defaults [:read, :destroy]
+    defaults [:destroy]
+
+    read :read do
+      primary? true
+      description "Lists the threats of the organisations of the actor."
+    end
+
+    read :for_organisation do
+      description "Lists the threats of an organisation."
+
+      argument :organisation_id, :integer do
+        allow_nil? false
+        description "The id of the organisation."
+      end
+
+      filter expr(organisation_id == ^arg(:organisation_id))
+    end
+
+    read :for_system do
+      description "Lists the threats of a system."
+
+      argument :system_id, :integer do
+        allow_nil? false
+        description "The id of the system."
+      end
+
+      filter expr(system_id == ^arg(:system_id))
+    end
+
+    read :for_asset do
+      description "Lists the threats of an asset."
+
+      argument :asset_id, :integer do
+        allow_nil? false
+        description "The id of the asset."
+      end
+
+      filter expr(asset_id == ^arg(:asset_id))
+    end
 
     create :create do
-      accept [:name, :description, :system_id, :asset_id]
+      description "Creates a threat of an organisation, optionally of one of its systems " <>
+                    "and assets."
 
-      argument :organisation_id, :integer, allow_nil?: false
-      change set_attribute(:organisation_id, arg(:organisation_id))
+      accept [:name, :description, :organisation_id, :system_id, :asset_id]
 
       # a threat may only reference a system and an asset of its own organisation
       validate {SameOrganisation, attribute: :system_id, resource: System},
@@ -80,42 +136,34 @@ defmodule ThreatShield.ThreatManagement.Threat do
     end
 
     update :update do
+      description "Changes a threat."
       accept [:name, :description, :system_id, :asset_id]
+      # the validations read the system and the asset
       require_atomic? false
 
-      # a threat may only reference a system and an asset of its own organisation
       validate {SameOrganisation, attribute: :system_id, resource: System},
         where: [changing(:system_id)]
 
       validate {SameOrganisation, attribute: :asset_id, resource: Asset},
         where: [changing(:asset_id)]
     end
-
-    read :for_user do
-      argument :user_id, :integer, allow_nil?: false
-      argument :roles, {:array, :atom}, allow_nil?: false
-
-      filter expr(
-               exists(
-                 organisation.memberships,
-                 user_id == ^arg(:user_id) and role in ^arg(:roles)
-               )
-             )
-    end
   end
 
   policies do
     policy action_type(:read) do
-      authorize_if expr(exists(organisation.memberships, user_id == ^actor(:id)))
+      authorize_if {OrganisationRole, right: :view_organisation}
     end
 
-    policy action_type([:create, :update, :destroy]) do
-      authorize_if expr(
-                     exists(
-                       organisation.memberships,
-                       user_id == ^actor(:id) and role in [:owner, :editor]
-                     )
-                   )
+    policy action_type(:create) do
+      authorize_if {OrganisationRoleForCreate, right: :create_threat}
+    end
+
+    policy action_type(:update) do
+      authorize_if {OrganisationRole, right: :edit_threat}
+    end
+
+    policy action_type(:destroy) do
+      authorize_if {OrganisationRole, right: :delete_threat}
     end
   end
 end

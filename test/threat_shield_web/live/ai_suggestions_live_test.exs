@@ -15,7 +15,7 @@ defmodule ThreatShieldWeb.AiSuggestionsLiveTest do
   alias ThreatShield.ThreatsFixtures
 
   alias ThreatShield.Repo
-  alias ThreatShield.Systems
+  alias ThreatShield.SystemsFixtures
   alias ThreatShield.Accounts.Organisation
   alias ThreatShield.ThreatManagement.Asset
   alias ThreatShield.ThreatManagement.Mitigation
@@ -29,8 +29,8 @@ defmodule ThreatShieldWeb.AiSuggestionsLiveTest do
   setup %{user: user} do
     organisation = OrganisationsFixtures.organisation_fixture(user)
 
-    {:ok, system} =
-      Systems.create_system(user, organisation, %{
+    system =
+      SystemsFixtures.system_fixture(user, organisation, %{
         name: "Web shop",
         description: "Sells products",
         attributes: %{}

@@ -1,36 +1,38 @@
 defmodule ThreatShield.OrganisationsTest do
-  use ExUnit.Case
   use ThreatShield.DataCase
 
-  alias ThreatShield.Organisations
+  alias ThreatShield.Accounts
   alias ThreatShield.Accounts.Organisation
-  alias ThreatShield.OrganisationsFixtures
   alias ThreatShield.AccountsFixtures
+  alias ThreatShield.OrganisationsFixtures
 
   describe "organisations" do
-    test "create_organisation/2 with valid data creates an organisation" do
-      user = AccountsFixtures.user_fixture()
-      valid_attrs = %{name: "some name"}
-
-      assert {:ok, %Organisation{}} =
-               Organisations.create_organisation(valid_attrs, user)
-    end
-
-    test "create_organisation/2 with invalid data returns error" do
+    test "create_organisation with valid data creates an organisation" do
       user = AccountsFixtures.user_fixture()
 
-      assert {:error, _} = Organisations.create_organisation(%{}, user)
+      assert {:ok, %Organisation{} = organisation} =
+               Accounts.create_organisation(%{name: "some name"}, actor: user)
+
+      assert organisation.attributes == %{}
     end
 
-    test "update_organisation/3 with valid data updates the organisation" do
+    test "create_organisation with invalid data returns error" do
+      user = AccountsFixtures.user_fixture()
+
+      assert {:error, _} = Accounts.create_organisation(%{}, actor: user)
+    end
+
+    test "create_organisation needs an actor" do
+      assert {:error, _} = Accounts.create_organisation(%{name: "x"})
+      refute ThreatShield.Repo.get_by(Organisation, name: "x")
+    end
+
+    test "update_organisation with valid data updates the organisation" do
       user = AccountsFixtures.user_fixture()
       organisation = OrganisationsFixtures.organisation_fixture(user)
 
-      updated_attrs = %{name: "Updated Name"}
-      updated_organisation = Organisations.update_organisation(organisation, user, updated_attrs)
-
-      assert {:ok, %Organisation{} = organisation} = updated_organisation
-      assert organisation.name == "Updated Name"
+      assert {:ok, %Organisation{name: "Updated Name"}} =
+               Accounts.update_organisation(organisation, %{name: "Updated Name"}, actor: user)
     end
   end
 end

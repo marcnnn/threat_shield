@@ -1,17 +1,15 @@
 defmodule ThreatShieldWeb.AshErrors do
   @moduledoc """
-  Turns the errors of an Ash action into field errors of an Ecto changeset, so that
-  the forms can show them.
+  Error messages of Ash actions in the wording of the forms.
 
-  The forms are still built from Ecto changesets. Until they use `AshPhoenix.Form`,
-  this module puts the errors that an Ash action returns into the changeset of the
-  form. Messages that Ash words differently from Ecto are given the Ecto wording, so
-  that the translations in `priv/gettext/errors.pot` apply.
+  Ash words some validation messages differently from Ecto. `normalize/2` gives them
+  the Ecto wording, so that the translations in `priv/gettext/errors.pot` apply.
+  `ThreatShieldWeb.CoreComponents.translate_error/1` uses it for every form error.
   """
 
   @doc """
   Returns the field errors of an Ash error or changeset as
-  `[{field, {message, vars}}]`.
+  `[{field, {message, vars}}]`, with normalized messages.
   """
   def field_errors(%Ash.Changeset{errors: errors}), do: field_errors(errors)
   def field_errors(%{errors: errors}) when is_list(errors), do: field_errors(errors)
@@ -20,19 +18,6 @@ defmodule ThreatShieldWeb.AshErrors do
     errors
     |> Enum.flat_map(&to_form_errors/1)
     |> Enum.map(fn {field, message, vars} -> {field, normalize(message, vars)} end)
-  end
-
-  @doc """
-  Replaces the errors of an Ecto changeset with the field errors of an Ash error.
-  """
-  def add_to_changeset(%Ecto.Changeset{} = changeset, error) do
-    error
-    |> field_errors()
-    |> Enum.reduce(%{changeset | errors: [], valid?: true}, fn {field, {message, vars}},
-                                                               changeset ->
-      Ecto.Changeset.add_error(changeset, field, message, vars)
-    end)
-    |> Map.put(:action, changeset.action || :insert)
   end
 
   defp to_form_errors(error) do
@@ -46,19 +31,22 @@ defmodule ThreatShieldWeb.AshErrors do
     end
   end
 
-  defp normalize("length must be less than or equal to %{max}", vars) do
+  @doc """
+  Returns the message and the variables of an error in the Ecto wording.
+  """
+  def normalize("length must be less than or equal to %{max}", vars) do
     {"should be at most %{count} character(s)",
      [count: vars[:max], validation: :length, kind: :max, type: :string]}
   end
 
-  defp normalize("length must be greater than or equal to %{min}", vars) do
+  def normalize("length must be greater than or equal to %{min}", vars) do
     {"should be at least %{count} character(s)",
      [count: vars[:min], validation: :length, kind: :min, type: :string]}
   end
 
-  defp normalize("is required", _vars), do: {"can't be blank", [validation: :required]}
+  def normalize("is required", _vars), do: {"can't be blank", [validation: :required]}
 
-  defp normalize(message, vars), do: {message, Enum.map(vars || [], &whole_number/1)}
+  def normalize(message, vars), do: {message, Enum.map(vars || [], &whole_number/1)}
 
   # Float constraints report a limit of 5 as 5.0. Ecto and the translations use 5.
   defp whole_number({key, value}) when is_float(value) and value == trunc(value),

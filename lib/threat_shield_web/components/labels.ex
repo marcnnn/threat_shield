@@ -8,6 +8,7 @@ defmodule ThreatShieldWeb.Labels do
   alias ThreatShield.ThreatManagement.Asset
   alias ThreatShield.ThreatManagement.Threat
   alias ThreatShield.ThreatManagement.Risk
+  alias ThreatShield.ThreatManagement.{MitigationStatus, RiskStatus}
 
   def system_label(%Risk{} = risk) do
     system_label(risk.threat)
@@ -42,60 +43,42 @@ defmodule ThreatShieldWeb.Labels do
   def risk_status_label(status) when is_binary(status),
     do: risk_status_label(String.to_existing_atom(status))
 
-  def risk_status_label(status) when is_atom(status) do
-    available_risk_states()
-    |> find_by_key(status)
-  end
-
+  def risk_status_label(:identified), do: dgettext("risks", "State:identified")
+  def risk_status_label(:assessed), do: dgettext("risks", "State:assessed")
+  def risk_status_label(:mitigated), do: dgettext("risks", "State:mitigated")
+  def risk_status_label(:accepted), do: dgettext("risks", "State:accepted")
   def risk_status_label(status), do: status
 
   def mitigation_status_label(status) when is_binary(status),
     do: mitigation_status_label(String.to_existing_atom(status))
 
-  def mitigation_status_label(status) when is_atom(status) do
-    available_mitigation_states()
-    |> find_by_key(status)
-  end
-
+  def mitigation_status_label(:open), do: dgettext("mitigations", "State:open")
+  def mitigation_status_label(:in_progress), do: dgettext("mitigations", "State:in_progress")
+  def mitigation_status_label(:implemented), do: dgettext("mitigations", "State:implemented")
+  def mitigation_status_label(:verified), do: dgettext("mitigations", "State:verified")
+  def mitigation_status_label(:failed), do: dgettext("mitigations", "State:failed")
+  def mitigation_status_label(:deferred), do: dgettext("mitigations", "State:deferred")
+  def mitigation_status_label(:obsolete), do: dgettext("mitigations", "State:obsolete")
   def mitigation_status_label(status), do: status
 
   def role_label(role) when is_binary(role),
     do: role_label(String.to_existing_atom(role))
 
-  def role_label(role) when is_atom(role) do
-    case role do
-      :owner -> dgettext("members", "Role:owner")
-      :editor -> dgettext("members", "Role:editor")
-      :viewer -> dgettext("members", "Role:viewer")
-    end
-  end
+  def role_label(:owner), do: dgettext("members", "Role:owner")
+  def role_label(:editor), do: dgettext("members", "Role:editor")
+  def role_label(:viewer), do: dgettext("members", "Role:viewer")
 
+  @doc """
+  The states of a risk with their labels, in the order of `RiskStatus`.
+  """
   def available_risk_states() do
-    [
-      identified: dgettext("risks", "State:identified"),
-      assessed: dgettext("risks", "State:assessed"),
-      mitigated: dgettext("risks", "State:mitigated"),
-      accepted: dgettext("risks", "State:accepted")
-    ]
+    Enum.map(RiskStatus.values(), &{&1, risk_status_label(&1)})
   end
 
+  @doc """
+  The states of a mitigation with their labels, in the order of `MitigationStatus`.
+  """
   def available_mitigation_states() do
-    [
-      open: dgettext("mitigations", "State:open"),
-      in_progress: dgettext("mitigations", "State:in_progress"),
-      implemented: dgettext("mitigations", "State:implemented"),
-      verified: dgettext("mitigations", "State:verified"),
-      failed: dgettext("mitigations", "State:failed"),
-      deferred: dgettext("mitigations", "State:deferred"),
-      obsolete: dgettext("mitigations", "State:obsolete")
-    ]
-  end
-
-  defp find_by_key(list, key) do
-    Enum.find(list, fn {k, _} -> k == key end)
-    |> case do
-      {_key, label} -> label
-      _ -> key
-    end
+    Enum.map(MitigationStatus.values(), &{&1, mitigation_status_label(&1)})
   end
 end

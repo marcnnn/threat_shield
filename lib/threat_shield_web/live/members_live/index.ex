@@ -4,7 +4,7 @@ defmodule ThreatShieldWeb.MembersLive.Index do
   """
   use ThreatShieldWeb, :live_view
 
-  alias ThreatShield.Members
+  alias ThreatShield.Accounts
   alias ThreatShield.Accounts.Invite
   alias ThreatShield.Accounts.{User, Organisation, Membership, UserNotifier}
 
@@ -14,14 +14,13 @@ defmodule ThreatShieldWeb.MembersLive.Index do
   @impl true
   def mount(%{"org_id" => org_id}, _session, socket) do
     %User{} = user = socket.assigns.current_user
-    %Organisation{} = organisation = Members.get_organisation!(user, org_id)
-    current_membership = organisation.memberships |> Enum.find(fn m -> m.user.id == user.id end)
-    owner_count = organisation.memberships |> Enum.count(fn m -> m.role == :owner end)
+    %Organisation{} = organisation = get_organisation!(user, org_id)
+    current_membership = Organisation.get_membership(organisation, user)
 
     socket
     |> assign(:organisation, organisation)
     |> assign(:current_org_membership, current_membership)
-    |> assign(:owner_count, owner_count)
+    |> assign(:owner_count, owner_count(organisation))
     |> ok()
   end
 
@@ -62,25 +61,21 @@ defmodule ThreatShieldWeb.MembersLive.Index do
   @impl true
   def handle_info({ThreatShieldWeb.MembersLive.RoleForm, {:saved, _membership}}, socket) do
     user = socket.assigns.current_user
-    organisation = Members.get_organisation!(user, socket.assigns.organisation.id)
+    organisation = get_organisation!(user, socket.assigns.organisation.id)
 
     socket
     |> assign(:organisation, organisation)
-    |> assign(
-      :current_org_membership,
-      organisation.memberships |> Enum.find(fn m -> m.user.id == user.id end)
-    )
+    |> assign(:current_org_membership, Organisation.get_membership(organisation, user))
+    |> assign(:owner_count, owner_count(organisation))
     |> noreply()
   end
 
   @impl true
   def handle_event("delete_membership", %{"membership_id" => id}, socket) do
     user = socket.assigns.current_user
-    organisation = socket.assigns.organisation
-
     user_id = user.id
 
-    case Members.delete_membership_by_id(user, organisation.id, id) do
+    case destroy_membership(socket.assigns.organisation, id, user) do
       {:ok, %Membership{user_id: ^user_id}} ->
         {:noreply, push_navigate(socket, to: ~p"/organisations")}
 
@@ -116,7 +111,7 @@ defmodule ThreatShieldWeb.MembersLive.Index do
 
   @impl true
   def handle_event("revoke_invite", %{"invite_id" => id}, socket) do
-    case Members.revoke_invite(socket.assigns.current_user, id) do
+    case Accounts.revoke_invite(id, actor: socket.assigns.current_user, return_destroyed?: true) do
       {:ok, invite} ->
         socket
         |> assign(
@@ -132,6 +127,21 @@ defmodule ThreatShieldWeb.MembersLive.Index do
         |> put_flash(:error, dgettext("members", "This invitation cannot be revoked."))
         |> noreply()
     end
+  end
+
+  defp destroy_membership(%Organisation{memberships: memberships}, id, user) do
+    case Enum.find(memberships, &(to_string(&1.id) == id)) do
+      nil -> {:error, :not_found}
+      membership -> Accounts.destroy_membership(membership, actor: user, return_destroyed?: true)
+    end
+  end
+
+  defp get_organisation!(user, id) do
+    Accounts.get_organisation!(id, actor: user, load: [:invites, memberships: [:email]])
+  end
+
+  defp owner_count(%Organisation{memberships: memberships}) do
+    Enum.count(memberships, fn m -> m.role == :owner end)
   end
 
   defp delete_by_id(list, id) do

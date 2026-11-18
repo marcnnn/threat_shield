@@ -89,7 +89,7 @@ defmodule ThreatShieldWeb do
       import ThreatShieldWeb.CoreComponents
       import ThreatShieldWeb.TsComponents
       import ThreatShieldWeb.Gettext
-      import ThreatShield.Members.Rights, only: [may?: 2]
+      import ThreatShield.Accounts.Rights, only: [may?: 2]
 
       alias ThreatShieldWeb.Icons
 

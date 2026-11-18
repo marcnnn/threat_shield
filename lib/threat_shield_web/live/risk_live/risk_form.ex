@@ -3,7 +3,7 @@ defmodule ThreatShieldWeb.RiskLive.RiskForm do
 
   import ThreatShieldWeb.FormHelpers
 
-  alias ThreatShield.Risks
+  alias ThreatShield.ThreatManagement.Risk
   alias ThreatShieldWeb.Labels
 
   @impl true
@@ -65,27 +65,23 @@ defmodule ThreatShieldWeb.RiskLive.RiskForm do
   end
 
   @impl true
-  def update(%{risk: risk} = assigns, socket) do
-    changeset = Risks.change_risk(risk)
-
+  def update(assigns, socket) do
     {:ok,
      socket
      |> assign(assigns)
-     |> assign_form(changeset)}
+     |> assign_form(build_form(assigns))}
   end
 
   @impl true
   def handle_event("validate", %{"risk" => risk_params}, socket) do
-    changeset =
-      socket.assigns.risk
-      |> Risks.change_risk(risk_params)
-      |> Map.put(:action, :validate)
-
-    {:noreply, assign_form(socket, changeset)}
+    {:noreply, validate_form(socket, risk_params)}
   end
 
   def handle_event("save", %{"risk" => risk_params}, socket) do
-    save_risk(socket, socket.assigns.action, risk_params)
+    {socket, _result} =
+      submit_form(socket, risk_params, __MODULE__, success_message(socket.assigns.action))
+
+    noreply(socket)
   end
 
   def status_options() do
@@ -93,23 +89,19 @@ defmodule ThreatShieldWeb.RiskLive.RiskForm do
     |> Enum.map(fn {key, label} -> {label, key} end)
   end
 
-  defp save_risk(socket, :edit_risk, risk_params) do
-    %{current_user: user, risk: risk} = socket.assigns
-
-    result = Risks.update_risk(user, risk, risk_params)
-
-    socket
-    |> handle_save_result(result, __MODULE__, "Risk updated successfully")
-    |> noreply()
+  defp build_form(%{action: :edit_risk, risk: risk, current_user: user}) do
+    AshPhoenix.Form.for_update(risk, :update, actor: user, as: "risk")
   end
 
-  defp save_risk(socket, :new_risk, risk_params) do
-    %{current_user: user, threat: threat} = socket.assigns
-
-    result = Risks.create_risk(user, threat.id, risk_params)
-
-    socket
-    |> handle_save_result(result, __MODULE__, "Risk created successfully")
-    |> noreply()
+  defp build_form(%{action: :new_risk, threat: threat, current_user: user}) do
+    AshPhoenix.Form.for_create(Risk, :create,
+      actor: user,
+      as: "risk",
+      # the risk belongs to the threat of the page, whatever the client sends
+      transform_params: fn params, _type -> Map.put(params, "threat_id", threat.id) end
+    )
   end
+
+  defp success_message(:edit_risk), do: "Risk updated successfully"
+  defp success_message(:new_risk), do: "Risk created successfully"
 end
