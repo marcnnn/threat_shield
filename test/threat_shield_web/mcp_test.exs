@@ -278,6 +278,25 @@ defmodule ThreatShieldWeb.McpTest do
       assert %Threat{name: "Secret threat"} = Repo.get!(Threat, other_threat.id)
     end
 
+    test "a viewer does not see the create tools", %{conn: conn, organisation: organisation} do
+      viewer = AccountsFixtures.user_fixture()
+      MembersFixtures.membership_fixture(organisation, viewer, :viewer)
+      key = AccountsFixtures.api_key_fixture(viewer)
+
+      %{"result" => %{"tools" => tools}} = conn |> rpc(key, "tools/list") |> json_response(200)
+      names = Enum.map(tools, & &1["name"])
+
+      assert "list_threats" in names
+      refute Enum.any?(names, &String.starts_with?(&1, "create_"))
+
+      # an editor in another organisation sees them
+      other = OrganisationsFixtures.organisation_fixture(AccountsFixtures.user_fixture())
+      MembersFixtures.membership_fixture(other, viewer, :editor)
+
+      %{"result" => %{"tools" => tools}} = conn |> rpc(key, "tools/list") |> json_response(200)
+      assert "create_threat" in Enum.map(tools, & &1["name"])
+    end
+
     test "a viewer may read but not write",
          %{conn: conn, organisation: organisation, threat: threat} do
       viewer = AccountsFixtures.user_fixture()
@@ -290,12 +309,22 @@ defmodule ThreatShieldWeb.McpTest do
       assert {:error, _} =
                call_tool(conn, key, "update_threat", %{id: threat.id, input: %{name: "Changed"}})
 
-      assert {:error, _} =
-               call_tool(conn, key, "create_threat", %{
-                 input: %{name: "New", description: "x", organisation_id: organisation.id}
-               })
+      create = %{input: %{name: "New", description: "x", organisation_id: organisation.id}}
+
+      assert %{"error" => %{"message" => "Tool not found: create_threat"}} =
+               conn
+               |> rpc(key, "tools/call", %{name: "create_threat", arguments: create})
+               |> json_response(200)
+
+      # As an editor of another organisation, the viewer sees the tool, but may not
+      # create in this organisation.
+      other = OrganisationsFixtures.organisation_fixture(AccountsFixtures.user_fixture())
+      MembersFixtures.membership_fixture(other, viewer, :editor)
+
+      assert {:error, _} = call_tool(conn, key, "create_threat", create)
 
       assert %Threat{name: "Data theft"} = Repo.get!(Threat, threat.id)
+      refute Repo.get_by(Threat, name: "New")
     end
   end
 

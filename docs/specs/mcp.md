@@ -92,7 +92,9 @@ Code interfaces: `ThreatManagement.threat_model_context/3`,
 - ash_ai lists and resolves a tool only if `Ash.can?` allows its action for the actor,
   with an empty input. `Checks.OrganisationRoleForCreate` cannot know the organisation
   then and allows this pre-check (private context `ash_ai_pre_check?`, which a client
-  cannot set). The call itself is authorized with its input.
+  cannot set) if the user has the create right in any organisation. A user who is
+  only a viewer does not see the create tools. The call itself is authorized with its
+  input.
 
 ## Client setup
 
