@@ -1,7 +1,6 @@
 defmodule ThreatShieldWeb.MitigationLive.MitigationsList do
   use ThreatShieldWeb, :live_component
 
-  alias ThreatShield.AI
   alias ThreatShield.Scope
   alias ThreatShieldWeb.AiSuggestions
 
@@ -113,7 +112,9 @@ defmodule ThreatShieldWeb.MitigationLive.MitigationsList do
     scope = socket.assigns.scope
 
     socket
-    |> AiSuggestions.request(scope, fn -> AI.suggest_mitigations_for_risk(scope, risk) end)
+    |> AiSuggestions.request(fn ->
+      ThreatManagement.suggest_mitigations(risk.id, actor: scope.user)
+    end)
     |> noreply()
   end
 

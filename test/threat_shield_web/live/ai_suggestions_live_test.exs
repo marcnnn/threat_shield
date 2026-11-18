@@ -53,7 +53,7 @@ defmodule ThreatShieldWeb.AiSuggestionsLiveTest do
   defp suggest_and_apply(view, entities) do
     view |> element(~s([phx-click="suggest_#{entities}"])) |> render_click()
 
-    html = render_async(view)
+    html = render_async(view, 1000)
     assert html =~ "Suggestion 1"
     assert html =~ "Description 2"
 
@@ -190,12 +190,32 @@ defmodule ThreatShieldWeb.AiSuggestionsLiveTest do
     end
   end
 
+  test "a viewer cannot request suggestions with a LiveView event",
+       %{conn: conn, organisation: organisation} do
+    viewer = ThreatShield.AccountsFixtures.user_fixture()
+    ThreatShield.MembersFixtures.membership_fixture(organisation, viewer, :viewer)
+    conn = log_in_user(conn, viewer)
+
+    path = ~p"/organisations/#{organisation.id}"
+    {:ok, view, _html} = live(conn, path)
+    switch_tab(view, "threats")
+    refute has_element?(view, ~s([phx-click="suggest_threats"]))
+
+    view |> with_target(".threats") |> render_click("suggest_threats")
+
+    flash = assert_redirect(view, path, 1000)
+    assert flash["error"] =~ "could not create suggestions"
+
+    assert ThreatShield.Quotas.QuotaManager.get_usage(organisation, "ai_requests_per_month") ==
+             0.0
+  end
+
   test "applying without a selection creates nothing", %{conn: conn, organisation: organisation} do
     {:ok, view, _html} = live(conn, ~p"/organisations/#{organisation.id}")
     switch_tab(view, "threats")
 
     view |> element(~s([phx-click="suggest_threats"])) |> render_click()
-    render_async(view)
+    render_async(view, 1000)
 
     html = view |> element("#suggest-threats-modal form") |> render_submit(%{})
 

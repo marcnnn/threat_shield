@@ -1,7 +1,6 @@
 defmodule ThreatShieldWeb.RiskLive.RisksList do
   use ThreatShieldWeb, :live_component
 
-  alias ThreatShield.AI
   alias ThreatShield.Scope
   alias ThreatShieldWeb.AiSuggestions
   alias ThreatShield.ThreatManagement
@@ -105,7 +104,9 @@ defmodule ThreatShieldWeb.RiskLive.RisksList do
     scope = socket.assigns.scope
 
     socket
-    |> AiSuggestions.request(scope, fn -> AI.suggest_risks_for_threat(scope, threat) end)
+    |> AiSuggestions.request(fn ->
+      ThreatManagement.suggest_risks(threat.id, actor: scope.user)
+    end)
     |> noreply()
   end
 

@@ -1,7 +1,6 @@
 defmodule ThreatShieldWeb.AssetLive.AssetsList do
   use ThreatShieldWeb, :live_component
 
-  alias ThreatShield.AI
   alias ThreatShield.Scope
   alias ThreatShieldWeb.AiSuggestions
   alias ThreatShield.ThreatManagement
@@ -173,8 +172,12 @@ defmodule ThreatShieldWeb.AssetLive.AssetsList do
   def handle_event("suggest_assets", _params, socket) do
     scope = socket.assigns.scope
 
+    focus = %{system_id: scope.system && scope.system.id}
+
     socket
-    |> AiSuggestions.request(scope, fn -> AI.suggest_assets(scope) end)
+    |> AiSuggestions.request(fn ->
+      ThreatManagement.suggest_assets(scope.organisation.id, focus, actor: scope.user)
+    end)
     |> noreply()
   end
 

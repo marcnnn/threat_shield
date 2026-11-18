@@ -72,7 +72,8 @@ Organisation ──< System ──< Asset
   users, tokens, organisations, memberships, invites, API keys),
   `ThreatShield.ThreatManagement` (`threat_management.ex`: systems, assets, threats,
   risks, mitigations, and `ThreatModel`, a resource without data whose generic actions
-  `:context` and `:risk_summary` describe a threat model) and `ThreatShield.Quotas`. Each domain defines **code interfaces** (`define ...`) such as
+  `:context` and `:risk_summary` describe a threat model and `:suggest_assets`,
+  `:suggest_threats`, `:suggest_risks`, `:suggest_mitigations` ask the AI assistant) and `ThreatShield.Quotas`. Each domain defines **code interfaces** (`define ...`) such as
   `ThreatManagement.get_threat!(id, actor: user, load: [...])`,
   `list_threats!(org_id, actor: user)`, `create_risk(attrs, actor: user)`,
   `update_asset(asset, attrs, actor: user)`, `destroy_system(id, actor: user)`.
@@ -212,13 +213,17 @@ A suggestion has three parts; only the second needs a language model:
 3. `ThreatShield.AI` turns the JSON answer into unsaved records. The user selects some,
    and the list components store them with the normal create actions (`actor:`).
 
-Every AI call goes through `AI.run_task/2`, which checks the organisation's **quota**
-(`Quotas.QuotaManager`, `ai_requests_per_month`), logs the usage, and then runs the
-task. The call blocks, so run it in a separate process: the list components use
-`ThreatShieldWeb.AiSuggestions`, which starts it with `start_async` under
-`ThreatShield.TaskSupervisor`. When adding AI features, route through `run_task/2` so
-quotas are respected. Call a language model only through a provider, so that tests can
-replace it.
+A suggestion on a user path is a generic action of `ThreatModel`
+(`ThreatManagement.suggest_threats(org_id, %{system_id: ...}, actor: user)` etc.). Its
+policy requires the right to create what is suggested, then it reads the records in
+focus with the actor and uses one AI request of the organisation's **quota**
+(`Quotas.QuotaManager.consume/5`: check and record in one transaction with a lock on
+the organisation, `ai_requests_per_month`) before it calls `ThreatShield.AI`. The
+functions of `ThreatShield.AI` check neither rights nor quota. The call blocks, so run
+it in a separate process: the list components use `ThreatShieldWeb.AiSuggestions`,
+which starts it with `start_async` under `ThreatShield.TaskSupervisor`. When adding AI
+features, add an action that consumes the quota the same way. Call a language model
+only through a provider, so that tests can replace it.
 
 ### MCP server
 
@@ -262,9 +267,9 @@ needs:
   `Accounts.Rights`. A library would take the checks (or a "role of the actor in the
   owner" function) from the host app.
 - **User** is only the actor; nothing in ThreatManagement reads it directly.
-- **AI and quotas.** `ThreatShield.AI.run_task/2` uses `Quotas.QuotaManager` and the
-  `Scope` struct. Prompts and `Description` need no quota; a library would ship them and
-  leave quota handling to the host.
+- **AI and quotas.** The suggestion actions of `ThreatModel` use
+  `Quotas.QuotaManager` and the `Scope` struct. Prompts and `Description` need no
+  quota; a library would ship them and leave quota handling to the host.
 - **Static configuration.** `otp_app: :threat_shield` in the domain and resources, the
   table names, and the migrations and snapshots in `priv/`. A library needs its own
   migrations (or an installer) and an `otp_app` option.

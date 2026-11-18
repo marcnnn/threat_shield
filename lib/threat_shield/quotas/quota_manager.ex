@@ -6,6 +6,7 @@ defmodule ThreatShield.Quotas.QuotaManager do
   # Quota bookkeeping is a system operation: it counts and records the usage of an
   # organisation for any member, so it runs without authorization.
 
+  alias ThreatShield.Quotas.Errors.QuotaExceeded
   alias ThreatShield.Quotas.QuotaUsage
   alias ThreatShield.Accounts.Organisation
 
@@ -32,6 +33,35 @@ defmodule ThreatShield.Quotas.QuotaManager do
       {:error, :quota_exceeded}
     else
       {:ok, :quota_available}
+    end
+  end
+
+  @doc """
+  Records the usage `amount` of the quota for the user if the quota of the
+  organisation allows it, and returns `:ok`, or `{:error, :quota_exceeded}`. The
+  check and the record are one transaction with a lock on the organisation, so
+  concurrent requests cannot exceed the quota together.
+  """
+  def consume(%Organisation{} = org, user, quota_type, amount \\ 1.0, message \\ nil) do
+    QuotaUsage
+    |> Ash.ActionInput.for_action(
+      :consume,
+      %{
+        organisation_id: org.id,
+        user_id: user && user.id,
+        quota_type: to_string(quota_type),
+        amount: amount,
+        message: message
+      },
+      authorize?: false
+    )
+    |> Ash.run_action()
+    |> case do
+      :ok ->
+        :ok
+
+      {:error, error} ->
+        if QuotaExceeded.exceeded?(error), do: {:error, :quota_exceeded}, else: {:error, error}
     end
   end
 

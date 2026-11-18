@@ -74,22 +74,80 @@ defmodule ThreatShield.AITest do
     {system_prompt, user_prompt}
   end
 
-  test "run_task/2 records the usage and refuses a request above the quota",
-       %{user: user, organisation: organisation} do
-    organisation = get_organisation!(user, organisation.id)
-    scope = Scope.for(user, organisation)
+  describe "the suggestion actions" do
+    defp usage(organisation),
+      do: ThreatShield.Quotas.QuotaManager.get_usage(organisation, "ai_requests_per_month")
 
-    assert {:ok, :done} = AI.run_task(scope, fn -> :done end)
+    test "record the usage and refuse a request above the quota",
+         %{user: user, organisation: organisation, system: system, threat: threat, risk: risk} do
+      assert {:ok, [%Asset{name: "Suggestion 1"}, %Asset{}]} =
+               ThreatManagement.suggest_assets(organisation.id, %{system_id: system.id},
+                 actor: user
+               )
 
-    assert ThreatShield.Quotas.QuotaManager.get_usage(organisation, "ai_requests_per_month") ==
-             1.0
+      assert {:ok, [%Threat{}, %Threat{}]} =
+               ThreatManagement.suggest_threats(organisation.id, actor: user)
 
-    ThreatShield.Repo.update_all(ThreatShield.Accounts.Organisation,
-      set: [quotas: %{"ai_requests_per_month" => 1}]
-    )
+      assert {:ok, [%Risk{}, %Risk{}]} = ThreatManagement.suggest_risks(threat.id, actor: user)
 
-    organisation = get_organisation!(user, organisation.id)
-    assert {:error, :quota_exceeded} = AI.run_task(Scope.for(user, organisation), fn -> :done end)
+      assert {:ok, [%Mitigation{}, %Mitigation{}]} =
+               ThreatManagement.suggest_mitigations(risk.id, actor: user)
+
+      assert usage(organisation) == 4.0
+
+      ThreatShield.Repo.update_all(ThreatShield.Accounts.Organisation,
+        set: [quotas: %{"ai_requests_per_month" => 4}]
+      )
+
+      assert {:error, error} = ThreatManagement.suggest_threats(organisation.id, actor: user)
+      assert ThreatShield.Quotas.Errors.QuotaExceeded.exceeded?(error)
+      assert usage(organisation) == 4.0
+    end
+
+    test "are refused for a viewer, without using the quota or the language model",
+         %{organisation: organisation, threat: threat, risk: risk} do
+      viewer = AccountsFixtures.user_fixture()
+      ThreatShield.MembersFixtures.membership_fixture(organisation, viewer, :viewer)
+
+      assert {:error, %Ash.Error.Forbidden{}} =
+               ThreatManagement.suggest_assets(organisation.id, actor: viewer)
+
+      assert {:error, %Ash.Error.Forbidden{}} =
+               ThreatManagement.suggest_threats(organisation.id, actor: viewer)
+
+      assert {:error, %Ash.Error.Forbidden{}} =
+               ThreatManagement.suggest_risks(threat.id, actor: viewer)
+
+      assert {:error, %Ash.Error.Forbidden{}} =
+               ThreatManagement.suggest_mitigations(risk.id, actor: viewer)
+
+      assert {:error, %Ash.Error.Forbidden{}} =
+               ThreatManagement.suggest_threats(organisation.id)
+
+      assert usage(organisation) == 0.0
+      refute_received {:ai_request, _}
+    end
+
+    test "are refused for another organisation and for a record of another organisation",
+         %{user: user, organisation: organisation, threat: threat} do
+      outsider = AccountsFixtures.user_fixture()
+      other = OrganisationsFixtures.organisation_fixture(outsider)
+      other_system = ThreatShield.SystemsFixtures.system_fixture(outsider, other)
+
+      assert {:error, %Ash.Error.Forbidden{}} =
+               ThreatManagement.suggest_threats(organisation.id, actor: outsider)
+
+      assert {:error, %Ash.Error.Forbidden{}} =
+               ThreatManagement.suggest_risks(threat.id, actor: outsider)
+
+      assert {:error, _} =
+               ThreatManagement.suggest_threats(organisation.id, %{system_id: other_system.id},
+                 actor: user
+               )
+
+      assert usage(organisation) == 0.0
+      refute_received {:ai_request, _}
+    end
   end
 
   test "suggest_assets/1 for an organisation", %{user: user, organisation: organisation} do

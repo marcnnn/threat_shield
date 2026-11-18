@@ -57,6 +57,17 @@ defmodule ThreatShield.Quotas.QuotaManagerTest do
     assert {:error, :quota_exceeded} = QuotaManager.check_quota(organisation, @quota, 1)
   end
 
+  test "consume/5 records the usage only within the quota",
+       %{user: user, organisation: organisation} do
+    Repo.update_all(ThreatShield.Accounts.Organisation, set: [quotas: %{@quota => 2}])
+
+    assert :ok = QuotaManager.consume(organisation, user, @quota, 1.0, "AI request")
+    assert :ok = QuotaManager.consume(organisation, user, @quota)
+    assert {:error, :quota_exceeded} = QuotaManager.consume(organisation, user, @quota)
+
+    assert QuotaManager.get_usage(organisation, @quota) == 2.0
+  end
+
   test "deleting the user or the organisation keeps the database consistent",
        %{user: user, organisation: organisation} do
     {:ok, usage} = QuotaManager.add_usage(organisation, user, @quota, 1.0)

@@ -74,6 +74,19 @@ defmodule ThreatShield.Quotas.QuotaUsage do
       accept [:quota_type, :amount, :message, :timestamp, :organisation_id, :user_id]
     end
 
+    action :consume do
+      description "Records a usage of a quota of an organisation, if the quota allows it."
+      transaction? true
+
+      argument :organisation_id, :integer, allow_nil?: false
+      argument :user_id, :integer
+      argument :quota_type, :string, allow_nil?: false
+      argument :amount, :float, allow_nil?: false, default: 1.0
+      argument :message, :string
+
+      run ThreatShield.Quotas.Actions.Consume
+    end
+
     read :get_usage do
       argument :organisation_id, :integer, allow_nil?: false
       argument :quota_type, :string, allow_nil?: false

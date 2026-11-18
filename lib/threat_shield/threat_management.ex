@@ -108,6 +108,10 @@ defmodule ThreatShield.ThreatManagement do
     resource ThreatShield.ThreatManagement.ThreatModel do
       define :threat_model_context, action: :context, args: [:organisation_id]
       define :risk_summary, action: :risk_summary, args: [:organisation_id]
+      define :suggest_assets, action: :suggest_assets, args: [:organisation_id]
+      define :suggest_threats, action: :suggest_threats, args: [:organisation_id]
+      define :suggest_risks, action: :suggest_risks, args: [:threat_id]
+      define :suggest_mitigations, action: :suggest_mitigations, args: [:risk_id]
     end
   end
 end

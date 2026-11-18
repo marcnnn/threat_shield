@@ -4,7 +4,10 @@ defmodule ThreatShieldWeb.AiSuggestions do
 
   A list component
 
-    * calls `request/3` to ask the AI assistant for suggestions,
+    * calls `request/2` to ask the AI assistant for suggestions, with a function
+      that calls a suggestion action of `ThreatShield.ThreatManagement` (e.g.
+      `suggest_threats/3`) with the user as `actor:`. The action checks the right
+      and the quota,
     * passes the result from its `handle_async/3` callback to `handle_result/2`,
     * and reads the suggestions that the user selected in the dialog with `selected/2`.
 
@@ -17,21 +20,19 @@ defmodule ThreatShieldWeb.AiSuggestions do
   import Phoenix.LiveView, only: [start_async: 4, put_flash: 3, push_navigate: 2]
   import ThreatShieldWeb.Gettext
 
-  alias ThreatShield.AI
-  alias ThreatShield.Scope
+  alias ThreatShield.Quotas.Errors.QuotaExceeded
 
   @doc """
   Opens the suggestion dialog and asks the AI assistant in the background.
 
-  `fun` calls the AI module and returns the list of suggestions.
+  `fun` calls a suggestion action and returns `{:ok, suggestions}` or
+  `{:error, error}`. It blocks until the language model has answered.
   """
-  def request(socket, %Scope{} = scope, fun) when is_function(fun, 0) do
+  def request(socket, fun) when is_function(fun, 0) do
     socket
     |> assign(:ai_suggestions, nil)
     |> assign(:show_suggest_dialog, true)
-    |> start_async(:ai_suggestions, fn -> AI.run_task(scope, fun) end,
-      supervisor: ThreatShield.TaskSupervisor
-    )
+    |> start_async(:ai_suggestions, fun, supervisor: ThreatShield.TaskSupervisor)
   end
 
   @doc """
@@ -41,12 +42,18 @@ defmodule ThreatShieldWeb.AiSuggestions do
     assign(socket, :ai_suggestions, suggestions)
   end
 
-  def handle_result(socket, {:ok, {:error, :quota_exceeded}}) do
-    fail(socket, dgettext("common", "Your quota for AI suggestions is exceeded."))
+  def handle_result(socket, {:ok, {:error, error}}) do
+    if QuotaExceeded.exceeded?(error) do
+      fail(socket, dgettext("common", "Your quota for AI suggestions is exceeded."))
+    else
+      fail_generic(socket)
+    end
   end
 
-  # an error from the AI module, an empty list, or a crashed task
-  def handle_result(socket, _result) do
+  # an empty list or a crashed task
+  def handle_result(socket, _result), do: fail_generic(socket)
+
+  defp fail_generic(socket) do
     fail(
       socket,
       dgettext("common", "The AI assistant could not create suggestions. Please try again later.")

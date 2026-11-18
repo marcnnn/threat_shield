@@ -1,7 +1,6 @@
 defmodule ThreatShieldWeb.ThreatLive.ThreatsList do
   use ThreatShieldWeb, :live_component
 
-  alias ThreatShield.AI
   alias ThreatShield.Scope
   alias ThreatShieldWeb.AiSuggestions
 
@@ -159,8 +158,12 @@ defmodule ThreatShieldWeb.ThreatLive.ThreatsList do
   def handle_event("suggest_threats", _params, socket) do
     scope = socket.assigns.scope
 
+    focus = %{system_id: scope.system && scope.system.id, asset_id: scope.asset && scope.asset.id}
+
     socket
-    |> AiSuggestions.request(scope, fn -> AI.suggest_threats(scope) end)
+    |> AiSuggestions.request(fn ->
+      ThreatManagement.suggest_threats(scope.organisation.id, focus, actor: scope.user)
+    end)
     |> noreply()
   end
 
