@@ -136,4 +136,22 @@ defmodule ThreatShieldWeb.Helpers do
   def link_to(%Organisation{id: org_id}) do
     ~p"/organisations/#{org_id}"
   end
+
+  @doc """
+  The options of a select for the system of an entity: "None" and the systems of the
+  organisation, which need to be loaded.
+  """
+  def system_options(%Organisation{systems: systems}) when is_list(systems),
+    do: [{"None", nil} | Enum.map(systems, &{&1.name, &1.id})]
+
+  def system_options(_organisation), do: [{"None", nil}]
+
+  @doc """
+  The options of a select for the asset of an entity: "None" and the assets of the
+  organisation, which need to be loaded.
+  """
+  def asset_options(%Organisation{assets: assets}) when is_list(assets),
+    do: [{"None", nil} | Enum.map(assets, &{&1.name, &1.id})]
+
+  def asset_options(_organisation), do: [{"None", nil}]
 end

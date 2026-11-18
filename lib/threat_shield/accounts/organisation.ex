@@ -174,16 +174,4 @@ defmodule ThreatShield.Accounts.Organisation do
   def attributes_config do
     @attributes
   end
-
-  def list_system_options(%{systems: systems}) when is_list(systems) do
-    [{"None", nil} | Enum.map(systems, fn s -> {s.name, s.id} end)]
-  end
-
-  def list_system_options(_), do: [{"None", nil}]
-
-  def list_asset_options(%{assets: assets}) when is_list(assets) do
-    [{"None", nil} | Enum.map(assets, fn a -> {a.name, a.id} end)]
-  end
-
-  def list_asset_options(_), do: [{"None", nil}]
 end

@@ -6,11 +6,11 @@ defmodule ThreatShieldWeb.ThreatLive.ThreatDetails do
   alias ThreatShield.ThreatManagement.Threat
   alias ThreatShield.ThreatManagement.Risk
 
-  import ThreatShield.Accounts.Organisation,
-    only: [list_system_options: 1, list_asset_options: 1]
-
   import ThreatShieldWeb.ScopeUrlBinding
-  import ThreatShieldWeb.Helpers, only: [add_breadcrumbs: 2, get_path_prefix: 1]
+
+  import ThreatShieldWeb.Helpers,
+    only: [add_breadcrumbs: 2, get_path_prefix: 1, system_options: 1, asset_options: 1]
+
   import ThreatShieldWeb.Labels
 
   @impl true
@@ -26,8 +26,8 @@ defmodule ThreatShieldWeb.ThreatLive.ThreatDetails do
     |> assign(asset: threat.asset)
     |> assign(threat: threat)
     |> assign(page_title: page_title(socket.assigns.live_action))
-    |> assign(system_options: list_system_options(threat.organisation))
-    |> assign(asset_options: list_asset_options(threat.organisation))
+    |> assign(system_options: system_options(threat.organisation))
+    |> assign(asset_options: asset_options(threat.organisation))
     |> assign(origin: threat_scope_to_url(scope))
     |> ok()
   end

@@ -5,7 +5,6 @@ defmodule ThreatShieldWeb.ThreatLive.ThreatsList do
   alias ThreatShieldWeb.AiSuggestions
 
   alias ThreatShield.ThreatManagement
-  alias ThreatShield.Accounts.Organisation
   alias ThreatShield.ThreatManagement.System
 
   import ThreatShieldWeb.Labels
@@ -102,8 +101,8 @@ defmodule ThreatShieldWeb.ThreatLive.ThreatsList do
           action={:new_threat}
           title={dgettext("threats", "New Threat")}
           scope={@scope}
-          system_options={systems_of_organisaton(@scope.organisation)}
-          asset_options={assets_of_organisaton(@scope.organisation)}
+          system_options={system_options(@scope.organisation)}
+          asset_options={asset_options(@scope.organisation)}
           patch={@origin}
         />
       </.modal>
@@ -208,14 +207,6 @@ defmodule ThreatShieldWeb.ThreatLive.ThreatsList do
 
     socket
     |> assign(threats: threats)
-  end
-
-  defp systems_of_organisaton(%Organisation{} = organisation) do
-    Organisation.list_system_options(organisation)
-  end
-
-  defp assets_of_organisaton(%Organisation{} = organisation) do
-    Organisation.list_asset_options(organisation)
   end
 
   defp create_threat(%Scope{} = scope, %{name: name, description: desc}) do

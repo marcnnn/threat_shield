@@ -5,10 +5,9 @@ defmodule ThreatShieldWeb.AssetLive.AssetsList do
   alias ThreatShieldWeb.AiSuggestions
   alias ThreatShield.ThreatManagement
 
-  alias ThreatShield.Accounts.Organisation
   alias ThreatShield.ThreatManagement.System
 
-  import ThreatShieldWeb.Helpers, only: [link_to: 1]
+  import ThreatShieldWeb.Helpers, only: [link_to: 1, system_options: 1]
 
   require Logger
 
@@ -122,7 +121,7 @@ defmodule ThreatShieldWeb.AssetLive.AssetsList do
           parent_id={@id}
           title={dgettext("assets", "New Asset")}
           action={:new_asset}
-          system_options={systems_of_organisaton(@scope.organisation)}
+          system_options={system_options(@scope.organisation)}
           patch={@origin}
         />
       </.modal>
@@ -222,10 +221,6 @@ defmodule ThreatShieldWeb.AssetLive.AssetsList do
 
     socket
     |> assign(assets: assets)
-  end
-
-  defp systems_of_organisaton(%Organisation{} = organisation) do
-    Organisation.list_system_options(organisation)
   end
 
   defp create_asset(%Scope{} = scope, %{name: name, description: desc}) do
