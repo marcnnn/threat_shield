@@ -17,10 +17,18 @@ defmodule ThreatShield.ThreatManagement.Asset do
     table "assets"
     repo ThreatShield.Repo
 
+    # match the columns of the Ecto migrations
+    migration_types name: {:varchar, 255},
+                    description: {:varchar, 4000},
+                    inserted_at: :naive_datetime,
+                    updated_at: :naive_datetime
+
+    migration_defaults inserted_at: "nil", updated_at: "nil"
+
     references do
-      reference :organisation, on_delete: :delete
+      reference :organisation, on_delete: :delete, index?: true
       # deleting a system deletes its assets
-      reference :system, on_delete: :delete
+      reference :system, on_delete: :delete, index?: true
     end
   end
 

@@ -18,11 +18,17 @@ defmodule ThreatShield.Accounts.Invite do
     table "invites"
     repo ThreatShield.Repo
 
-    identity_index_names unique_email_per_organisation: "invites_organisation_id_email_index",
-                         unique_token: "invites_token_index"
+    identity_index_names unique_token: "invites_token_index"
+
+    # match the columns of the Ecto migrations
+    migration_types token: {:varchar, 255},
+                    inserted_at: :naive_datetime,
+                    updated_at: :naive_datetime
+
+    migration_defaults inserted_at: "nil", updated_at: "nil"
 
     references do
-      reference :organisation, on_delete: :delete
+      reference :organisation, on_delete: :delete, index?: true
     end
   end
 
@@ -68,8 +74,9 @@ defmodule ThreatShield.Accounts.Invite do
   end
 
   identities do
-    # The first key holds the error. The index has the columns in the other order.
-    identity :unique_email_per_organisation, [:email, :organisation_id],
+    # Named after the index of the migration, so that the error of the unique
+    # constraint goes to the field :email.
+    identity :organisation_id_email, [:organisation_id, :email],
       field_names: [:email],
       message: "has already been invited to this organisation"
 

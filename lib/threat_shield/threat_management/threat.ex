@@ -17,11 +17,19 @@ defmodule ThreatShield.ThreatManagement.Threat do
     table "threats"
     repo ThreatShield.Repo
 
+    # match the columns of the Ecto migrations
+    migration_types name: {:varchar, 255},
+                    description: {:varchar, 4000},
+                    inserted_at: :naive_datetime,
+                    updated_at: :naive_datetime
+
+    migration_defaults inserted_at: "nil", updated_at: "nil"
+
     references do
-      reference :organisation, on_delete: :delete
+      reference :organisation, on_delete: :delete, index?: true
       # deleting a system deletes its threats, deleting an asset keeps them
-      reference :system, on_delete: :delete
-      reference :asset, on_delete: :nilify
+      reference :system, on_delete: :delete, index?: true
+      reference :asset, on_delete: :nilify, index?: true
     end
   end
 
@@ -35,8 +43,9 @@ defmodule ThreatShield.ThreatManagement.Threat do
       description "The name of the threat."
     end
 
+    # a nullable column; the validation below requires a value
     attribute :description, :string do
-      allow_nil? false
+      allow_nil? true
       public? true
       constraints max_length: 4000
       description "The event or action that can compromise the organisation, system or asset."
@@ -78,6 +87,11 @@ defmodule ThreatShield.ThreatManagement.Threat do
       public? true
       description "The name of the asset of the threat."
     end
+  end
+
+  validations do
+    # only when the description is valid otherwise, e.g. not too long
+    validate present(:description), message: "is required", only_when_valid?: true
   end
 
   actions do

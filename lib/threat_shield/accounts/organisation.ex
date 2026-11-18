@@ -31,6 +31,16 @@ defmodule ThreatShield.Accounts.Organisation do
   postgres do
     table "organisations"
     repo ThreatShield.Repo
+
+    # match the columns of the Ecto migrations
+    migration_types name: {:varchar, 255},
+                    location: {:varchar, 255},
+                    inserted_at: :naive_datetime,
+                    updated_at: :naive_datetime
+
+    migration_defaults inserted_at: "nil",
+                       updated_at: "nil",
+                       quotas: "%{ai_requests_per_month: 100}"
   end
 
   attributes do

@@ -16,8 +16,18 @@ defmodule ThreatShield.ThreatManagement.Risk do
     table "risks"
     repo ThreatShield.Repo
 
+    # match the columns of the Ecto migrations
+    migration_types name: {:varchar, 255},
+                    description: {:varchar, 4000},
+                    estimated_cost: :integer,
+                    status: {:varchar, 255},
+                    inserted_at: :naive_datetime,
+                    updated_at: :naive_datetime
+
+    migration_defaults inserted_at: "nil", updated_at: "nil"
+
     references do
-      reference :threat, on_delete: :delete
+      reference :threat, on_delete: :delete, index?: true
     end
   end
 
@@ -31,14 +41,14 @@ defmodule ThreatShield.ThreatManagement.Risk do
       description "The name of the risk."
     end
 
+    # a nullable column; the validation below requires a value
     attribute :description, :string do
-      allow_nil? false
+      allow_nil? true
       public? true
       constraints max_length: 4000
       description "The loss, damage or harm that the threat can cause."
     end
 
-    # an integer column
     attribute :estimated_cost, :integer do
       allow_nil? true
       public? true
@@ -106,6 +116,11 @@ defmodule ThreatShield.ThreatManagement.Risk do
       public? true
       description "The name of the threat of the risk."
     end
+  end
+
+  validations do
+    # only when the description is valid otherwise, e.g. not too long
+    validate present(:description), message: "is required", only_when_valid?: true
   end
 
   actions do

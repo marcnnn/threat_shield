@@ -15,8 +15,21 @@ defmodule ThreatShield.ThreatManagement.Mitigation do
     table "mitigations"
     repo ThreatShield.Repo
 
+    # match the columns of the Ecto migrations
+    migration_types name: {:varchar, 255},
+                    description: {:varchar, 4000},
+                    issue_link: {:varchar, 255},
+                    status: {:varchar, 255},
+                    implementation_notes: {:varchar, 255},
+                    verification_method: {:varchar, 255},
+                    verification_result: {:varchar, 255},
+                    inserted_at: :naive_datetime,
+                    updated_at: :naive_datetime
+
+    migration_defaults inserted_at: "nil", updated_at: "nil"
+
     references do
-      reference :risk, on_delete: :delete
+      reference :risk, on_delete: :delete, index?: true
     end
   end
 
@@ -30,8 +43,9 @@ defmodule ThreatShield.ThreatManagement.Mitigation do
       description "The name of the mitigation."
     end
 
+    # a nullable column; the validation below requires a value
     attribute :description, :string do
-      allow_nil? false
+      allow_nil? true
       public? true
       constraints max_length: 4000
       description "The measure and how it reduces the risk."
@@ -114,6 +128,11 @@ defmodule ThreatShield.ThreatManagement.Mitigation do
       public? true
       description "The name of the risk of the mitigation."
     end
+  end
+
+  validations do
+    # only when the description is valid otherwise, e.g. not too long
+    validate present(:description), message: "is required", only_when_valid?: true
   end
 
   actions do

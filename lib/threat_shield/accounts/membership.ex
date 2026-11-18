@@ -20,9 +20,12 @@ defmodule ThreatShield.Accounts.Membership do
 
     identity_index_names unique_membership: "memberships_user_id_organisation_id_index"
 
+    # match the column of the Ecto migration
+    migration_types role: {:varchar, 255}
+
     references do
       reference :user, on_delete: :delete
-      reference :organisation, on_delete: :delete
+      reference :organisation, on_delete: :delete, index?: true
     end
   end
 

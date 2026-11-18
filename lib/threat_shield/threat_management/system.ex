@@ -46,7 +46,13 @@ defmodule ThreatShield.ThreatManagement.System do
     table "systems"
     repo ThreatShield.Repo
 
-    identity_index_names unique_name_per_organisation: "systems_organisation_id_name_index"
+    # match the columns of the Ecto migrations
+    migration_types name: {:varchar, 255},
+                    description: {:varchar, 4000},
+                    inserted_at: :naive_datetime,
+                    updated_at: :naive_datetime
+
+    migration_defaults inserted_at: "nil", updated_at: "nil"
 
     references do
       reference :organisation, on_delete: :delete
@@ -63,8 +69,9 @@ defmodule ThreatShield.ThreatManagement.System do
       description "The name of the system, unique in its organisation."
     end
 
+    # a nullable column; the validation below requires a value
     attribute :description, :string do
-      allow_nil? false
+      allow_nil? true
       public? true
       constraints max_length: 4000
       description "What the system does, its context and purpose."
@@ -95,12 +102,15 @@ defmodule ThreatShield.ThreatManagement.System do
   end
 
   validations do
+    # only when the description is valid otherwise, e.g. not too long
+    validate present(:description), message: "is required", only_when_valid?: true
     validate {ThreatShield.Validations.AttributeValues, attribute: :attributes}
   end
 
   identities do
-    # The first key holds the error. The index has the columns in the other order.
-    identity :unique_name_per_organisation, [:name, :organisation_id],
+    # Named after the index of the migration, so that the error of the unique
+    # constraint goes to the field :name.
+    identity :organisation_id_name, [:organisation_id, :name],
       field_names: [:name],
       message: "is already used by another system of this organisation"
   end

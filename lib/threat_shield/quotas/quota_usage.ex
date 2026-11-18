@@ -12,18 +12,23 @@ defmodule ThreatShield.Quotas.QuotaUsage do
     table "quota_usages"
     repo ThreatShield.Repo
 
+    # match the columns of the Ecto migrations
+    migration_types quota_type: {:varchar, 255}, message: {:varchar, 255}
+    migration_defaults amount: "0", timestamp: ~S|fragment("now()")|
+
     references do
-      reference :organisation, on_delete: :delete
+      reference :organisation, on_delete: :delete, index?: true
       # the usage stays counted for the organisation when the user is deleted
-      reference :user, on_delete: :nilify
+      reference :user, on_delete: :nilify, index?: true
     end
   end
 
   attributes do
     integer_primary_key :id
 
+    # nullable columns; the validations below require the values
     attribute :quota_type, :string do
-      allow_nil? false
+      allow_nil? true
       public? true
     end
 
@@ -38,6 +43,7 @@ defmodule ThreatShield.Quotas.QuotaUsage do
     end
 
     attribute :timestamp, :utc_datetime_usec do
+      allow_nil? false
       default &DateTime.utc_now/0
       public? true
     end
@@ -45,7 +51,7 @@ defmodule ThreatShield.Quotas.QuotaUsage do
 
   relationships do
     belongs_to :organisation, ThreatShield.Accounts.Organisation do
-      allow_nil? false
+      allow_nil? true
       attribute_type :integer
       public? true
     end
@@ -55,6 +61,10 @@ defmodule ThreatShield.Quotas.QuotaUsage do
       attribute_type :integer
       public? true
     end
+  end
+
+  validations do
+    validate present([:organisation_id, :quota_type]), on: [:create]
   end
 
   actions do
