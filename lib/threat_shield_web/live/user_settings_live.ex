@@ -2,7 +2,6 @@ defmodule ThreatShieldWeb.UserSettingsLive do
   use ThreatShieldWeb, :live_view
 
   alias ThreatShield.Accounts
-  alias ThreatShieldWeb.UserAuth
 
   import ThreatShieldWeb.Helpers, only: [format_datetime: 1]
 
@@ -287,11 +286,7 @@ defmodule ThreatShieldWeb.UserSettingsLive do
 
   defp email_form(user) do
     user
-    |> AshPhoenix.Form.for_update(:change_email,
-      as: "user",
-      actor: user,
-      context: UserAuth.account_urls_context()
-    )
+    |> AshPhoenix.Form.for_update(:change_email, as: "user", actor: user)
     |> to_form()
   end
 

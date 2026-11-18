@@ -18,9 +18,7 @@ defmodule ThreatShieldWeb.UserConfirmationLiveTest do
 
     test "confirms the given token once", %{conn: conn, user: user} do
       token =
-        extract_user_token(fn url ->
-          Accounts.request_confirmation(user.email, url_context(%{confirm: url}))
-        end)
+        extract_user_token(fn -> Accounts.request_confirmation(user.email) end)
 
       {:ok, lv, _html} = live(conn, ~p"/users/confirm/#{token}")
 

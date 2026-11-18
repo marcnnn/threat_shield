@@ -5,7 +5,6 @@ defmodule ThreatShield.AccountsFixtures do
   """
 
   alias ThreatShield.Accounts
-  alias ThreatShield.Accounts.Senders.Urls
 
   def unique_user_email, do: "user#{System.unique_integer()}@example.com"
   def valid_user_password, do: "hello world!"
@@ -26,7 +25,7 @@ defmodule ThreatShield.AccountsFixtures do
     {:ok, user} =
       attrs
       |> valid_user_attributes()
-      |> Accounts.register_user(url_context(%{confirm: &"/users/confirm/#{&1}"}))
+      |> Accounts.register_user()
 
     # The confirmation instructions of the registration
     receive do
@@ -41,30 +40,36 @@ defmodule ThreatShield.AccountsFixtures do
   def confirmed_user_fixture(attrs \\ %{}) do
     user = user_fixture(attrs)
 
-    token =
-      extract_user_token(fn url ->
-        Accounts.request_confirmation(user.email, context: Urls.context(%{confirm: url}))
-      end)
+    token = extract_user_token(fn -> Accounts.request_confirmation(user.email) end)
 
     {:ok, user} = Accounts.confirm_user(token)
     user
   end
 
   @doc """
-  Calls `fun` with a URL builder and returns the token of the link in the email that
-  `fun` sends.
+  Calls `fun` and returns the token of the link in the email that `fun` sends.
   """
-  def extract_user_token(fun) do
-    fun.(&"[TOKEN]#{&1}[TOKEN]")
+  def extract_user_token(fun) when is_function(fun, 0) do
+    flush_emails()
+    fun.()
     receive_token()
+  end
+
+  # earlier emails, e.g. invites, carry other tokens
+  defp flush_emails do
+    receive do
+      {:email, _} -> flush_emails()
+    after
+      0 -> :ok
+    end
   end
 
   defp receive_token do
     receive do
       {:email, %Swoosh.Email{text_body: body}} ->
-        case String.split(body, "[TOKEN]") do
-          [_, token | _] -> token
-          _ -> receive_token()
+        case link_token(body) do
+          nil -> receive_token()
+          token -> token
         end
     after
       0 -> raise "no email with a token was sent"
@@ -72,9 +77,14 @@ defmodule ThreatShield.AccountsFixtures do
   end
 
   @doc """
-  Returns the URL context for the account emails with the given URL builders.
+  Returns the token at the end of the link in the text of an email, or nil.
   """
-  def url_context(builders), do: [context: Urls.context(builders)]
+  def link_token(body) do
+    case Regex.run(~r{https?://\S+/([^/\s]+)\s}, body <> "\n") do
+      [_, token] -> token
+      nil -> nil
+    end
+  end
 
   @doc """
   Issues a session token for the user, like a sign in does.

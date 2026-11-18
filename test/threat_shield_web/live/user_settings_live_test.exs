@@ -167,13 +167,8 @@ defmodule ThreatShieldWeb.UserSettingsLiveTest do
       email = unique_user_email()
 
       token =
-        extract_user_token(fn url ->
-          Accounts.change_user_email(
-            user,
-            email,
-            valid_user_password(),
-            [actor: user] ++ url_context(%{confirm_email_change: url})
-          )
+        extract_user_token(fn ->
+          Accounts.change_user_email(user, email, valid_user_password(), actor: user)
         end)
 
       %{conn: log_in_user(conn, user), token: token, email: email, user: user}

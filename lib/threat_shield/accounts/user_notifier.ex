@@ -80,14 +80,14 @@ defmodule ThreatShield.Accounts.UserNotifier do
   end
 
   @doc """
-  Deliver organisation invites. `url` is the link that accepts the invite; the web
-  layer builds it from the token of the invite.
+  Deliver organisation invites. `url` is the link that accepts the invite. The
+  invite needs `:organisation_name` loaded.
   """
   def deliver_invite(%Invite{} = invite, url) do
     deliver(invite.email, "You have been invited to an organisation in ThreatShield", """
     Hi,
 
-    You have been invited to join #{invite.organisation.name} on ThreatShield 🙂 Follow the link below to accept the invite:
+    You have been invited to join #{invite.organisation_name} on ThreatShield 🙂 Follow the link below to accept the invite:
 
     #{url}
 

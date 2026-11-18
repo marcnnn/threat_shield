@@ -1,9 +1,6 @@
 defmodule ThreatShield.AccountsTest do
   use ThreatShield.DataCase
 
-  # Registrations without URL builders log that they send no email
-  @moduletag :capture_log
-
   import ThreatShield.AccountsFixtures
 
   alias AshAuthentication.Jwt
@@ -12,8 +9,6 @@ defmodule ThreatShield.AccountsTest do
   alias ThreatShield.OrganisationsFixtures
 
   defp token_valid?(token), do: match?({:ok, _, _}, Jwt.verify(token, :threat_shield))
-
-  defp confirmation_url_context, do: url_context(%{confirm: &"[TOKEN]#{&1}[TOKEN]"})
 
   describe "get_user_by_email/2" do
     test "does not return the user if the email does not exist" do
@@ -115,22 +110,24 @@ defmodule ThreatShield.AccountsTest do
       assert token_valid?(user.__metadata__.token)
     end
 
-    test "sends the confirmation instructions with the given URL builder" do
+    test "sends the confirmation instructions with the link of the configured module" do
       email = unique_user_email()
 
-      {:ok, _user} =
-        Accounts.register_user(
-          valid_user_attributes(email: email),
-          url_context(%{confirm: &"https://test/confirm/#{&1}"})
-        )
+      {:ok, _user} = Accounts.register_user(valid_user_attributes(email: email))
 
       assert_received {:email, %{to: [{_, ^email}], text_body: body}}
-      assert body =~ "https://test/confirm/"
+      assert body =~ ThreatShieldWeb.AccountUrls.url_for(:confirm, link_token(body))
+      assert body =~ "/users/confirm/"
     end
 
-    test "sends no email without a URL builder" do
-      {:ok, _user} = Accounts.register_user(valid_user_attributes())
-      refute_received {:email, _}
+    test "fails loudly without a configured module for the links" do
+      urls = Application.fetch_env!(:threat_shield, :account_urls)
+      Application.delete_env(:threat_shield, :account_urls)
+      on_exit(fn -> Application.put_env(:threat_shield, :account_urls, urls) end)
+
+      assert_raise ArgumentError, ~r/no module builds the links/, fn ->
+        ThreatShield.Accounts.Senders.Urls.build(:confirm, "token")
+      end
     end
   end
 
@@ -159,9 +156,7 @@ defmodule ThreatShield.AccountsTest do
       user = user_fixture()
 
       token =
-        extract_user_token(fn url ->
-          Accounts.request_confirmation(user.email, url_context(%{confirm: url}))
-        end)
+        extract_user_token(fn -> Accounts.request_confirmation(user.email) end)
 
       assert {:ok, %User{confirmed_at: %DateTime{}}} = Accounts.confirm_user(token)
       assert {:error, _} = Accounts.confirm_user(token)
@@ -174,8 +169,8 @@ defmodule ThreatShield.AccountsTest do
     test "sends no instructions to a confirmed user or an unknown address" do
       user = confirmed_user_fixture()
 
-      :ok = Accounts.request_confirmation(user.email, confirmation_url_context())
-      :ok = Accounts.request_confirmation("unknown@example.com", confirmation_url_context())
+      :ok = Accounts.request_confirmation(user.email)
+      :ok = Accounts.request_confirmation("unknown@example.com")
 
       refute_received {:email, _}
     end
@@ -186,9 +181,7 @@ defmodule ThreatShield.AccountsTest do
       user = user_fixture()
 
       token =
-        extract_user_token(fn url ->
-          Accounts.request_password_reset(user.email, url_context(%{reset_password: url}))
-        end)
+        extract_user_token(fn -> Accounts.request_password_reset(user.email) end)
 
       %{user: user, token: token}
     end
@@ -337,7 +330,7 @@ defmodule ThreatShield.AccountsTest do
         user,
         email,
         password,
-        [actor: user] ++ url_context(%{confirm_email_change: &"[TOKEN]#{&1}[TOKEN]"}) ++ opts
+        [actor: user] ++ opts
       )
     end
 
@@ -364,7 +357,7 @@ defmodule ThreatShield.AccountsTest do
       assert unchanged.email == user.email
 
       assert_received {:email, %{to: [{_, ^email}], text_body: body}}
-      [_, token | _] = String.split(body, "[TOKEN]")
+      token = link_token(body)
 
       assert {:ok, changed} = Accounts.confirm_user_email_change(user, token, actor: user)
       assert to_string(changed.email) == email
@@ -376,7 +369,7 @@ defmodule ThreatShield.AccountsTest do
     test "does not apply the token to another user", %{user: user} do
       {:ok, _} = request_change(user, unique_user_email())
       assert_received {:email, %{text_body: body}}
-      [_, token | _] = String.split(body, "[TOKEN]")
+      token = link_token(body)
 
       other_user = user_fixture()
 

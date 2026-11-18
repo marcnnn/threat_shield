@@ -2,7 +2,6 @@ defmodule ThreatShieldWeb.UserConfirmationInstructionsLive do
   use ThreatShieldWeb, :live_view
 
   alias ThreatShield.Accounts
-  alias ThreatShieldWeb.UserAuth
 
   def render(assigns) do
     ~H"""
@@ -35,7 +34,7 @@ defmodule ThreatShieldWeb.UserConfirmationInstructionsLive do
 
   def handle_event("send_instructions", %{"user" => %{"email" => email}}, socket) do
     # Does not tell whether the address is registered
-    _ = Accounts.request_confirmation(email, context: UserAuth.account_urls_context())
+    _ = Accounts.request_confirmation(email)
 
     info =
       "If your email is in our system and it has not been confirmed yet, you will receive an email with instructions shortly."

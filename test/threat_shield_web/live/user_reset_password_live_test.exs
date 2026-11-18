@@ -10,9 +10,7 @@ defmodule ThreatShieldWeb.UserResetPasswordLiveTest do
     user = user_fixture()
 
     token =
-      extract_user_token(fn url ->
-        Accounts.request_password_reset(user.email, url_context(%{reset_password: url}))
-      end)
+      extract_user_token(fn -> Accounts.request_password_reset(user.email) end)
 
     %{token: token, user: user}
   end

@@ -6,7 +6,7 @@ defmodule ThreatShieldWeb.MembersLive.Index do
 
   alias ThreatShield.Accounts
   alias ThreatShield.Accounts.Invite
-  alias ThreatShield.Accounts.{User, Organisation, Membership, UserNotifier}
+  alias ThreatShield.Accounts.{User, Organisation, Membership}
 
   import ThreatShieldWeb.Helpers, only: [add_breadcrumbs: 2, format_datetime: 1]
   import ThreatShieldWeb.Labels
@@ -45,8 +45,7 @@ defmodule ThreatShieldWeb.MembersLive.Index do
 
   @impl true
   def handle_info({ThreatShieldWeb.MembersLive.InviteForm, {:saved, invite}}, socket) do
-    UserNotifier.deliver_invite(invite, url(~p"/join/#{invite.token}"))
-
+    # the create action has sent the email
     socket
     |> assign(
       organisation: %{

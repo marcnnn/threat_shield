@@ -94,6 +94,21 @@ defmodule ThreatShield.MembersTest do
       assert {:ok, %Membership{}} = Accounts.accept_invite(invite.id, actor: user)
     end
 
+    test "an invite sends the link to join to the invited address",
+         %{owner: owner, organisation: organisation} do
+      {:ok, invite} =
+        Accounts.create_invite(organisation.id, %{email: "new@example.com"}, actor: owner)
+
+      assert_received {:email, %{to: [{_, "new@example.com"}], text_body: body}}
+      assert body =~ ThreatShieldWeb.AccountUrls.url_for(:join_organisation, invite.token)
+      assert body =~ organisation.name
+
+      assert {:error, _} =
+               Accounts.create_invite(organisation.id, %{email: "new@example.com"}, actor: owner)
+
+      refute_received {:email, %{to: [{_, "new@example.com"}]}}
+    end
+
     test "an address can be invited only once per organisation",
          %{owner: owner, organisation: organisation} do
       assert {:error, %Ash.Error.Invalid{} = error} =

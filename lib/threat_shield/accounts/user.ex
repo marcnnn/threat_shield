@@ -7,7 +7,7 @@ defmodule ThreatShield.Accounts.User do
   ends a session for good.
 
   The emails of the account carry links into the web application. This resource does
-  not know the routes: the caller passes the URL builders in the action context, see
+  not know the routes: a configured module builds the links, see
   `ThreatShield.Accounts.Senders.Urls`.
   """
 

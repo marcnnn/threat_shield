@@ -28,6 +28,9 @@ config :threat_shield,
     ThreatShield.Quotas
   ]
 
+# The links in the account and invite emails, see ThreatShield.Accounts.Senders.Urls
+config :threat_shield, :account_urls, ThreatShieldWeb.AccountUrls
+
 config :ash,
   include_embedded_source_by_default?: false,
   default_page_type: :keyset,

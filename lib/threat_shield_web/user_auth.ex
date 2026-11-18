@@ -14,7 +14,6 @@ defmodule ThreatShieldWeb.UserAuth do
 
   alias AshAuthentication.Plug.Helpers, as: AuthHelpers
   alias Phoenix.LiveView.Socket
-  alias ThreatShield.Accounts.Senders.Urls
   alias ThreatShield.Accounts.User
 
   @otp_app :threat_shield
@@ -23,18 +22,6 @@ defmodule ThreatShieldWeb.UserAuth do
   @max_age 60 * 60 * 24 * 60
   @remember_me_cookie "_threat_shield_web_user_remember_me"
   @remember_me_options [sign: true, max_age: @max_age, same_site: "Lax", http_only: true]
-
-  @doc """
-  The action context with the URL builders for the links in the account emails. Pass
-  it to the actions that send emails, see `ThreatShield.Accounts.Senders.Urls`.
-  """
-  def account_urls_context do
-    Urls.context(%{
-      confirm: &url(~p"/users/confirm/#{&1}"),
-      reset_password: &url(~p"/users/reset_password/#{&1}"),
-      confirm_email_change: &url(~p"/users/settings/confirm_email/#{&1}")
-    })
-  end
 
   @doc """
   Logs the user in. The user comes from a sign in action and carries its token in

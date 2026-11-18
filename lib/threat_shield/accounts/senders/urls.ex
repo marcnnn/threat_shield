@@ -1,51 +1,47 @@
 defmodule ThreatShield.Accounts.Senders.Urls do
   @moduledoc """
-  The links in the account emails point into the web application, which this domain
-  does not know. The caller of an action that sends such an email passes URL
-  builders in the action context:
+  The links in the account and invite emails point into the web application, which
+  this domain does not know. The application configures a module that implements
+  this behaviour and builds the links:
 
-      Accounts.request_password_reset(email,
-        context: Urls.context(%{reset_password: &url(~p"/users/reset_password/\#{&1}")})
-      )
+      config :threat_shield, :account_urls, ThreatShieldWeb.AccountUrls
 
-  A builder takes the token and returns the URL. The senders use these keys:
+  The callback gets the name of the link and the token, and returns the URL:
 
     * `:confirm` - confirmation of a new account
     * `:reset_password` - password reset
     * `:confirm_email_change` - confirmation of a new email address
+    * `:join_organisation` - the invite link of an organisation
 
-  Without a builder, the email is not sent.
+  Without the configuration, `build/2` raises: an email without its link is of no
+  use, and a missing configuration is a defect of the application.
   """
 
-  require Logger
-
-  @key :account_urls
+  @type name :: :confirm | :reset_password | :confirm_email_change | :join_organisation
 
   @doc """
-  Returns the action context that carries the given URL builders.
+  Returns the URL of the link `name` for the token.
   """
-  def context(builders) when is_map(builders), do: %{@key => builders}
+  @callback url_for(name(), token :: String.t()) :: String.t()
 
   @doc """
-  Builds the URL `name` for the token from the URL builders in the action context
-  that a sender receives in its options.
+  Builds the URL `name` for the token with the configured module.
   """
-  def build(opts, name, token) do
-    case get_in(action_context(opts), [@key, name]) do
-      builder when is_function(builder, 1) ->
-        {:ok, builder.(token)}
+  @spec build(name(), String.t()) :: String.t()
+  def build(name, token) when is_binary(token), do: module().url_for(name, token)
+
+  defp module do
+    case Application.fetch_env(:threat_shield, :account_urls) do
+      {:ok, module} when is_atom(module) and not is_nil(module) ->
+        module
 
       _ ->
-        Logger.warning("No URL builder #{inspect(name)} in the action context, email not sent")
-        :error
-    end
-  end
+        raise ArgumentError, """
+        no module builds the links of the account emails. Configure one that \
+        implements #{inspect(__MODULE__)}:
 
-  defp action_context(opts) do
-    case opts[:context] || opts[:changeset] do
-      %{context: context} -> context
-      context when is_map(context) -> context
-      _ -> %{}
+            config :threat_shield, :account_urls, MyAppWeb.AccountUrls
+        """
     end
   end
 end

@@ -8,9 +8,7 @@ defmodule ThreatShield.Accounts.Senders.SendConfirmationEmail do
   alias ThreatShield.Accounts.UserNotifier
 
   @impl true
-  def send(user, token, opts) do
-    with {:ok, url} <- Urls.build(opts, :confirm, token) do
-      UserNotifier.deliver_confirmation_instructions(user, url)
-    end
+  def send(user, token, _opts) do
+    UserNotifier.deliver_confirmation_instructions(user, Urls.build(:confirm, token))
   end
 end

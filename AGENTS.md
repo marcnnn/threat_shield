@@ -245,9 +245,11 @@ The ThreatManagement core is meant to become a reusable Ash library later. It is
 extracted yet, but kept ready:
 
 - Nothing under `lib/threat_shield/` references `ThreatShieldWeb`, except
-  `application.ex`, which starts the endpoint. Links and other web details are passed
-  in by the web layer (`Accounts.Senders.Urls`, the invite link in
-  `UserNotifier.deliver_invite/2`).
+  `application.ex`, which starts the endpoint. The links in the account and invite
+  emails are built by a module of the web layer that implements the behaviour
+  `Accounts.Senders.Urls` (`config :threat_shield, :account_urls,
+  ThreatShieldWeb.AccountUrls`). The actions send the emails themselves (the senders
+  of `User`, the change `SendInviteEmail` of `Invite.create`).
 - The ThreatManagement resources read their repo from
   `config :threat_shield, :threat_management_repo` (default `ThreatShield.Repo`, read at
   compile time).

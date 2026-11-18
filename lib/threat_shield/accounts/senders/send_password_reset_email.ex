@@ -8,9 +8,7 @@ defmodule ThreatShield.Accounts.Senders.SendPasswordResetEmail do
   alias ThreatShield.Accounts.UserNotifier
 
   @impl true
-  def send(user, token, opts) do
-    with {:ok, url} <- Urls.build(opts, :reset_password, token) do
-      UserNotifier.deliver_reset_password_instructions(user, url)
-    end
+  def send(user, token, _opts) do
+    UserNotifier.deliver_reset_password_instructions(user, Urls.build(:reset_password, token))
   end
 end

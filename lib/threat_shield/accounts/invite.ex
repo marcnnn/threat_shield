@@ -121,11 +121,12 @@ defmodule ThreatShield.Accounts.Invite do
     end
 
     create :create do
-      description "Invites an email address to an organisation. An address can be invited " <>
-                    "once per organisation."
+      description "Invites an email address to an organisation and sends the link to " <>
+                    "join to the address. An address can be invited once per organisation."
 
       accept [:email, :organisation_id]
       change ThreatShield.Accounts.Changes.GenerateInviteToken
+      change ThreatShield.Accounts.Changes.SendInviteEmail
     end
 
     destroy :destroy do

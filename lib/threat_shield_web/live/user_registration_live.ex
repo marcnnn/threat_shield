@@ -3,7 +3,6 @@ defmodule ThreatShieldWeb.UserRegistrationLive do
 
   alias ThreatShield.Accounts
   alias ThreatShield.Accounts.User
-  alias ThreatShieldWeb.UserAuth
 
   @impl true
   def render(assigns) do
@@ -168,15 +167,10 @@ defmodule ThreatShieldWeb.UserRegistrationLive do
     |> noreply()
   end
 
-  # The registration sends the confirmation instructions, with links built by the
-  # URL builders in the context.
+  # The registration sends the confirmation instructions
   defp registration_form(params) do
     User
-    |> AshPhoenix.Form.for_create(:register_with_password,
-      as: "user",
-      params: params,
-      context: UserAuth.account_urls_context()
-    )
+    |> AshPhoenix.Form.for_create(:register_with_password, as: "user", params: params)
     |> to_form()
   end
 
