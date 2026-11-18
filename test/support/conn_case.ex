@@ -55,7 +55,7 @@ defmodule ThreatShieldWeb.ConnCase do
   It returns an updated `conn`.
   """
   def log_in_user(conn, user) do
-    token = ThreatShield.Accounts.Helpers.generate_user_session_token(user)
+    token = ThreatShield.AccountsFixtures.session_token(user)
 
     conn
     |> Phoenix.ConnTest.init_test_session(%{})

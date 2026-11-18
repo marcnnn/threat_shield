@@ -1,7 +1,7 @@
 defmodule ThreatShieldWeb.UserConfirmationLive do
   use ThreatShieldWeb, :live_view
 
-  alias ThreatShield.Accounts.Helpers, as: Accounts
+  alias ThreatShield.Accounts
 
   def render(%{live_action: :edit} = assigns) do
     ~H"""
@@ -40,7 +40,7 @@ defmodule ThreatShieldWeb.UserConfirmationLive do
          |> put_flash(:info, "User confirmed successfully.")
          |> redirect(to: ~p"/")}
 
-      :error ->
+      {:error, _} ->
         # If there is a current user and the account was already confirmed,
         # then odds are that the confirmation link was already visited, either
         # by some automation or by the user themselves, so we redirect without

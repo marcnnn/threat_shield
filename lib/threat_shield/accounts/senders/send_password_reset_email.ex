@@ -1,14 +1,16 @@
 defmodule ThreatShield.Accounts.Senders.SendPasswordResetEmail do
   @moduledoc """
-  Sends a password reset email via AshAuthentication.
+  Sends the password reset instructions.
   """
   use AshAuthentication.Sender
 
+  alias ThreatShield.Accounts.Senders.Urls
   alias ThreatShield.Accounts.UserNotifier
 
   @impl true
-  def send(user, token, _opts) do
-    url = ThreatShieldWeb.Endpoint.url() <> "/auth/user/password/reset?token=#{token}"
-    UserNotifier.deliver_reset_password_instructions(user, url)
+  def send(user, token, opts) do
+    with {:ok, url} <- Urls.build(opts, :reset_password, token) do
+      UserNotifier.deliver_reset_password_instructions(user, url)
+    end
   end
 end

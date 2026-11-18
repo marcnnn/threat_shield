@@ -1,7 +1,9 @@
 defmodule ThreatShieldWeb.UserResetPasswordLive do
   use ThreatShieldWeb, :live_view
 
-  alias ThreatShield.Accounts.Helpers, as: Accounts
+  alias ThreatShield.Accounts
+  alias ThreatShield.Accounts.User
+  alias ThreatShieldWeb.AshErrors
 
   def render(assigns) do
     ~H"""
@@ -40,52 +42,45 @@ defmodule ThreatShieldWeb.UserResetPasswordLive do
     """
   end
 
-  def mount(params, _session, socket) do
-    socket = assign_user_and_token(socket, params)
+  def mount(%{"token" => token}, _session, socket) do
+    case Accounts.get_user_by_reset_token(token) do
+      {:ok, %User{} = user} ->
+        {:ok, assign(socket, :form, reset_form(user, token))}
 
-    form_source =
-      case socket.assigns do
-        %{user: user} ->
-          Accounts.change_user_password(user)
-
-        _ ->
-          %{}
-      end
-
-    {:ok, assign_form(socket, form_source), temporary_assigns: [form: nil]}
+      _ ->
+        socket
+        |> put_flash(:error, "Reset password link is invalid or it has expired.")
+        |> redirect(to: ~p"/")
+        |> ok()
+    end
   end
 
   # Do not log in the user after reset password to avoid a
   # leaked token giving the user access to the account.
   def handle_event("reset_password", %{"user" => user_params}, socket) do
-    case Accounts.reset_user_password(socket.assigns.user, user_params) do
+    case AshPhoenix.Form.submit(socket.assigns.form, params: user_params) do
       {:ok, _} ->
         {:noreply,
          socket
          |> put_flash(:info, "Password reset successfully.")
          |> redirect(to: ~p"/users/log_in")}
 
-      {:error, changeset} ->
-        {:noreply, assign_form(socket, Map.put(changeset, :action, :insert))}
+      {:error, form} ->
+        {:noreply, assign(socket, :form, form)}
     end
   end
 
   def handle_event("validate", %{"user" => user_params}, socket) do
-    changeset = Accounts.change_user_password(socket.assigns.user, user_params)
-    {:noreply, assign_form(socket, Map.put(changeset, :action, :validate))}
+    {:noreply, assign(socket, :form, AshPhoenix.Form.validate(socket.assigns.form, user_params))}
   end
 
-  defp assign_user_and_token(socket, %{"token" => token}) do
-    if user = Accounts.get_user_by_reset_password_token(token) do
-      assign(socket, user: user, token: token)
-    else
-      socket
-      |> put_flash(:error, "Reset password link is invalid or it has expired.")
-      |> redirect(to: ~p"/")
-    end
-  end
-
-  defp assign_form(socket, %{} = source) do
-    assign(socket, :form, to_form(source, as: "user"))
+  defp reset_form(user, token) do
+    user
+    |> AshPhoenix.Form.for_update(:password_reset_with_password,
+      as: "user",
+      prepare_params: fn params, _phase -> Map.put(params, "reset_token", token) end,
+      post_process_errors: &AshErrors.post_process_error/3
+    )
+    |> to_form()
   end
 end

@@ -35,6 +35,15 @@ defmodule ThreatShieldWeb.AshErrors do
     |> Map.put(:action, changeset.action || :insert)
   end
 
+  @doc """
+  For the option `post_process_errors` of `AshPhoenix.Form`: gives an error the
+  Ecto wording, like `field_errors/1`.
+  """
+  def post_process_error(_form, _path, {field, message, vars}) do
+    {message, vars} = normalize(message, vars)
+    {field, message, vars}
+  end
+
   defp to_form_errors(error) do
     if AshPhoenix.FormData.Error.impl_for(error) do
       error

@@ -39,6 +39,9 @@ defmodule ThreatShieldWeb.UserForgotPasswordLiveTest do
         |> follow_redirect(conn, "/")
 
       assert Phoenix.Flash.get(conn.assigns.flash, :info) =~ "If your email is in our system"
+
+      assert_received {:email, %{subject: "Reset password instructions", text_body: body}}
+      assert body =~ ~p"/users/reset_password/"
     end
 
     test "does not send reset password token if email is invalid", %{conn: conn} do
@@ -51,6 +54,7 @@ defmodule ThreatShieldWeb.UserForgotPasswordLiveTest do
         |> follow_redirect(conn, "/")
 
       assert Phoenix.Flash.get(conn.assigns.flash, :info) =~ "If your email is in our system"
+      refute_received {:email, _}
     end
   end
 end

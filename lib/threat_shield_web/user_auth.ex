@@ -1,24 +1,55 @@
 defmodule ThreatShieldWeb.UserAuth do
+  @moduledoc """
+  Sessions of the browser, based on the tokens of AshAuthentication.
+
+  A session holds a token of `ThreatShield.Accounts.Token` under `"user_token"`. The
+  token authenticates only while it is stored and not revoked, so signing out ends
+  the session, also for the "remember me" cookie, which holds the same token.
+  """
+
   use ThreatShieldWeb, :verified_routes
 
   import Plug.Conn
   import Phoenix.Controller
 
+  alias AshAuthentication.Plug.Helpers, as: AuthHelpers
   alias Phoenix.LiveView.Socket
-  alias ThreatShield.Accounts.Helpers, as: Accounts
+  alias ThreatShield.Accounts.Senders.Urls
+  alias ThreatShield.Accounts.User
 
-  # Make the remember me cookie valid for 60 days.
+  @otp_app :threat_shield
+
+  # Valid as long as the token, see the token lifetime of `ThreatShield.Accounts.User`
   @max_age 60 * 60 * 24 * 60
   @remember_me_cookie "_threat_shield_web_user_remember_me"
   @remember_me_options [sign: true, max_age: @max_age, same_site: "Lax", http_only: true]
 
-  def log_in_user(conn, user, params \\ %{}) do
-    token = Accounts.generate_user_session_token(user)
+  @doc """
+  The action context with the URL builders for the links in the account emails. Pass
+  it to the actions that send emails, see `ThreatShield.Accounts.Senders.Urls`.
+  """
+  def account_urls_context do
+    Urls.context(%{
+      confirm: &url(~p"/users/confirm/#{&1}"),
+      reset_password: &url(~p"/users/reset_password/#{&1}"),
+      confirm_email_change: &url(~p"/users/settings/confirm_email/#{&1}")
+    })
+  end
+
+  @doc """
+  Logs the user in. The user comes from a sign in action and carries its token in
+  the metadata.
+
+  It renews the session ID and clears the whole session to avoid fixation attacks.
+  """
+  def log_in_user(conn, %User{__metadata__: %{token: token}} = user, params \\ %{})
+      when is_binary(token) do
     user_return_to = get_session(conn, :user_return_to)
 
     conn
     |> renew_session()
-    |> put_token_in_session(token)
+    |> AuthHelpers.store_in_session(user)
+    |> put_live_socket_id(token)
     |> maybe_write_remember_me_cookie(token, params)
     |> redirect(to: user_return_to || signed_in_path(conn))
   end
@@ -37,9 +68,12 @@ defmodule ThreatShieldWeb.UserAuth do
     |> clear_session()
   end
 
+  @doc """
+  Logs the user out. Revokes the token of the session, which also invalidates the
+  "remember me" cookie, and disconnects the LiveViews of the session.
+  """
   def log_out_user(conn) do
-    user_token = get_session(conn, :user_token)
-    user_token && Accounts.delete_user_session_token(user_token)
+    conn = AuthHelpers.revoke_session_tokens(conn, @otp_app)
 
     if live_socket_id = get_session(conn, :live_socket_id) do
       ThreatShieldWeb.Endpoint.broadcast(live_socket_id, "disconnect", %{})
@@ -51,22 +85,31 @@ defmodule ThreatShieldWeb.UserAuth do
     |> redirect(to: ~p"/")
   end
 
+  @doc """
+  Authenticates the user by the token in the session or in the "remember me" cookie
+  and assigns it, with its organisations, as `:current_user`.
+  """
   def fetch_current_user(conn, _opts) do
-    {user_token, conn} = ensure_user_token(conn)
-    user = user_token && Accounts.get_user_by_session_token(user_token)
-    assign(conn, :current_user, user)
+    conn =
+      conn
+      |> ensure_user_token()
+      |> AuthHelpers.retrieve_from_session(@otp_app)
+
+    assign(conn, :current_user, with_organisations(conn.assigns.current_user))
   end
 
   defp ensure_user_token(conn) do
-    if token = get_session(conn, :user_token) do
-      {token, conn}
+    if get_session(conn, :user_token) do
+      conn
     else
       conn = fetch_cookies(conn, signed: [@remember_me_cookie])
 
       if token = conn.cookies[@remember_me_cookie] do
-        {token, put_token_in_session(conn, token)}
+        conn
+        |> put_session(:user_token, token)
+        |> put_live_socket_id(token)
       else
-        {nil, conn}
+        conn
       end
     end
   end
@@ -117,12 +160,21 @@ defmodule ThreatShieldWeb.UserAuth do
   end
 
   defp mount_current_user(socket, session) do
-    Phoenix.Component.assign_new(socket, :current_user, fn ->
-      if user_token = session["user_token"] do
-        Accounts.get_user_by_session_token(user_token)
-      end
-    end)
+    socket
+    |> AuthHelpers.assign_new_resources(session, &Phoenix.Component.assign_new/3,
+      otp_app: @otp_app
+    )
+    |> Phoenix.Component.update(:current_user, &with_organisations/1)
   end
+
+  defp with_organisations(%User{organisations: %Ash.NotLoaded{}} = user) do
+    case Ash.load(user, :organisations, actor: user) do
+      {:ok, user} -> user
+      {:error, _} -> user
+    end
+  end
+
+  defp with_organisations(user), do: user
 
   def redirect_if_user_is_authenticated(conn, _opts) do
     if conn.assigns[:current_user] do
@@ -146,10 +198,8 @@ defmodule ThreatShieldWeb.UserAuth do
     end
   end
 
-  defp put_token_in_session(conn, token) do
-    conn
-    |> put_session(:user_token, token)
-    |> put_session(:live_socket_id, "users_sessions:#{Base.url_encode64(token)}")
+  defp put_live_socket_id(conn, token) do
+    put_session(conn, :live_socket_id, "users_sessions:#{Base.url_encode64(token)}")
   end
 
   defp maybe_store_return_to(%{method: "GET"} = conn) do

@@ -1,7 +1,8 @@
 defmodule ThreatShieldWeb.UserSettingsLive do
   use ThreatShieldWeb, :live_view
 
-  alias ThreatShield.Accounts.Helpers, as: Accounts
+  alias ThreatShield.Accounts
+  alias ThreatShieldWeb.{AshErrors, UserAuth}
 
   def render(assigns) do
     ~H"""
@@ -78,12 +79,14 @@ defmodule ThreatShieldWeb.UserSettingsLive do
   end
 
   def mount(%{"token" => token}, _session, socket) do
+    user = socket.assigns.current_user
+
     socket =
-      case Accounts.update_user_email(socket.assigns.current_user, token) do
-        :ok ->
+      case Accounts.confirm_user_email_change(user, token, actor: user) do
+        {:ok, _user} ->
           put_flash(socket, :info, "Email changed successfully.")
 
-        :error ->
+        {:error, _} ->
           put_flash(socket, :error, "Email change link is invalid or it has expired.")
       end
 
@@ -92,50 +95,48 @@ defmodule ThreatShieldWeb.UserSettingsLive do
 
   def mount(_params, _session, socket) do
     user = socket.assigns.current_user
-    email_changeset = Accounts.change_user_email(user)
-    password_changeset = Accounts.change_user_password(user)
 
     socket =
       socket
       |> assign(:current_password, nil)
       |> assign(:email_form_current_password, nil)
       |> assign(:current_email, user.email)
-      |> assign(:email_form, to_form(email_changeset))
-      |> assign(:password_form, to_form(password_changeset))
+      |> assign(:email_form, email_form(user))
+      |> assign(:password_form, password_form(user))
       |> assign(:trigger_submit, false)
 
     {:ok, socket}
   end
 
+  # The current password is a separate parameter, see the inputs of the forms
   def handle_event("validate_email", params, socket) do
     %{"current_password" => password, "user" => user_params} = params
 
     email_form =
-      socket.assigns.current_user
-      |> Accounts.change_user_email(user_params)
-      |> Map.put(:action, :validate)
-      |> to_form()
+      AshPhoenix.Form.validate(socket.assigns.email_form, with_password(user_params, password))
 
     {:noreply, assign(socket, email_form: email_form, email_form_current_password: password)}
   end
 
+  # Sends a confirmation link to the new address. The address is changed when the
+  # link is followed.
   def handle_event("update_email", params, socket) do
     %{"current_password" => password, "user" => user_params} = params
-    user = socket.assigns.current_user
 
-    case Accounts.apply_user_email(user, password, user_params) do
-      {:ok, applied_user} ->
-        Accounts.deliver_user_update_email_instructions(
-          applied_user,
-          user.email,
-          &url(~p"/users/settings/confirm_email/#{&1}")
-        )
-
+    case AshPhoenix.Form.submit(socket.assigns.email_form,
+           params: with_password(user_params, password)
+         ) do
+      {:ok, _user} ->
         info = "A link to confirm your email change has been sent to the new address."
-        {:noreply, socket |> put_flash(:info, info) |> assign(email_form_current_password: nil)}
 
-      {:error, changeset} ->
-        {:noreply, assign(socket, :email_form, to_form(Map.put(changeset, :action, :insert)))}
+        {:noreply,
+         socket
+         |> put_flash(:info, info)
+         |> assign(email_form_current_password: nil)
+         |> assign(email_form: email_form(socket.assigns.current_user))}
+
+      {:error, email_form} ->
+        {:noreply, assign(socket, :email_form, email_form)}
     end
   end
 
@@ -143,29 +144,59 @@ defmodule ThreatShieldWeb.UserSettingsLive do
     %{"current_password" => password, "user" => user_params} = params
 
     password_form =
-      socket.assigns.current_user
-      |> Accounts.change_user_password(user_params)
-      |> Map.put(:action, :validate)
-      |> to_form()
+      AshPhoenix.Form.validate(
+        socket.assigns.password_form,
+        with_password(user_params, password)
+      )
 
     {:noreply, assign(socket, password_form: password_form, current_password: password)}
   end
 
+  # Changing the password signs the user out everywhere. The form then posts the
+  # address and the new password to the session controller, which signs the user in
+  # again.
   def handle_event("update_password", params, socket) do
     %{"current_password" => password, "user" => user_params} = params
-    user = socket.assigns.current_user
 
-    case Accounts.update_user_password(user, password, user_params) do
-      {:ok, user} ->
+    case AshPhoenix.Form.submit(socket.assigns.password_form,
+           params: with_password(user_params, password)
+         ) do
+      {:ok, _user} ->
         password_form =
-          user
-          |> Accounts.change_user_password(user_params)
-          |> to_form()
+          AshPhoenix.Form.validate(
+            socket.assigns.password_form,
+            with_password(user_params, password),
+            errors: false
+          )
 
         {:noreply, assign(socket, trigger_submit: true, password_form: password_form)}
 
-      {:error, changeset} ->
-        {:noreply, assign(socket, password_form: to_form(changeset))}
+      {:error, password_form} ->
+        {:noreply, assign(socket, password_form: password_form)}
     end
+  end
+
+  defp with_password(user_params, password),
+    do: Map.put(user_params, "current_password", password)
+
+  defp email_form(user) do
+    user
+    |> AshPhoenix.Form.for_update(:change_email,
+      as: "user",
+      actor: user,
+      context: UserAuth.account_urls_context(),
+      post_process_errors: &AshErrors.post_process_error/3
+    )
+    |> to_form()
+  end
+
+  defp password_form(user) do
+    user
+    |> AshPhoenix.Form.for_update(:change_password,
+      as: "user",
+      actor: user,
+      post_process_errors: &AshErrors.post_process_error/3
+    )
+    |> to_form()
   end
 end

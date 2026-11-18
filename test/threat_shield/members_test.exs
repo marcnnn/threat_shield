@@ -7,7 +7,7 @@ defmodule ThreatShield.MembersTest do
   alias ThreatShield.AccountsFixtures
   alias ThreatShield.MembersFixtures
   alias ThreatShield.{Members, Organisations}
-  alias ThreatShield.Accounts.Helpers, as: Accounts
+  alias ThreatShield.Accounts
   alias ThreatShield.Accounts.Invite
   alias ThreatShield.Accounts.{Organisation, Membership}
 
@@ -26,7 +26,7 @@ defmodule ThreatShield.MembersTest do
       {:ok, membership} = Members.accept_invite(other_user, invite.id)
       assert membership.organisation_id == organisation.id
 
-      reloaded = Accounts.get_user!(other_user.id)
+      reloaded = Accounts.get_user!(other_user.id, actor: other_user)
       assert [%Organisation{id: org_id}] = Organisations.list_organisations(reloaded)
       assert org_id == organisation.id
     end
