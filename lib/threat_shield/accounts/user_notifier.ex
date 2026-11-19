@@ -4,8 +4,22 @@ defmodule ThreatShield.Accounts.UserNotifier do
   """
   import Swoosh.Email
 
+  require Logger
+
   alias ThreatShield.Accounts.Invite
   alias ThreatShield.Mailer
+
+  @doc """
+  The result of a delivery as an `AshAuthentication.Sender` returns it: always `:ok`,
+  because AshAuthentication ignores the result of a sender. A failed delivery is
+  logged.
+  """
+  def sender_result({:ok, _email}), do: :ok
+
+  def sender_result({:error, reason}) do
+    Logger.error("Sending an email failed: #{inspect(reason)}")
+    :ok
+  end
 
   # Delivers the email using the application mailer.
   defp deliver(recipient, subject, body) do

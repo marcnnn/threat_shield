@@ -10,5 +10,6 @@ defmodule ThreatShield.Accounts.Senders.SendPasswordResetEmail do
   @impl true
   def send(user, token, _opts) do
     UserNotifier.deliver_reset_password_instructions(user, Urls.build(:reset_password, token))
+    |> UserNotifier.sender_result()
   end
 end

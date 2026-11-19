@@ -16,6 +16,16 @@ defmodule AshThreatShield.MixProject do
       lockfile: "../../mix.lock",
       aliases: aliases(),
       deps: deps(),
+      # With the deps and the lock file of ThreatShield, dialyxir treats the library like
+      # an umbrella child and does not build a PLT; it uses the PLTs of ThreatShield,
+      # which cover the same dependencies (build them with `mix dialyzer --plt` there).
+      dialyzer: [
+        plt_local_path: Path.expand("../../priv/plts", __DIR__),
+        plt_core_path: Path.expand("../../priv/plts", __DIR__),
+        plt_add_apps: [:mix, :ex_unit],
+        ignore_warnings: ".dialyzer_ignore.exs",
+        list_unused_filters: true
+      ],
       description: "Threat modeling with Ash: systems, assets, threats, risks and mitigations.",
       package: package()
     ]

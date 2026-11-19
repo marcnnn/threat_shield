@@ -10,7 +10,14 @@ defmodule ThreatShield.MixProject do
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
       deps: deps(),
-      hex: [ignore_advisories: ignored_advisories()]
+      hex: [ignore_advisories: ignored_advisories()],
+      dialyzer: [
+        plt_local_path: Path.expand("priv/plts", __DIR__),
+        plt_core_path: Path.expand("priv/plts", __DIR__),
+        plt_add_apps: [:mix, :ex_unit],
+        ignore_warnings: ".dialyzer_ignore.exs",
+        list_unused_filters: true
+      ]
     ]
   end
 

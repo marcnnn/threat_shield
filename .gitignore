@@ -57,3 +57,6 @@ tmp/
 
 # Local Claude Code settings and worktrees
 .claude/
+
+# Dialyzer PLTs (built by mix dialyzer, cached in CI)
+/priv/plts/

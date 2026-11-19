@@ -19,9 +19,9 @@ defmodule ThreatShield.Quotas.QuotaManager do
 
     org.id
     |> Quotas.query_to_quota_usage(to_string(quota_type), start_time(quota_type), opts)
-    |> Ash.sum(:amount, opts)
+    |> Ash.aggregate({:usage, :sum, field: :amount, default: 0.0}, opts)
     |> case do
-      {:ok, amount} -> {:ok, amount || 0.0}
+      {:ok, %{usage: usage}} -> {:ok, usage}
       {:error, error} -> {:error, error}
     end
   end

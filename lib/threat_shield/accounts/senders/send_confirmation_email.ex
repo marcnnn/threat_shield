@@ -10,5 +10,6 @@ defmodule ThreatShield.Accounts.Senders.SendConfirmationEmail do
   @impl true
   def send(user, token, _opts) do
     UserNotifier.deliver_confirmation_instructions(user, Urls.build(:confirm, token))
+    |> UserNotifier.sender_result()
   end
 end

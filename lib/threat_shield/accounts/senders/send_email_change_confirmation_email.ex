@@ -12,6 +12,8 @@ defmodule ThreatShield.Accounts.Senders.SendEmailChangeConfirmationEmail do
     new_email = Ash.Changeset.get_attribute(Keyword.fetch!(opts, :changeset), :email)
 
     url = Urls.build(:confirm_email_change, token)
+
     UserNotifier.deliver_update_email_instructions(user, new_email, url)
+    |> UserNotifier.sender_result()
   end
 end
