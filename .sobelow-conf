@@ -1,0 +1,20 @@
+# Sobelow, the security scanner for Phoenix: `mix sobelow` reads this file.
+# Every finding of any confidence fails the run (exit: :low). No check is ignored;
+# a skip needs a `# sobelow_skip ["Check.Name"]` comment with the reason at the
+# function or pipeline (skip: true) and a note in AGENTS.md ("Checks").
+[
+  exit: :low,
+  threshold: :low,
+  format: "txt",
+  verbose: false,
+  private: false,
+  skip: true,
+  ignore: [],
+  ignore_files: [],
+  only: [],
+  include_mix_tasks: false,
+  include_scripts: false,
+  out: nil,
+  router: nil,
+  summary: false
+]

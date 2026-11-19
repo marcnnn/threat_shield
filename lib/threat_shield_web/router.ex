@@ -3,13 +3,20 @@ defmodule ThreatShieldWeb.Router do
 
   import ThreatShieldWeb.UserAuth
 
+  # The pages use inline scripts and styles (the dropdowns of the layout, style
+  # attributes). LiveView connects to the same origin, which 'self' allows.
+  @browser_headers %{
+    "content-security-policy" =>
+      "default-src 'self'; img-src 'self' data:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; frame-ancestors 'self'; base-uri 'self'"
+  }
+
   pipeline :browser do
     plug :accepts, ["html"]
     plug :fetch_session
     plug :fetch_live_flash
     plug :put_root_layout, html: {ThreatShieldWeb.Layouts, :root}
     plug :protect_from_forgery
-    plug :put_secure_browser_headers
+    plug :put_secure_browser_headers, @browser_headers
     plug :fetch_current_user
   end
 
