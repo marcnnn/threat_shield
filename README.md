@@ -131,6 +131,13 @@ To run the tests, access the app container, and use the following command:
 MIX_ENV=test mix test
 ```
 
+The threat model is a library of its own in `packages/ash_threat_shield` (see its
+[README](packages/ash_threat_shield/README.md)). Its tests run in its directory:
+
+```bash
+cd packages/ash_threat_shield && mix test
+```
+
 ## Development setup with CLI tools
 
 ### Prerequisites for CLI tools

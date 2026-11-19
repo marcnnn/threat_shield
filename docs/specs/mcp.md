@@ -48,8 +48,10 @@ sets `expires_at`), `Accounts.list_api_keys/1`,
 ## Tools
 
 The tools are defined in the `tools` blocks of the domains
-(`lib/threat_shield/accounts.ex`, `lib/threat_shield/threat_management.ex`). The router
-serves all tools of the domains of `:threat_shield`. A tool takes its description from
+(`lib/threat_shield/accounts.ex`, and
+`packages/ash_threat_shield/lib/ash_threat_shield/threat_management.ex` in the
+library). The router serves all tools of the domains in the `:ash_domains` of
+`:threat_shield`, which include the library domain. A tool takes its description from
 the tool or the action, and the descriptions of its inputs from the action arguments
 and the accepted attributes.
 
@@ -67,12 +69,12 @@ API keys. Those stay in the web application.
 
 ### Threat model context
 
-`ThreatShield.ThreatManagement.ThreatModel` is a resource without data. Its generic
+`AshThreatShield.ThreatManagement.ThreatModel` is a resource without data. Its generic
 actions read the records with the actor:
 
 - `:context` (`organisation_id`, optional `system_id`, `asset_id`, `threat_id`,
   `risk_id`) returns the text of
-  `ThreatShield.ThreatManagement.Description.threat_model/1`: the organisation with
+  `AshThreatShield.ThreatManagement.Description.threat_model/1`: the organisation with
   its properties and systems (the same text the built-in AI assistant puts into its
   system prompt), the records in focus, and the known entities of the most specific
   one with their ids. A record of another organisation is an invalid argument.
@@ -90,9 +92,10 @@ Code interfaces: `ThreatManagement.threat_model_context/3`,
   but not write; records of other organisations are not found; a create in an
   organisation where the user lacks the right is forbidden.
 - ash_ai lists and resolves a tool only if `Ash.can?` allows its action for the actor,
-  with an empty input. `Checks.OrganisationRoleForCreate` cannot know the organisation
-  then and allows this pre-check (private context `ash_ai_pre_check?`, which a client
-  cannot set) if the user has the create right in any organisation. A user who is
+  with an empty input. `AshThreatShield.Checks.OrganisationRoleForCreate` cannot know
+  the organisation then and allows this pre-check (private context `ash_ai_pre_check?`,
+  which a client cannot set) if the user has the create right in any organisation
+  (`authorized_somewhere?/2` of `ThreatShield.Accounts.Authorization`). A user who is
   only a viewer does not see the create tools. The call itself is authorized with its
   input.
 

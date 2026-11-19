@@ -11,6 +11,11 @@ assess **risks**, and plan **mitigations**. An OpenAI-backed assistant suggests 
 (threats, assets, risks, etc.) at each step. Chat agents such as Claude work on the same
 data through an MCP server, authenticated with a personal API key.
 
+The repository holds two Mix projects: the app at the root, and the library
+**`ash_threat_shield`** in `packages/ash_threat_shield/`, which holds the threat model
+(systems to mitigations, the AI assistant, the policy checks). The app uses it as a path
+dependency (see "Library ash_threat_shield").
+
 ## Tech stack
 
 - **Elixir** 1.20.4 / **OTP** 29.1.1 (see `.tool-versions`; CI and the `Dockerfile` pin the
@@ -20,7 +25,7 @@ data through an MCP server, authenticated with a personal API key.
   (forms), **AshAuthentication** (users and tokens). Ecto is still there underneath
   (repo, migrations, test sandbox).
 - **OpenAI** via the `openai` hex package (`gpt-3.5-turbo`), behind the behaviour
-  `ThreatShield.AI.Provider` (see "AI integration").
+  `AshThreatShield.AI.Provider` of the library (see "AI integration").
 - **ash_ai** (held at 1.0.2, later versions need ash 3.33) serves the domain actions as
   MCP tools at `/mcp` (see "MCP server").
 - Assets: **esbuild** + **tailwind**, run through Mix. JS dependencies (`chart.js`,
@@ -39,6 +44,7 @@ iex -S mix phx.server    # run with an interactive shell
 
 mix test                 # creates+migrates the test DB, then runs tests
 mix test path/to/test.exs:NN   # single test
+(cd packages/ash_threat_shield && mix test)   # the tests of the library
 
 mix ecto.setup           # ecto.create + ecto.migrate + seeds
 mix ecto.reset           # ecto.drop + ecto.setup
@@ -70,8 +76,9 @@ Organisation ──< System ──< Asset
 
 - **Domains** are the public API: `ThreatShield.Accounts` (`lib/threat_shield/accounts.ex`:
   users, tokens, organisations, memberships, invites, API keys),
-  `ThreatShield.ThreatManagement` (`threat_management.ex`: systems, assets, threats,
-  risks, mitigations, and `ThreatModel`, a resource without data whose generic actions
+  `AshThreatShield.ThreatManagement` (in the library,
+  `packages/ash_threat_shield/lib/ash_threat_shield/threat_management.ex`: systems,
+  assets, threats, risks, mitigations, and `ThreatModel`, a resource without data whose generic actions
   `:context` and `:risk_summary` describe a threat model and `:suggest_assets`,
   `:suggest_threats`, `:suggest_risks`, `:suggest_mitigations` ask the AI assistant) and `ThreatShield.Quotas`. Each domain defines **code interfaces** (`define ...`) such as
   `ThreatManagement.get_threat!(id, actor: user, load: [...])`,
@@ -79,14 +86,15 @@ Organisation ──< System ──< Asset
   `update_asset(asset, attrs, actor: user)`, `destroy_system(id, actor: user)`.
   LiveViews, controllers and tests call these functions directly; there are no context
   modules.
-- **Resources** live under `lib/threat_shield/<domain>/<resource>.ex`. Actions, their
+- **Resources** live under `lib/threat_shield/<domain>/<resource>.ex`, those of
+  ThreatManagement under `packages/ash_threat_shield/lib/ash_threat_shield/threat_management/`. Actions, their
   arguments and the accepted attributes have a `description`: ash_ai sends them to chat
   agents as the descriptions of the MCP tools. A foreign key that a create accepts is
   declared as an attribute with a description (`define_attribute? false` on the
   `belongs_to`).
 - Logic goes into the resource, not into callers: module **changes**
-  (`threat_management/changes/`, `accounts/changes/`), **validations**
-  (`validations/`, `threat_management/validations/`), **calculations** (e.g.
+  (`threat_management/changes/` in the library, `accounts/changes/`), **validations**
+  (`validations/` and `threat_management/validations/` in the library), **calculations** (e.g.
   `Risk.estimated_risk_cost`, `Threat.system_name`), **aggregates** (e.g.
   `Organisation.threat_count`), and read actions with arguments for filters
   (`:for_organisation`, `:for_system`, `:for_asset`). Filter in the database, not in
@@ -96,7 +104,7 @@ Organisation ──< System ──< Asset
   membership of a new organisation, the accepted invite), not hand-written
   transactions.
 - **Enums** are `Ash.Type.Enum` modules stored as strings: `Accounts.Role`,
-  `ThreatManagement.RiskStatus`, `ThreatManagement.MitigationStatus`. Derive lists of
+  `AshThreatShield.ThreatManagement.RiskStatus` and `.MitigationStatus`. Derive lists of
   states from `values/0`.
 - Expression calculations (`expr(organisation.name)`) do not apply the read policies of
   the related resource. They are used where a user may see a field of a record they may
@@ -108,7 +116,8 @@ Organisation ──< System ──< Asset
 `ThreatShield.Scope` (`lib/threat_shield/scope.ex`) is a struct carrying the current
 `user`, `organisation`, `membership`, and the relevant `system` / `asset` / `threat`.
 The LiveViews build it per page and pass it to the list components and the AI module.
-It is a view helper, not an access check: the policies check access.
+It is a view helper, not an access check: the policies check access. The library does
+not know it; its AI functions take a plain focus map (`%{organisation: ..., system: ...}`).
 
 ### Authorization
 
@@ -118,11 +127,14 @@ See `docs/adr/0002-authorization-with-ash-policies.md`.
   `:delete_member`, ...) to the roles (`:owner` / `:editor` / `:viewer`) that have it.
   It is the single source of truth for both layers:
   - the **policies** of the resources authorize with
-    `{ThreatShield.Checks.OrganisationRole, right: ...}` (reads, updates, destroys; a
-    filter check with a `path:` to the organisation, e.g. `[:threat, :organisation]`
-    for risks) and `{ThreatShield.Checks.OrganisationRoleForCreate, right: ...}`
+    `{AshThreatShield.Checks.OrganisationRole, right: ...}` (reads, updates, destroys;
+    a filter check with a `path:` to the organisation, e.g. `[:threat, :organisation]`
+    for risks) and `{AshThreatShield.Checks.OrganisationRoleForCreate, right: ...}`
     (creates; resolves the organisation from `organisation_id` or from the parent,
-    e.g. `parent: {:threat_id, Threat}`);
+    e.g. `parent: {:threat_id, Threat}`). The checks come from the library and ask the
+    behaviour `AshThreatShield.Authorization`, which the app implements in
+    `ThreatShield.Accounts.Authorization` with `Membership` and `Rights`. The app's
+    own resources (organisations, memberships, invites) use the same checks;
   - **templates** use `may?(@scope, :create_threat)` (imported everywhere; takes a scope
     or a membership) to show only allowed buttons.
 - Platform roles (`global_roles` on the user, e.g. `platform_admin`) are separate from
@@ -147,8 +159,8 @@ See `docs/adr/0002-authorization-with-ash-policies.md`.
   not accept parent ids (a mitigation stays with its risk).
 - **Check references against the organisation.** When an entity points to another one
   (a threat to a system or an asset), the validation
-  `ThreatManagement.Validations.SameOrganisation` checks that both belong to the same
-  organisation.
+  `AshThreatShield.ThreatManagement.Validations.SameOrganisation` checks that both
+  belong to the same organisation.
 - **Invites are matched by email address.** They are listed and accepted only by users
   with a confirmed address (`Checks.InviteAddressee`). The token of an invite link is a
   secret: whoever has it may read the invite and join.
@@ -171,6 +183,10 @@ See `docs/adr/0002-authorization-with-ash-policies.md`.
   (`mix ash_postgres.generate_migrations --snapshot-path ... --migration-path ...`),
   run them on a scratch database and compare its columns, indexes and constraints with
   a database built from `priv/repo/migrations`.
+- The app owns the migrations and snapshots of the library tables too. After a change
+  of a library resource, run `mix ash.codegen <name>` in the app, and
+  `MIX_ENV=test mix ash.codegen <name>` in `packages/ash_threat_shield` for its test
+  host.
 
 ### Web layer
 
@@ -204,31 +220,35 @@ See `docs/adr/0002-authorization-with-ash-policies.md`.
 
 A suggestion has three parts; only the second needs a language model:
 
-1. `ThreatShield.AI.Prompts` builds the prompt (pure functions). Its context is the
-   text of `ThreatShield.ThreatManagement.Description`, which also answers the MCP tool
-   `threat_model_context`.
-2. The configured `ThreatShield.AI.Provider` answers it (`chat/2`, returns the text of
-   the answer). The provider is read from `config :threat_shield, :ai_provider`; the
-   default is `ThreatShield.AI.Providers.OpenAI`.
-3. `ThreatShield.AI` turns the JSON answer into unsaved records. The user selects some,
-   and the list components store them with the normal create actions (`actor:`).
+1. `AshThreatShield.AI.Prompts` builds the prompt (pure functions). Its context is the
+   text of `AshThreatShield.ThreatManagement.Description`, which also answers the MCP
+   tool `threat_model_context`.
+2. The configured `AshThreatShield.AI.Provider` answers it (`chat/2`, returns the text
+   of the answer). The provider is read from `config :ash_threat_shield, :ai_provider`;
+   the default is `AshThreatShield.AI.Providers.OpenAI`.
+3. `AshThreatShield.AI` turns the JSON answer into unsaved records. The user selects
+   some, and the list components store them with the normal create actions (`actor:`).
 
 A suggestion on a user path is a generic action of `ThreatModel`
 (`ThreatManagement.suggest_threats(org_id, %{system_id: ...}, actor: user)` etc.). Its
 policy requires the right to create what is suggested, then it reads the records in
-focus with the actor and uses one AI request of the organisation's **quota**
-(`Quotas.QuotaManager.consume/5`: check and record in one transaction with a lock on
-the organisation, `ai_requests_per_month`) before it calls `ThreatShield.AI`. The
-functions of `ThreatShield.AI` check neither rights nor quota. The call blocks, so run
-it in a separate process: the list components use `ThreatShieldWeb.AiSuggestions`,
-which starts it with `start_async` under `ThreatShield.TaskSupervisor`. When adding AI
-features, add an action that consumes the quota the same way. Call a language model
-only through a provider, so that tests can replace it.
+focus with the actor and calls the configured `AshThreatShield.AI.Hook` before it calls
+`AshThreatShield.AI`. The app's hook `ThreatShield.Quotas.AiQuota` uses one AI request of
+the organisation's **quota** (`Quotas.QuotaManager.consume/5`: check and record in one
+transaction with a lock on the organisation, `ai_requests_per_month`). The functions of
+`AshThreatShield.AI` check neither rights nor quota. The call blocks, so run it in a
+separate process: the list components use `ThreatShieldWeb.AiSuggestions`, which starts
+it with `start_async` under `ThreatShield.TaskSupervisor`. When adding AI features, add
+an action that passes the hook the same way. Call a language model only through a
+provider, so that tests can replace it.
 
 ### MCP server
 
-`/mcp` serves the `tools` of the domains (`accounts.ex`, `threat_management.ex`) to chat
-agents; the spec is `docs/specs/mcp.md`, the decision ADR 0003. Rules:
+`/mcp` serves the `tools` of the domains (`accounts.ex` in the app, `threat_management.ex`
+in the library) to chat agents; the spec is `docs/specs/mcp.md`, the decision ADR 0003.
+ash_ai runs a tool with the domain of its resource, so the tools of the threat model stay
+in the library domain; the router of the app serves them because the domain is in the
+`:ash_domains` of `:threat_shield`. Rules:
 
 - A tool is an existing action; put logic and checks into the action, not into the tool.
 - Expose reads, creates and updates of the threat model. Deletes and the management of
@@ -237,49 +257,61 @@ agents; the spec is `docs/specs/mcp.md`, the decision ADR 0003. Rules:
   inputs, and a case in `test/threat_shield_web/mcp_test.exs`.
 - ash_ai lists a tool only if `Ash.can?` allows its action with an empty input. A
   create check that needs the input must allow that pre-check (see
-  `Checks.OrganisationRoleForCreate`).
+  `AshThreatShield.Checks.OrganisationRoleForCreate`).
 
-### Extraction
+### Library ash_threat_shield
 
-The ThreatManagement core is meant to become a reusable Ash library later. It is not
-extracted yet, but kept ready:
+`packages/ash_threat_shield/` is a Mix project of its own (otp_app `:ash_threat_shield`,
+namespace `AshThreatShield`). Its README documents every option; ADR 0004 records the
+layout and the seams. The app depends on it with
+`{:ash_threat_shield, path: "packages/ash_threat_shield"}`. The library shares `deps/` and
+`mix.lock` with the app, so both use the same versions.
 
+Where code goes:
+
+- **Library:** the threat model and everything it needs that is not specific to
+  ThreatShield: the ThreatManagement resources, enums, changes, validations and
+  calculations, the `ThreatModel` actions, the AI assistant (provider behaviour, OpenAI
+  provider, prompts, description, parsing), `DynamicAttribute`, and the policy checks.
+- **App:** accounts (users, organisations, memberships, invites, API keys, rights),
+  quotas, the web layer, the Excel export, the analytics of the risk board, and the
+  implementations of the seams below.
+- The library never references `ThreatShield.*`, `ThreatShieldWeb.*` or the config of
+  `:threat_shield`. Check with
+  `grep -rnw ThreatShield packages/ash_threat_shield/{lib,test,config}` (no match).
 - Nothing under `lib/threat_shield/` references `ThreatShieldWeb`, except
   `application.ex`, which starts the endpoint. The links in the account and invite
   emails are built by a module of the web layer that implements the behaviour
   `Accounts.Senders.Urls` (`config :threat_shield, :account_urls,
-  ThreatShieldWeb.AccountUrls`). The actions send the emails themselves (the senders
-  of `User`, the change `SendInviteEmail` of `Invite.create`).
-- The ThreatManagement resources read their repo from
-  `config :threat_shield, :threat_management_repo` (default `ThreatShield.Repo`, read at
-  compile time).
-- The language model is a behaviour (`ThreatShield.AI.Provider`).
+  ThreatShieldWeb.AccountUrls`).
 
-What still couples ThreatManagement to the rest of the app, and what an extraction
-needs:
+The seams, configured in `config/config.exs` under `config :ash_threat_shield`:
 
-- **Organisation** (`Accounts.Organisation`) owns systems, assets and threats
-  (`belongs_to :organisation`), and has `has_many` and count aggregates back to them.
-  `Description` uses `Organisation.attributes_config/0`, and `ThreatModel` reads the
-  organisation through `Accounts.get_organisation`. An extraction needs a configurable
-  owner resource (or a behaviour for "the organisation") and moves the reverse
-  relationships and aggregates into the host app.
-- **Rights and membership.** The policies use `Checks.OrganisationRole` and
-  `Checks.OrganisationRoleForCreate`, which read `Accounts.Membership` and
-  `Accounts.Rights`. A library would take the checks (or a "role of the actor in the
-  owner" function) from the host app.
-- **User** is only the actor; nothing in ThreatManagement reads it directly.
-- **AI and quotas.** The suggestion actions of `ThreatModel` use
-  `Quotas.QuotaManager` and the `Scope` struct. Prompts and `Description` need no
-  quota; a library would ship them and leave quota handling to the host.
-- **Static configuration.** `otp_app: :threat_shield` in the domain and resources, the
-  table names, and the migrations and snapshots in `priv/`. A library needs its own
-  migrations (or an installer) and an `otp_app` option.
+- `:repo` (compile time): `ThreatShield.Repo`.
+- `:owner_resource` (compile time): `ThreatShield.Accounts.Organisation`. The library
+  resources `belongs_to :organisation` of it (column `organisation_id`). The reverse
+  relationships and the counts (`threat_count` etc.) live in the app's `Organisation`,
+  which implements `AshThreatShield.Owner` (`attributes_config/0`). The library reads
+  the organisation with `Ash.get` and the actor, and its systems, assets and threats
+  through its own actions (`ThreatManagement.Focus`).
+- `:authorization`: `ThreatShield.Accounts.Authorization`, the behaviour
+  `AshThreatShield.Authorization` (`filter/2` for reads, `authorized?/3` for creates,
+  `authorized_somewhere?/2` for the ash_ai tool listing).
+- `:ai_provider`: default `AshThreatShield.AI.Providers.OpenAI`; the tests set
+  `AshThreatShield.AI.Providers.Stub`.
+- `:ai_hook`: `ThreatShield.Quotas.AiQuota`, the behaviour `AshThreatShield.AI.Hook`.
+
+Known coupling: the library is compiled before the app, so Ecto (and the domain
+verifier of Ash) warn there that `ThreatShield.Accounts.Organisation` does not exist, and
+Mix repeats these warnings of the dependency on every compile. They are expected; any
+other warning in the library is a defect. An Igniter installer for other hosts
+(configuration, migrations) is future work.
 
 ### Other notable modules
 
-- `lib/threat_shield/dynamic_attribute.ex` — organisations/systems carry flexible,
-  AI-suggestable attributes stored as a JSON `:map` field.
+- `AshThreatShield.DynamicAttribute` (library): organisations/systems carry flexible,
+  AI-suggestable attributes stored as a JSON `:map` field. The library application
+  starts its suggestion cache.
 - `lib/threat_shield/exporters/excel_exporter.ex` — Excel export (`/exports/excel`).
 - `lib/threat_shield/analytics/risk_analytics.ex` — risk analytics for the risk board.
 - `lib/threat_shield/quotas/` — quota tracking and enforcement.
@@ -312,16 +344,25 @@ the rules are defined in `docs/README.md` — read it before adding or changing 
 
 ## Testing
 
-- `mix test` auto-creates and migrates the test DB.
-- Tests live under `test/threat_shield/` (domains) and `test/threat_shield_web/`
-  (LiveViews/controllers). Support in `test/support/` — `ConnCase`, `DataCase`, and
-  fixtures under `test/support/fixtures/`. The SQL sandbox rolls back DB changes per test.
+- `mix test` auto-creates and migrates the test DB. Run both suites: `mix test` at the
+  root and in `packages/ash_threat_shield` (database `ash_threat_shield_test`).
+- Tests of the threat model itself (resources, validations, policies, AI prompts, risk
+  summary) live in the library under `packages/ash_threat_shield/test/`. Its test host in
+  `test/support/host/` provides users, organisations, memberships, the authorization,
+  an AI hook and a repo with migrations in `priv/test_repo/`.
+- Tests of the app live under `test/threat_shield/` (accounts, quotas, the integration
+  of the library: `authorization_test.exs`, `ai_quota_test.exs`, `changesets_test.exs`)
+  and `test/threat_shield_web/` (LiveViews/controllers, MCP). Support in
+  `test/support/`: `ConnCase`, `DataCase`, and fixtures under `test/support/fixtures/`.
+  The fixtures of the threat model (`AshThreatShield.SystemsFixtures` etc.) live in
+  `packages/ash_threat_shield/test/support/fixtures/` and are compiled into both suites.
+  The SQL sandbox rolls back DB changes per test.
 - Add a regression test with every fix. For a new read or write path, add a test with a
   second organisation and with a `:viewer` (`MembersFixtures.membership_fixture/3`,
   `AccountsFixtures.confirmed_user_fixture/1`). `test/threat_shield/authorization_test.exs`
   covers every ThreatManagement resource; extend it for a new resource.
-- Tests never call a language model: `config/test.exs` sets `ThreatShield.AI.StubProvider`
-  (`test/support/ai_stub_provider.ex`) as the AI provider.
+- Tests never call a language model: `config/test.exs` sets
+  `AshThreatShield.AI.Providers.Stub` (shipped by the library) as the AI provider.
 - `AccountsFixtures.api_key_fixture/2` creates an API key and returns the key itself.
 - Examples to copy from: `test/threat_shield/authorization_test.exs` and
   `test/threat_shield/members_test.exs` (policies), and in `test/threat_shield_web/live/`:
@@ -331,7 +372,8 @@ the rules are defined in `docs/README.md` — read it before adding or changing 
 
 ## CI/CD
 
-- `.github/workflows/test.yml` — runs `mix test` against a Postgres 18 service on every push.
+- `.github/workflows/test.yml` runs `mix test` of the app and of the library against a
+  Postgres 18 service on every push.
 - `.github/workflows/build.yml`, `deploy_gcp.yml` — build and deploy to GCP. Deployment
   manifests are in `deployment/` and `rel/`.
 - **Do not use `/` in branch names.** `test.yml` triggers on `branches: "*"`, which does
