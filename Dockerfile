@@ -35,8 +35,9 @@ RUN mix local.hex --force && \
 # set build ENV
 ENV MIX_ENV="prod"
 
-# install mix dependencies
+# install mix dependencies (the library in packages/ is a path dependency)
 COPY mix.exs mix.lock ./
+COPY packages/ash_threat_shield/mix.exs packages/ash_threat_shield/
 RUN mix deps.get --only $MIX_ENV
 RUN mkdir config
 
@@ -44,6 +45,7 @@ RUN mkdir config
 # to ensure any relevant config change will trigger the dependencies
 # to be re-compiled.
 COPY config/config.exs config/${MIX_ENV}.exs config/
+COPY packages packages
 RUN mix deps.compile
 
 COPY priv priv

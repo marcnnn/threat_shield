@@ -13,17 +13,19 @@ RUN apk add --no-cache inotify-tools build-base npm
 # Install Hex and Rebar
 RUN mix local.hex --force && mix local.rebar --force
 
-# Copy mix.exs and mix.lock to the container
+# Copy mix.exs and mix.lock to the container, and the mix.exs of the library in
+# packages/, which is a path dependency
 COPY mix.exs mix.lock ./
+COPY packages/ash_threat_shield/mix.exs packages/ash_threat_shield/
 
 # Install dependencies for tests
 RUN mix deps.get
 
-# Compile the dependencies
-RUN mix deps.compile
+# Compile the dependencies (the library is compiled with the sources below)
+RUN mix deps.compile --skip-local-deps
 
 # Copy remaining application code to the container
 COPY . .
 
-# Run tests
-CMD ["mix", "test"]
+# Run the tests of the application and of the library
+CMD ["sh", "-c", "mix test && cd packages/ash_threat_shield && mix test"]
