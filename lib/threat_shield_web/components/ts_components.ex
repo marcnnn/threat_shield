@@ -10,7 +10,7 @@ defmodule ThreatShieldWeb.TsComponents do
   use ThreatShieldWeb, :verified_routes
   import ThreatShieldWeb.CoreComponents
   import ThreatShieldWeb.Labels
-  import ThreatShieldWeb.Gettext
+  use Gettext, backend: ThreatShieldWeb.Gettext
 
   # big building blocks
 
@@ -42,7 +42,9 @@ defmodule ThreatShieldWeb.TsComponents do
           <div :if={@actions != []}>
             <%= render_slot(@actions) %>
           </div>
-          <.dropdown links={@links}></.dropdown>
+          <.dropdown>
+            <:links><%= render_slot(@links) %></:links>
+          </.dropdown>
         </div>
       </div>
       <div class="ts-container">
@@ -76,7 +78,7 @@ defmodule ThreatShieldWeb.TsComponents do
           <%= @title %>
         </.header>
 
-        <.form :let={_f} phx-submit="apply_selection" phx-target={@listener}>
+        <.form for={%{}} phx-submit="apply_selection" phx-target={@listener}>
           <.table id="asset_suggestions" rows={@suggestions}>
             <:col :let={suggestion} label={dgettext("common", "Select")}>
               <input type="checkbox" name="selected_suggestions[]" value={suggestion.name} />

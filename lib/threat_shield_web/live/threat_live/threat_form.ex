@@ -6,7 +6,7 @@ defmodule ThreatShieldWeb.ThreatLive.ThreatForm do
   alias ThreatShield.Scope
   alias AshThreatShield.ThreatManagement.Threat
 
-  import ThreatShieldWeb.Gettext
+  use Gettext, backend: ThreatShieldWeb.Gettext
 
   @impl true
   def render(assigns) do

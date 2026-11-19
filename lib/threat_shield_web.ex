@@ -45,7 +45,7 @@ defmodule ThreatShieldWeb do
         layouts: [html: ThreatShieldWeb.Layouts]
 
       import Plug.Conn
-      import ThreatShieldWeb.Gettext
+      use Gettext, backend: ThreatShieldWeb.Gettext
 
       unquote(verified_routes())
     end
@@ -88,7 +88,7 @@ defmodule ThreatShieldWeb do
       # Core UI components and translation
       import ThreatShieldWeb.CoreComponents
       import ThreatShieldWeb.TsComponents
-      import ThreatShieldWeb.Gettext
+      use Gettext, backend: ThreatShieldWeb.Gettext
       import ThreatShield.Accounts.Rights, only: [may?: 2]
 
       alias ThreatShieldWeb.Icons

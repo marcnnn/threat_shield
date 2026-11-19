@@ -4,7 +4,7 @@ defmodule ThreatShieldWeb.InfoVis do
   """
   use Phoenix.Component
 
-  import ThreatShieldWeb.Gettext
+  use Gettext, backend: ThreatShieldWeb.Gettext
 
   @doc """
   Components for Information Visualisation.

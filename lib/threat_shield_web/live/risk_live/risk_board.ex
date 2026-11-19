@@ -8,7 +8,7 @@ defmodule ThreatShieldWeb.RiskLive.RiskBoard do
 
   import ThreatShield.Analytics.RiskAnalytics, only: [max_cost: 1, max_frequency: 1]
   import ThreatShieldWeb.Helpers
-  import ThreatShieldWeb.Gettext
+  use Gettext, backend: ThreatShieldWeb.Gettext
   import ThreatShieldWeb.Icons
   import ThreatShieldWeb.InfoVis
   import ThreatShieldWeb.Labels, only: [risk_status_label: 1, mitigation_status_label: 1]

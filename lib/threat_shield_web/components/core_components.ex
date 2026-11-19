@@ -18,7 +18,7 @@ defmodule ThreatShieldWeb.CoreComponents do
 
   use ThreatShieldWeb, :verified_routes
   alias(Phoenix.LiveView.JS)
-  import ThreatShieldWeb.Gettext
+  use Gettext, backend: ThreatShieldWeb.Gettext
 
   def h1(assigns) do
     ~H"""

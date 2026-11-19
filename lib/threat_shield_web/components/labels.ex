@@ -2,7 +2,7 @@ defmodule ThreatShieldWeb.Labels do
   use Phoenix.Component
 
   use ThreatShieldWeb, :verified_routes
-  import ThreatShieldWeb.Gettext
+  use Gettext, backend: ThreatShieldWeb.Gettext
 
   alias AshThreatShield.ThreatManagement.System
   alias AshThreatShield.ThreatManagement.Asset

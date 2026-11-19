@@ -18,7 +18,7 @@ defmodule ThreatShieldWeb.AiSuggestions do
 
   import Phoenix.Component, only: [assign: 3]
   import Phoenix.LiveView, only: [start_async: 4, put_flash: 3, push_navigate: 2]
-  import ThreatShieldWeb.Gettext
+  use Gettext, backend: ThreatShieldWeb.Gettext
 
   alias ThreatShield.Quotas.Errors.QuotaExceeded
 

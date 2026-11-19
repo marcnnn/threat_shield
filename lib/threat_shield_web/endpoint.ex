@@ -9,7 +9,8 @@ defmodule ThreatShieldWeb.Endpoint do
     key: "_threat_shield_key",
     signing_salt: "dBA08V8L",
     same_site: "Lax",
-    http_only: true #attribute ensures that the cookie with the name "_threat_shield_key" can only be accessed by the server and not by any JavaScript code running in the browser.
+    # attribute ensures that the cookie with the name "_threat_shield_key" can only be accessed by the server and not by any JavaScript code running in the browser.
+    http_only: true
   ]
 
   socket "/live", Phoenix.LiveView.Socket, websocket: [connect_info: [session: @session_options]]

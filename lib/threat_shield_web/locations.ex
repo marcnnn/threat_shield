@@ -4,7 +4,7 @@ defmodule ThreatShieldWeb.Locations do
   select field.
   """
 
-  import ThreatShieldWeb.Gettext
+  use Gettext, backend: ThreatShieldWeb.Gettext
 
   def predefined_locations() do
     [
