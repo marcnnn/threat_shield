@@ -72,7 +72,24 @@ defmodule ThreatShieldWeb.Helpers do
   end
 
   def format_number(number) do
-    Number.Delimit.number_to_delimited(number, delimiter: ".", separator: ",", precision: 0)
+    integer = number |> to_decimal() |> Decimal.round(0) |> Decimal.to_integer()
+    sign = if integer < 0, do: "-", else: ""
+    sign <> delimit(Integer.to_string(abs(integer)))
+  end
+
+  defp to_decimal(%Decimal{} = number), do: number
+  defp to_decimal(number) when is_integer(number), do: Decimal.new(number)
+  defp to_decimal(number) when is_float(number), do: Decimal.from_float(number)
+  defp to_decimal(number) when is_binary(number), do: Decimal.new(number)
+
+  # inserts a "." between groups of three digits
+  defp delimit(digits) do
+    digits
+    |> String.reverse()
+    |> String.graphemes()
+    |> Enum.chunk_every(3)
+    |> Enum.map_join(".", &Enum.join/1)
+    |> String.reverse()
   end
 
   @spec format_monetary_amount(nil | binary() | number() | Decimal.t(), any()) ::

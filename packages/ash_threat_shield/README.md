@@ -38,10 +38,16 @@ def deps do
   [
     {:ash_threat_shield, path: "packages/ash_threat_shield"},
     # the default AI provider; optional
-    {:openai, "~> 0.5.2"}
+    {:openai, "~> 0.5.2"},
+    # openai asks for httpoison ~> 2.0, which is held at hackney 1.x with open
+    # security advisories; openai works with httpoison 3
+    {:httpoison, "~> 3.0", override: true}
   ]
 end
 ```
+
+The library needs ash 3.37 or later, with `config :ash, default_string_length_count:
+:codepoints` (or `:mixed`), and ash_ai 1.5 or later.
 
 Add `AshThreatShield.ThreatManagement` to the `:ash_domains` of your application, so
 that `mix ash.codegen` and the ash_ai router find it.

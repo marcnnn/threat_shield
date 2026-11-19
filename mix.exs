@@ -36,19 +36,17 @@ defmodule ThreatShield.MixProject do
   defp deps do
     [
       {:ash_threat_shield, path: "packages/ash_threat_shield"},
-      {:ash, "~> 3.0"},
-      {:ash_postgres, "~> 2.0"},
+      {:ash, "~> 3.37"},
+      {:ash_postgres, "~> 2.16"},
       {:ash_authentication, "~> 4.0"},
-      {:ash_authentication_phoenix, "~> 2.0"},
       {:ash_phoenix, "~> 2.0"},
-      # 1.0.3 and later need ash 3.33, which needs ecto 3.14
-      {:ash_ai, "~> 1.0.2"},
+      {:ash_ai, "~> 1.5"},
       {:picosat_elixir, "~> 0.2"},
       {:bcrypt_elixir, "~> 3.1"},
       {:phoenix, "~> 1.7.11"},
       {:phoenix_ecto, "~> 4.5"},
       {:dotenv, "~> 3.1.0"},
-      {:ecto_sql, "~> 3.10"},
+      {:ecto_sql, "~> 3.14"},
       {:postgrex, ">= 0.0.0"},
       {:phoenix_html, "~> 4.0"},
       {:phoenix_live_reload, "~> 1.2", only: :dev},
@@ -65,10 +63,12 @@ defmodule ThreatShield.MixProject do
       {:jason, "~> 1.2"},
       {:plug_cowboy, "~> 2.5"},
       {:openai, "~> 0.5.2"},
+      # openai needs httpoison ~> 2.0, which is held at hackney 1.x with open advisories.
+      # Its calls work unchanged with httpoison 3 and hackney 4.
+      {:httpoison, "~> 3.0", override: true},
       {:ecto_psql_extras, "~> 0.8"},
       {:ex_rated, "~> 2.1"},
       {:timex, "~> 3.7.11"},
-      {:number, "~> 1.0.1"},
       {:elixlsx, "~> 0.5.1"},
       {:logger_json, "~> 5.1"}
     ]

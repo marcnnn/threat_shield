@@ -35,14 +35,17 @@ defmodule AshThreatShield.MixProject do
 
   defp deps do
     [
-      {:ash, "~> 3.0"},
-      {:ash_postgres, "~> 2.0"},
-      # 1.0.3 and later need ash 3.33, which needs ecto 3.14
-      {:ash_ai, "~> 1.0.2"},
+      {:ash, "~> 3.37"},
+      {:ash_postgres, "~> 2.16"},
+      {:ash_ai, "~> 1.5"},
       {:picosat_elixir, "~> 0.2"},
       {:jason, "~> 1.2"},
       # the default AI provider; a host with another provider can leave it out
-      {:openai, "~> 0.5.2", optional: true}
+      {:openai, "~> 0.5.2", optional: true},
+      # openai needs httpoison ~> 2.0, which is held at hackney 1.x with open advisories.
+      # Its calls work unchanged with httpoison 3 and hackney 4. The override applies
+      # only to the builds of this project; a host sets its own.
+      {:httpoison, "~> 3.0", override: true, optional: true}
     ]
   end
 

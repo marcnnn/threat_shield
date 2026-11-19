@@ -26,8 +26,7 @@ dependency (see "Library ash_threat_shield").
   (repo, migrations, test sandbox).
 - **OpenAI** via the `openai` hex package (`gpt-3.5-turbo`), behind the behaviour
   `AshThreatShield.AI.Provider` of the library (see "AI integration").
-- **ash_ai** (held at 1.0.2, later versions need ash 3.33) serves the domain actions as
-  MCP tools at `/mcp` (see "MCP server").
+- **ash_ai** serves the domain actions as MCP tools at `/mcp` (see "MCP server").
 - Assets: **esbuild** + **tailwind**, run through Mix. JS dependencies (`chart.js`,
   `@popperjs/core`) come from `assets/package.json` and need `npm install` in `assets/`
   (Node.js 20, see `.tool-versions`). `choices.js` is listed there but not used.

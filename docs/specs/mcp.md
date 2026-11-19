@@ -11,9 +11,9 @@ Decision: [ADR 0003](../adr/0003-mcp-with-personal-api-keys.md).
 
 - URL: `https://<host>/mcp` (locally `http://localhost:4000/mcp`). The settings page
   shows the URL of the running instance.
-- Transport: streamable HTTP, served by `AshAi.Mcp.Router` (ash_ai 1.0.2). It supports
-  the protocol versions `2025-03-26` and `2025-06-18` (with `initialize`) and
-  `2026-07-28`.
+- Transport: streamable HTTP, served by `AshAi.Mcp.Router` (ash_ai 1.5). It supports
+  the protocol versions `2025-03-26`, `2025-06-18` and `2025-11-25` (with
+  `initialize`) and `2026-07-28`.
 - Server name `ThreatShield`. The `initialize` answer carries instructions for the
   agent: start with `list_organisations`, read `threat_model_context` before creating
   entities, ask the user before writing.

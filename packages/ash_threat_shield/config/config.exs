@@ -24,6 +24,9 @@ config :ash_threat_shield, AshThreatShield.TestRepo,
 config :ash,
   include_embedded_source_by_default?: false,
   default_page_type: :keyset,
-  policies: [no_filter_static_forbidden_reads?: false]
+  policies: [no_filter_static_forbidden_reads?: false],
+  # count string lengths in codepoints, as PostgreSQL does, so that max_length bounds
+  # the stored size
+  default_string_length_count: :codepoints
 
 import_config "#{config_env()}.exs"
