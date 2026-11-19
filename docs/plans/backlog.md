@@ -1,6 +1,6 @@
 # Backlog
 
-**Status:** open list. Last updated 2026-11-18.
+**Status:** open list. Last updated 2026-11-19.
 
 Short entries for open work without a plan of its own. When work on an entry starts and
 needs steps, it gets its own file in this folder and is removed from here.
@@ -9,13 +9,14 @@ needs steps, it gets its own file in this folder and is removed from here.
 
 The app runs on LiveView 0.20 (`mix.exs`: `~> 0.20.12`). The upgrade to 1.0 changes
 `mix.exs`, `mix.lock`, `assets/package.json`, and parts of
-`lib/threat_shield_web/components/core_components.ex`.
+`lib/threat_shield_web/components/core_components.ex`. It fixes the advisory
+EEF-CVE-2026-64941 (fixed in 1.0.19), which `mix.exs` ignores until then.
 
 ## Run tests on all branches
 
-`.github/workflows/test.yml` triggers on `branches: "*"`. This pattern does not match
-branch names that contain a `/`, such as `chore/upgrade-elixir-postgres`. Pushes to these
-branches start no test run. Use `"**"` or remove the branch filter.
+`.github/workflows/test.yml` and `security.yml` trigger on `branches: "*"`. This pattern
+does not match branch names that contain a `/`, such as `chore/upgrade-elixir-postgres`.
+Pushes to these branches start no test run. Use `"**"` or remove the branch filter.
 
 ## Build only after the tests
 
@@ -68,3 +69,31 @@ than production.
 Upgrade the instance to 18 with an in-place major version upgrade of Cloud SQL. Take a
 backup first and check that automated backups are enabled. Until then, consider running
 the tests against 15 as well.
+
+## Update assent
+
+ash_authentication 4.15 requires assent `< 0.3`, so the lock holds assent 0.2.13 with the
+advisory EEF-CVE-2026-117656 (Sign in with Apple, fixed in 0.3.2). The app uses no OAuth
+strategy, so `mix.exs` ignores the advisory. When ash_authentication allows assent 0.3,
+update it and remove the entry from `ignored_advisories/0`.
+
+## Replace the package openai
+
+The provider `AshThreatShield.AI.Providers.OpenAI` uses the package `openai` 0.5, which
+asks for httpoison 2 and so for hackney 1 with open advisories. Both `mix.exs` override
+httpoison to 3 (hackney 4); a host of the library has to do the same. A provider that
+calls the API with Finch or Req would drop the package and the override.
+
+## Timestamps of memberships
+
+`memberships` has no `inserted_at`/`updated_at`, so nobody can see when a member joined
+or got a role (AshCredo `MissingTimestamps`, disabled in
+`lib/threat_shield/accounts/membership.ex`). Adding them needs a migration and a default
+for the existing rows.
+
+## Translations
+
+The catalogs in `priv/gettext` are not up to date: newer texts are missing, and the
+msgids are the English texts. `mix gettext.extract --check-up-to-date` would fail, so
+`.check.exs` disables the gettext check of ex_check. Extract the catalogs and enable the
+check when the app gets a second language.

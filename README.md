@@ -181,6 +181,19 @@ Navigate to [localhost:4000](http://localhost:4000) in your browser, you're set 
 
 Use the `Ctrl+C` command twice in your terminal to stop the application.
 
+#### Checks
+
+`mix check` runs the tests and all static checks of the app and of the library:
+compiler warnings, formatting, Credo with AshCredo and the project's own checks,
+Sobelow, Dialyzer, the Ash codegen check and the dependency audits. It needs the test
+database. CI runs the same checks on every push; `AGENTS.md` ("Checks") lists them and
+how to handle a finding.
+
+```bash
+mix check
+mix check --only credo
+```
+
 ## CI/CD Deployment
 
 To create a secret for the GitHub Container Registry to pull the image from, run the following command:

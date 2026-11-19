@@ -25,7 +25,8 @@ The branch moves the domain layer to Ash and the sign in to AshAuthentication
     phx.gen.auth. **Every user is signed out once**, including "remember me" cookies,
     and signs in again with the same email address and password.
   - `20261118100000` and `20261118100100` add the email change confirmation and the
-    API keys; `20261118120000` installs the SQL functions of AshPostgres.
+    API keys; `20261118120000` installs the SQL functions of AshPostgres, and
+    `20261119163119` updates them to the version of ash_postgres 2.16.
 - Links in confirmation and password reset emails that were sent before the
   deployment no longer work; users request new ones.
 

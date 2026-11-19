@@ -32,6 +32,8 @@ dependency (see "Library ash_threat_shield").
   (Node.js 20, see `.tool-versions`). `choices.js` is listed there but not used.
 - Other: `bcrypt_elixir` (passwords), `ex_rated` (rate limiting), `gettext` (i18n),
   `elixlsx` (Excel export), `swoosh`/`finch` (mail), `timex`, `logger_json`.
+- Checks (dev/test only): `credo` with `ash_credo`, `sobelow`, `mix_audit`, `dialyxir`,
+  `ex_check`; see "Checks".
 
 ## Common commands
 
@@ -51,6 +53,9 @@ mix format               # format (see .formatter.exs)
 
 mix ash.codegen --check  # must report no changes: resources match the snapshots
 mix ash.codegen add_x    # after a resource change: generates a migration + snapshots
+
+mix check                # all checks of the app and the library (ex_check), see "Checks"
+mix credo --strict       # after mix compile; also in packages/ash_threat_shield
 ```
 
 Docker Compose is also supported (`docker compose up --build`); see `README.md`.
@@ -303,8 +308,10 @@ The seams, configured in `config/config.exs` under `config :ash_threat_shield`:
 Known coupling: the library is compiled before the app, so Ecto (and the domain
 verifier of Ash) warn there that `ThreatShield.Accounts.Organisation` does not exist, and
 Mix repeats these warnings of the dependency on every compile. They are expected; any
-other warning in the library is a defect. An Igniter installer for other hosts
-(configuration, migrations) is future work.
+other warning in the library is a defect. `mix compile --warnings-as-errors` in the app
+ignores warnings of dependencies, so `scripts/check_library_warnings_in_app.sh` compiles
+the library as a dependency and fails on every other warning. An Igniter installer for
+other hosts (configuration, migrations) is future work.
 
 ### Other notable modules
 
@@ -328,6 +335,7 @@ other warning in the library is a defect. An Igniter installer for other hosts
 - Compile after each change and add no new compiler warnings. Elixir 1.20 infers types
   and reports contradictions as warnings, for example a clause that never matches or a
   comparison that is always false. Treat a new warning as a defect in the change.
+- Run `mix check` before committing (see "Checks"); CI fails on every finding.
 
 ## Documentation
 
@@ -363,20 +371,94 @@ the rules are defined in `docs/README.md` — read it before adding or changing 
 - Tests never call a language model: `config/test.exs` sets
   `AshThreatShield.AI.Providers.Stub` (shipped by the library) as the AI provider.
 - `AccountsFixtures.api_key_fixture/2` creates an API key and returns the key itself.
+- The tests of the custom Credo checks are in `test/credo_checks/`; they load the checks
+  from `credo_checks/` with `credo_checks/test_setup.exs`.
 - Examples to copy from: `test/threat_shield/authorization_test.exs` and
   `test/threat_shield/members_test.exs` (policies), and in `test/threat_shield_web/live/`:
   `entity_form_live_test.exs` (forms), `entity_menu_live_test.exs` (rights in the UI,
   events, 404 for other organisations), `ai_suggestions_live_test.exs` (async flow with
   `render_async`).
 
+## Checks
+
+`mix check` (ex_check, `.check.exs`) runs every check of the app and of the library
+locally: the compiler first, then the others in parallel. It needs the test database
+like `mix test`, and `npm` for the audit of `assets/`. A single tool runs with
+`mix check --only credo` (names in `.check.exs`). The secret scan needs `gitleaks`
+(`gitleaks git --redact .`); without it, CI runs it.
+
+| Check | Command | Configuration |
+|---|---|---|
+| Compiler warnings | `mix compile --warnings-as-errors --force` (app, library) | |
+| Warnings of the library in the app | `MIX_ENV=test scripts/check_library_warnings_in_app.sh` | the known warnings in the script |
+| Formatting | `mix format --check-formatted` (app, library) | `.formatter.exs` |
+| Credo, AshCredo, custom checks | `mix credo --strict` after `mix compile` (app, library) | `.credo.exs`, `packages/ash_threat_shield/.credo.exs` |
+| Resources match the migrations | `mix ash.codegen --check` (app, library in `MIX_ENV=test`) | |
+| Sobelow (Phoenix security) | `mix sobelow` (app) | `.sobelow-conf` |
+| Dialyzer | `mix dialyzer` (app, then library: it uses the PLTs of the app) | `.dialyzer_ignore.exs` in each project |
+| Advisories of Hex packages | `mix hex.audit`, `mix deps.audit` | `hex: [ignore_advisories: ...]` in `mix.exs` |
+| Advisories of npm packages | `npm audit --omit=dev` in `assets/` | |
+| Unused dependencies | `mix deps.unlock --check-unused` | |
+| Secrets | `gitleaks git --redact .` | `.gitleaksignore` |
+
+The library shares `mix.lock` with the app, so the audits at the root cover it.
+
+### Custom Credo checks
+
+`credo_checks/` holds Credo checks for the rules of this file that AshCredo does not
+cover. They are not compiled into the app or the library: both `.credo.exs` load them
+with `requires` (`credo_checks/support/` first), and the tests in `test/credo_checks/`
+load them the same way. They stay out of the library package; an extraction of the
+library takes them along.
+
+- `AuthorizeFalseNeedsReason` (TS001): every `authorize?: false` has a comment that
+  says why, at the end of the line or on the line above. It replaces
+  `AshCredo.Check.Warning.AuthorizeFalse`, which flags every use. Tests are excluded.
+- `RequireAtomicFalseNeedsReason` (TS002): the same for `require_atomic? false`.
+- `ActorInWebCalls` (TS003, `lib/threat_shield_web/` only): calls of the code
+  interfaces of `Accounts`, `ThreatManagement` and `Quotas`, of `Ash.read/get/create/...`
+  and of the `AshPhoenix.Form.for_*` builders pass `actor:` (or `scope:`). For `Ash.*`
+  calls, an actor in the query or changeset of the same pipeline counts; options in a
+  variable named `*opts` are not checked. Actions for visitors without an account are
+  listed under `public:` in `.credo.exs`.
+- `NoRepoInWeb` (TS005, `lib/threat_shield_web/` only): no calls of a repo, of
+  `Ecto.Query`, `Ecto.Adapters.SQL` or `Ecto.Multi`.
+- `NoHostReferences` (TS004, library only): no `ThreatShield.*`, `ThreatShieldWeb.*`
+  or `:threat_shield` in the library.
+
+### Exceptions
+
+Do not weaken a check globally to get a run green. Fix the code; where a finding is
+not a defect, write the exception next to it with the reason:
+
+- Credo: `# credo:disable-for-next-line Check.Name` (or `-for-this-file`) with a
+  comment that says why, or a parameter of the check in `.credo.exs` with a comment.
+  The checks of AshCredo that are configured differently (`RaisingCall` for reads of
+  LiveViews, `UseCodeInterface` inside a domain, `MissingCodeInterface` for internal
+  actions) say why in `.credo.exs`.
+- Sobelow: `# sobelow_skip ["Check.Name"]` above the function or pipeline, with the
+  reason. There is none.
+- Dialyzer: an entry in `.dialyzer_ignore.exs` with a comment; only for false positives
+  (for example in code that Spark generates).
+- Advisories: an entry in `ignored_advisories/0` of `mix.exs` with the reason and the
+  update that fixes it.
+- gitleaks: the fingerprint in `.gitleaksignore` under a comment.
+
 ## CI/CD
 
-- `.github/workflows/test.yml` runs `mix test` of the app and of the library against a
-  Postgres 18 service on every push.
-- `.github/workflows/build.yml`, `deploy_gcp.yml` — build and deploy to GCP. Deployment
+- `.github/workflows/test.yml` ("Run Tests") runs on every push, in three jobs: the
+  tests of the app and the library against a Postgres 18 service with the compiler
+  warnings and the Ash codegen check; formatting, unused dependencies, Credo and
+  Sobelow; Dialyzer (the PLTs are cached by `mix.lock`). The shared setup is the
+  composite action `.github/actions/setup-elixir` (caches `deps/` and `_build`).
+- `.github/workflows/security.yml` ("Security") runs `mix hex.audit`, `mix deps.audit`,
+  `npm audit` and gitleaks on every push and every Monday. It does not block the
+  deploy: advisories are published without a change of the code, and a new one must
+  not hold back an unrelated fix. A failed run shows up like any failed workflow.
+- `.github/workflows/build.yml`, `deploy_gcp.yml`: build and deploy to GCP. Deployment
   manifests are in `deployment/` and `rel/`.
-- **Do not use `/` in branch names.** `test.yml` triggers on `branches: "*"`, which does
-  not match such names, so no tests run for them (see `docs/plans/backlog.md`).
-- **A push to `main` deploys to production** (Cloud Run) when the tests pass.
-- CI runs only the tests. Format and compiler warnings are not checked there; check them
-  locally.
+- **Do not use `/` in branch names.** `test.yml` and `security.yml` trigger on
+  `branches: "*"`, which does not match such names, so no checks run for them (see
+  `docs/plans/backlog.md`).
+- **A push to `main` deploys to production** (Cloud Run) when every job of "Run Tests"
+  passes: a failing test or check blocks the deploy.
