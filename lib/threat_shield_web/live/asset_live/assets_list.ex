@@ -184,13 +184,9 @@ defmodule ThreatShieldWeb.AssetLive.AssetsList do
   def handle_event("apply_selection", params, socket) do
     scope = %Scope{} = socket.assigns.scope
 
-    new_assets =
-      socket
-      |> AiSuggestions.selected(params)
-      |> Enum.map(fn s -> create_asset(scope, s) end)
+    {socket, new_assets} = AiSuggestions.apply_selected(socket, params, &create_asset(scope, &1))
 
     socket
-    |> assign(:show_suggest_dialog, false)
     |> assign(:assets, socket.assigns.assets ++ new_assets)
     |> noreply()
   end
@@ -224,7 +220,7 @@ defmodule ThreatShieldWeb.AssetLive.AssetsList do
   end
 
   defp create_asset(%Scope{} = scope, %{name: name, description: desc}) do
-    ThreatManagement.create_asset!(
+    ThreatManagement.create_asset(
       %{
         name: name,
         description: desc,

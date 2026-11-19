@@ -7,6 +7,7 @@ defmodule ThreatShieldWeb.AiSuggestionsLiveTest do
   """
   use ThreatShieldWeb.ConnCase
 
+  import Ecto.Query, only: [from: 2]
   import Phoenix.LiveViewTest
 
   alias AshThreatShield.AssetsFixtures
@@ -208,6 +209,33 @@ defmodule ThreatShieldWeb.AiSuggestionsLiveTest do
 
     assert ThreatShield.Quotas.QuotaManager.get_usage(organisation, "ai_requests_per_month") ==
              0.0
+  end
+
+  test "a suggestion that cannot be stored reloads the page with a message",
+       %{conn: conn, organisation: organisation, user: user} do
+    path = ~p"/organisations/#{organisation.id}"
+    {:ok, view, _html} = live(conn, path)
+    switch_tab(view, "threats")
+
+    view |> element(~s([phx-click="suggest_threats"])) |> render_click()
+    render_async(view, 1000)
+
+    # the user loses the right to create threats while the dialog is open
+    Repo.update_all(
+      from(m in "memberships",
+        where: m.user_id == ^user.id,
+        update: [set: [role: "viewer"]]
+      ),
+      []
+    )
+
+    view
+    |> element("#suggest-threats-modal form")
+    |> render_submit(%{"selected_suggestions" => ["Suggestion 1", "Suggestion 2"]})
+
+    flash = assert_redirect(view, path)
+    assert flash["error"] =~ "2 selected suggestions could not be saved."
+    refute Repo.get_by(Threat, name: "Suggestion 1")
   end
 
   test "applying without a selection creates nothing", %{conn: conn, organisation: organisation} do

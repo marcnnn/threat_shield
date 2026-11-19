@@ -170,13 +170,10 @@ defmodule ThreatShieldWeb.ThreatLive.ThreatsList do
   def handle_event("apply_selection", params, socket) do
     scope = %Scope{} = socket.assigns.scope
 
-    new_threats =
-      socket
-      |> AiSuggestions.selected(params)
-      |> Enum.map(fn s -> create_threat(scope, s) end)
+    {socket, new_threats} =
+      AiSuggestions.apply_selected(socket, params, &create_threat(scope, &1))
 
     socket
-    |> assign(:show_suggest_dialog, false)
     |> assign(:threats, socket.assigns.threats ++ new_threats)
     |> noreply()
   end
@@ -210,7 +207,7 @@ defmodule ThreatShieldWeb.ThreatLive.ThreatsList do
   end
 
   defp create_threat(%Scope{} = scope, %{name: name, description: desc}) do
-    ThreatManagement.create_threat!(
+    ThreatManagement.create_threat(
       %{
         name: name,
         description: desc,

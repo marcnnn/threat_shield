@@ -9,7 +9,8 @@ defmodule ThreatShieldWeb.AiSuggestions do
       `suggest_threats/3`) with the user as `actor:`. The action checks the right
       and the quota,
     * passes the result from its `handle_async/3` callback to `handle_result/2`,
-    * and reads the suggestions that the user selected in the dialog with `selected/2`.
+    * and stores the suggestions that the user selected in the dialog with
+      `apply_selected/3`.
 
   The suggestions are kept in the assign `:ai_suggestions` of the component. The
   dialog is shown while `:show_suggest_dialog` is true. The component needs the
@@ -68,6 +69,40 @@ defmodule ThreatShieldWeb.AiSuggestions do
   end
 
   def selected(_socket, _params), do: []
+
+  @doc """
+  Stores the suggestions that are selected in the parameters of the dialog form and
+  closes the dialog. Returns the socket and the created records.
+
+  `create` takes a suggestion, calls a create action with the user as `actor:`, and
+  returns `{:ok, record}` or `{:error, error}`. When a suggestion cannot be stored,
+  the others are kept, and the page is reloaded from `:origin` with a message that
+  says how many failed (a component shows a flash only with a navigation).
+  """
+  def apply_selected(socket, params, create) when is_function(create, 1) do
+    {created, failed} =
+      socket
+      |> selected(params)
+      |> Enum.map(create)
+      |> Enum.split_with(&match?({:ok, _}, &1))
+
+    socket = assign(socket, :show_suggest_dialog, false)
+    {report_failures(socket, length(failed)), Enum.map(created, fn {:ok, record} -> record end)}
+  end
+
+  defp report_failures(socket, 0), do: socket
+
+  defp report_failures(socket, count) do
+    fail(
+      socket,
+      dngettext(
+        "common",
+        "A selected suggestion could not be saved.",
+        "%{count} selected suggestions could not be saved.",
+        count
+      )
+    )
+  end
 
   defp fail(socket, message) do
     socket

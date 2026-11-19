@@ -115,13 +115,10 @@ defmodule ThreatShieldWeb.RiskLive.RisksList do
     scope = %Scope{} = socket.assigns.scope
     threat = socket.assigns.threat
 
-    new_risks =
-      socket
-      |> AiSuggestions.selected(params)
-      |> Enum.map(fn s -> create_risk(scope.user, threat, s) end)
+    {socket, new_risks} =
+      AiSuggestions.apply_selected(socket, params, &create_risk(scope.user, threat, &1))
 
     socket
-    |> assign(:show_suggest_dialog, false)
     |> assign(:risks, socket.assigns.risks ++ new_risks)
     |> noreply()
   end
@@ -134,7 +131,7 @@ defmodule ThreatShieldWeb.RiskLive.RisksList do
   end
 
   defp create_risk(%User{} = user, %Threat{} = threat, %{name: name, description: desc}) do
-    ThreatManagement.create_risk!(%{name: name, description: desc, threat_id: threat.id},
+    ThreatManagement.create_risk(%{name: name, description: desc, threat_id: threat.id},
       actor: user
     )
   end

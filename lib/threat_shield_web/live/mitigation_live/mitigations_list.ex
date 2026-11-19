@@ -123,13 +123,10 @@ defmodule ThreatShieldWeb.MitigationLive.MitigationsList do
     scope = %Scope{} = socket.assigns.scope
     risk = socket.assigns.risk
 
-    new_mitigations =
-      socket
-      |> AiSuggestions.selected(params)
-      |> Enum.map(fn s -> create_mitigation(scope.user, risk, s) end)
+    {socket, new_mitigations} =
+      AiSuggestions.apply_selected(socket, params, &create_mitigation(scope.user, risk, &1))
 
     socket
-    |> assign(:show_suggest_dialog, false)
     |> assign(:mitigations, socket.assigns.mitigations ++ new_mitigations)
     |> noreply()
   end
@@ -142,7 +139,7 @@ defmodule ThreatShieldWeb.MitigationLive.MitigationsList do
   end
 
   defp create_mitigation(%User{} = user, %Risk{} = risk, %{name: name, description: desc}) do
-    ThreatManagement.create_mitigation!(%{name: name, description: desc, risk_id: risk.id},
+    ThreatManagement.create_mitigation(%{name: name, description: desc, risk_id: risk.id},
       actor: user
     )
   end
