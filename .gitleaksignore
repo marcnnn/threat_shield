@@ -1,0 +1,11 @@
+# Findings of gitleaks (`gitleaks git`) that were reviewed and are not secrets.
+# Each line is the fingerprint of one finding: commit:file:rule:line.
+#
+# secret_key_base of the dev and test endpoints. Production reads SECRET_KEY_BASE
+# from the environment (config/runtime.exs); these values only sign local cookies.
+d13ad97792c198c1ad5ab9099b1e2938ccca1d3c:config/dev.exs:generic-api-key:27
+d13ad97792c198c1ad5ab9099b1e2938ccca1d3c:config/test.exs:generic-api-key:20
+ccdac1a19ff5b3b9eba337f2bed56967846aaea0:threat_shield/config/dev.exs:generic-api-key:25
+ccdac1a19ff5b3b9eba337f2bed56967846aaea0:threat_shield/config/test.exs:generic-api-key:20
+# the password of a user created by a test
+7c306a6244b16ed3cb8083b49fd126d7c13abd9e:test/threat_shield_web/live/user_login_live_test.exs:generic-api-key:29

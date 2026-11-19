@@ -1,0 +1,45 @@
+name: Set up Elixir
+description: >
+  Installs Erlang and Elixir (the versions of .tool-versions), restores the caches
+  of deps/ and of the _build directories of the app and of the library, and fetches
+  the dependencies.
+
+inputs:
+  mix-env:
+    description: The MIX_ENV whose _build is cached
+    default: test
+
+runs:
+  using: composite
+  steps:
+    - name: Set up Elixir and Mix
+      id: beam
+      uses: erlef/setup-beam@v1
+      with:
+        otp-version: 29.1.1
+        elixir-version: 1.20.4-otp-29
+        version-type: strict
+
+    - name: Cache deps
+      uses: actions/cache@v4
+      with:
+        path: deps
+        key: ${{ runner.os }}-deps-${{ hashFiles('mix.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-deps-
+
+    # _build holds the compiled dependencies; a cache from an older lock file still
+    # saves most of the compilation
+    - name: Cache _build
+      uses: actions/cache@v4
+      with:
+        path: |
+          _build/${{ inputs.mix-env }}
+          packages/ash_threat_shield/_build/${{ inputs.mix-env }}
+        key: ${{ runner.os }}-build-${{ inputs.mix-env }}-otp${{ steps.beam.outputs.otp-version }}-elixir${{ steps.beam.outputs.elixir-version }}-${{ hashFiles('mix.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-build-${{ inputs.mix-env }}-otp${{ steps.beam.outputs.otp-version }}-elixir${{ steps.beam.outputs.elixir-version }}-
+
+    - name: Install dependencies
+      shell: bash
+      run: mix deps.get
