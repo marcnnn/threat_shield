@@ -4,8 +4,8 @@ defmodule ThreatShieldWeb.TsComponents do
   """
   use Phoenix.Component
 
-  alias ThreatShield.Scope
   alias Phoenix.LiveView.JS
+  alias ThreatShield.Scope
 
   use ThreatShieldWeb, :verified_routes
   import ThreatShieldWeb.CoreComponents

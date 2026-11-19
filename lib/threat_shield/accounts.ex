@@ -82,22 +82,34 @@ defmodule ThreatShield.Accounts do
   end
 
   @doc """
-  Deletes the expired invites. This is a system operation of
-  `ThreatShield.Periodically` without an actor, so it is not authorized.
+  Deletes the expired invites and returns an `Ash.BulkResult`. This is a system
+  operation of `ThreatShield.Periodically` without an actor, so it is not authorized.
   """
   def delete_expired_invites do
     ThreatShield.Accounts.Invite
+    # system operation without an actor, see above
     |> Ash.Query.for_read(:expired, %{}, authorize?: false)
-    |> Ash.bulk_destroy!(:destroy, %{}, authorize?: false, strategy: [:atomic, :stream])
+    |> Ash.bulk_destroy(:destroy, %{},
+      # system operation without an actor, see above
+      authorize?: false,
+      strategy: [:atomic, :stream],
+      return_errors?: true
+    )
   end
 
   @doc """
-  Deletes the expired API keys. This is a system operation of
-  `ThreatShield.Periodically` without an actor, so it is not authorized.
+  Deletes the expired API keys and returns an `Ash.BulkResult`. This is a system
+  operation of `ThreatShield.Periodically` without an actor, so it is not authorized.
   """
   def delete_expired_api_keys do
     ThreatShield.Accounts.ApiKey
+    # system operation without an actor, see above
     |> Ash.Query.for_read(:expired, %{}, authorize?: false)
-    |> Ash.bulk_destroy!(:destroy, %{}, authorize?: false, strategy: [:atomic, :stream])
+    |> Ash.bulk_destroy(:destroy, %{},
+      # system operation without an actor, see above
+      authorize?: false,
+      strategy: [:atomic, :stream],
+      return_errors?: true
+    )
   end
 end

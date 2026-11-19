@@ -3,8 +3,8 @@ defmodule ThreatShieldWeb.AssetLive.AssetForm do
 
   import ThreatShieldWeb.FormHelpers
 
-  alias ThreatShield.Scope
   alias AshThreatShield.ThreatManagement.Asset
+  alias ThreatShield.Scope
 
   import ThreatShieldWeb.TsComponents
 

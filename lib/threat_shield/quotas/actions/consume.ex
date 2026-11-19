@@ -10,6 +10,7 @@ defmodule ThreatShield.Quotas.Actions.Consume do
 
   require Ash.Query
 
+  alias Ash.Error.Query.NotFound
   alias ThreatShield.Accounts.Organisation
   alias ThreatShield.Quotas.Errors.QuotaExceeded
   alias ThreatShield.Quotas.QuotaManager
@@ -37,10 +38,11 @@ defmodule ThreatShield.Quotas.Actions.Consume do
     Organisation
     |> Ash.Query.filter(id == ^id)
     |> Ash.Query.lock(:for_update)
+    # system operation without a user, see the comment above
     |> Ash.read_one(authorize?: false)
     |> case do
       {:ok, %Organisation{} = organisation} -> {:ok, organisation}
-      {:ok, nil} -> {:error, Ash.Error.Query.NotFound.exception(resource: Organisation)}
+      {:ok, nil} -> {:error, NotFound.exception(resource: Organisation)}
       {:error, error} -> {:error, error}
     end
   end
@@ -49,6 +51,7 @@ defmodule ThreatShield.Quotas.Actions.Consume do
     case QuotaManager.check_quota(organisation, quota_type, amount) do
       {:ok, :quota_available} -> :ok
       {:error, :quota_exceeded} -> {:error, QuotaExceeded.exception(quota_type: quota_type)}
+      {:error, error} -> {:error, error}
     end
   end
 end

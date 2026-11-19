@@ -1,9 +1,9 @@
 defmodule ThreatShieldWeb.SystemLiveTest do
   use ThreatShieldWeb.ConnCase
 
+  alias AshThreatShield.SystemsFixtures
   alias ThreatShield.AccountsFixtures
   alias ThreatShield.OrganisationsFixtures
-  alias AshThreatShield.SystemsFixtures
 
   @create_attrs %{attributes: %{}, name: "some name", description: "some description"}
 

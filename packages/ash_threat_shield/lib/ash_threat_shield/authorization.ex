@@ -46,10 +46,24 @@ defmodule AshThreatShield.Authorization do
   """
   @spec rights() :: [right()]
   def rights do
-    entities = [:system, :asset, :threat, :risk, :mitigation]
-
-    [:view_organisation] ++
-      for action <- [:create, :edit, :delete], entity <- entities, do: :"#{action}_#{entity}"
+    [
+      :view_organisation,
+      :create_system,
+      :create_asset,
+      :create_threat,
+      :create_risk,
+      :create_mitigation,
+      :edit_system,
+      :edit_asset,
+      :edit_threat,
+      :edit_risk,
+      :edit_mitigation,
+      :delete_system,
+      :delete_asset,
+      :delete_threat,
+      :delete_risk,
+      :delete_mitigation
+    ]
   end
 
   @doc """

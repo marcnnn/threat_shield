@@ -17,6 +17,7 @@ defmodule ThreatShield.Accounts.Changes.AddOwnerMembership do
       |> Ash.Changeset.for_create(
         :create,
         %{organisation_id: organisation.id, user_id: user_id, role: :owner},
+        # bootstrap of the first owner, see above
         authorize?: false
       )
       |> Ash.create()

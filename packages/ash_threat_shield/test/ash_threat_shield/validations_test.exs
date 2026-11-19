@@ -5,7 +5,7 @@ defmodule AshThreatShield.ValidationsTest do
   """
   use AshThreatShield.DataCase, async: true
 
-  alias AshThreatShield.ThreatManagement.{Asset, Mitigation, Risk, System, Threat}
+  alias AshThreatShield.ThreatManagement.{Asset, Description, Mitigation, Risk, System, Threat}
 
   defp changeset(resource, attrs) do
     Ash.Changeset.for_create(resource, :create, attrs, authorize?: false)
@@ -43,7 +43,7 @@ defmodule AshThreatShield.ValidationsTest do
   end
 
   test "the description of the organisation uses the properties of the owner resource" do
-    text = AshThreatShield.ThreatManagement.Description.organisation(%{name: "ACME"})
+    text = Description.organisation(%{name: "ACME"})
 
     assert text =~ ~s(The name of the organisation is "ACME".)
     assert text =~ ~s("Industry: ", "Examples are finance and health.")

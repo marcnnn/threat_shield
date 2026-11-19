@@ -61,7 +61,7 @@ defmodule AshThreatShield.ThreatManagement.ThreatModel.Actions.Context do
       {name, _record} ->
         {:error,
          InvalidArgument.exception(
-           field: :"#{name}_id",
+           field: String.to_existing_atom("#{name}_id"),
            message: "does not belong to the organisation"
          )}
     end)

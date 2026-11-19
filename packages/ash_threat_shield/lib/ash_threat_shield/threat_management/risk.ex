@@ -104,6 +104,7 @@ defmodule AshThreatShield.ThreatManagement.Risk do
 
   calculations do
     calculate :organisation_id, :integer, expr(threat.organisation_id) do
+      allow_nil? false
       public? true
       description "The id of the organisation of the risk."
     end
@@ -117,6 +118,7 @@ defmodule AshThreatShield.ThreatManagement.Risk do
                   fragment("round(?)", estimated_cost * probability)
                 end
               ) do
+      allow_nil? true
       public? true
 
       description "The estimated cost per year in EUR: the cost of an incident times the " <>
@@ -124,6 +126,7 @@ defmodule AshThreatShield.ThreatManagement.Risk do
     end
 
     calculate :threat_name, :string, expr(threat.name) do
+      allow_nil? false
       public? true
       description "The name of the threat of the risk."
     end

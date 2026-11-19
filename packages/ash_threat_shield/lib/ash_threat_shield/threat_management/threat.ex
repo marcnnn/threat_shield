@@ -111,11 +111,13 @@ defmodule AshThreatShield.ThreatManagement.Threat do
 
   calculations do
     calculate :system_name, :string, expr(system.name) do
+      allow_nil? true
       public? true
       description "The name of the system of the threat."
     end
 
     calculate :asset_name, :string, expr(asset.name) do
+      allow_nil? true
       public? true
       description "The name of the asset of the threat."
     end

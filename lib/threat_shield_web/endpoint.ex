@@ -9,7 +9,8 @@ defmodule ThreatShieldWeb.Endpoint do
     key: "_threat_shield_key",
     signing_salt: "dBA08V8L",
     same_site: "Lax",
-    # attribute ensures that the cookie with the name "_threat_shield_key" can only be accessed by the server and not by any JavaScript code running in the browser.
+    # The cookie "_threat_shield_key" is sent to the server only; JavaScript in the
+    # browser cannot read it.
     http_only: true
   ]
 

@@ -5,6 +5,8 @@ defmodule AshThreatShield.DataCase do
   """
   use ExUnit.CaseTemplate
 
+  alias Ecto.Adapters.SQL.Sandbox
+
   using do
     quote do
       alias AshThreatShield.TestRepo, as: Repo
@@ -16,11 +18,11 @@ defmodule AshThreatShield.DataCase do
 
   setup tags do
     pid =
-      Ecto.Adapters.SQL.Sandbox.start_owner!(AshThreatShield.TestRepo,
+      Sandbox.start_owner!(AshThreatShield.TestRepo,
         shared: not tags[:async]
       )
 
-    on_exit(fn -> Ecto.Adapters.SQL.Sandbox.stop_owner(pid) end)
+    on_exit(fn -> Sandbox.stop_owner(pid) end)
     :ok
   end
 

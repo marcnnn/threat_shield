@@ -8,10 +8,10 @@ defmodule ThreatShieldWeb.Helpers do
   import Phoenix.Component
   alias ThreatShieldWeb.Endpoint
 
-  alias AshThreatShield.ThreatManagement.Risk
-  alias AshThreatShield.ThreatManagement.Threat
-  alias AshThreatShield.ThreatManagement.System
   alias AshThreatShield.ThreatManagement.Asset
+  alias AshThreatShield.ThreatManagement.Risk
+  alias AshThreatShield.ThreatManagement.System
+  alias AshThreatShield.ThreatManagement.Threat
 
   alias ThreatShield.Scope
 
@@ -41,7 +41,7 @@ defmodule ThreatShieldWeb.Helpers do
     assign(socket, :breadcrumbs, [:home | breadcrumbs])
   end
 
-  def generate_token() do
+  def generate_token do
     :crypto.strong_rand_bytes(128)
     |> Base.url_encode64(padding: false)
   end

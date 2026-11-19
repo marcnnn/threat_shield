@@ -3,9 +3,9 @@ defmodule AshThreatShield.AssetsTest do
 
   alias AshThreatShield.AssetsFixtures
   alias AshThreatShield.SystemsFixtures
-  alias AshThreatShield.ThreatsFixtures
   alias AshThreatShield.ThreatManagement
   alias AshThreatShield.ThreatManagement.{Asset, Threat}
+  alias AshThreatShield.ThreatsFixtures
 
   setup do
     user = user_fixture()

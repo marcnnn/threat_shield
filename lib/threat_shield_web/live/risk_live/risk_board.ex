@@ -1,10 +1,10 @@
 defmodule ThreatShieldWeb.RiskLive.RiskBoard do
   use ThreatShieldWeb, :live_view
 
-  alias ThreatShield.Accounts.Organisation
   alias AshThreatShield.ThreatManagement
-  alias ThreatShield.Accounts
   alias AshThreatShield.ThreatManagement.{MitigationStatus, Risk, RiskStatus}
+  alias ThreatShield.Accounts
+  alias ThreatShield.Accounts.Organisation
 
   import ThreatShield.Analytics.RiskAnalytics, only: [max_cost: 1, max_frequency: 1]
   import ThreatShieldWeb.Helpers

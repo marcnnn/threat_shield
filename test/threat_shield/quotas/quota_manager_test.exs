@@ -4,9 +4,9 @@ defmodule ThreatShield.Quotas.QuotaManagerTest do
   alias ThreatShield.AccountsFixtures
   alias ThreatShield.OrganisationsFixtures
 
-  alias ThreatShield.Repo
   alias ThreatShield.Accounts
   alias ThreatShield.Quotas.{QuotaManager, QuotaUsage}
+  alias ThreatShield.Repo
 
   @quota "ai_requests_per_month"
 
@@ -45,7 +45,7 @@ defmodule ThreatShield.Quotas.QuotaManagerTest do
       set: [timestamp: two_months_ago]
     )
 
-    assert QuotaManager.get_usage(organisation, @quota) == 3.5
+    assert QuotaManager.get_usage(organisation, @quota) == {:ok, 3.5}
   end
 
   test "check_quota/3 refuses a request above the quota",
@@ -65,7 +65,7 @@ defmodule ThreatShield.Quotas.QuotaManagerTest do
     assert :ok = QuotaManager.consume(organisation, user, @quota)
     assert {:error, :quota_exceeded} = QuotaManager.consume(organisation, user, @quota)
 
-    assert QuotaManager.get_usage(organisation, @quota) == 2.0
+    assert QuotaManager.get_usage(organisation, @quota) == {:ok, 2.0}
   end
 
   test "deleting the user or the organisation keeps the database consistent",

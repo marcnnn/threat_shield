@@ -132,11 +132,13 @@ defmodule AshThreatShield.ThreatManagement.Mitigation do
 
   calculations do
     calculate :organisation_id, :integer, expr(risk.threat.organisation_id) do
+      allow_nil? false
       public? true
       description "The id of the organisation of the mitigation."
     end
 
     calculate :risk_name, :string, expr(risk.name) do
+      allow_nil? false
       public? true
       description "The name of the risk of the mitigation."
     end

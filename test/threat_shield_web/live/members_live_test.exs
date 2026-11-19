@@ -5,8 +5,8 @@ defmodule ThreatShieldWeb.MembersLiveTest do
   import Swoosh.TestAssertions
 
   alias ThreatShield.Accounts.Invite
-  alias ThreatShield.Repo
   alias ThreatShield.OrganisationsFixtures
+  alias ThreatShield.Repo
 
   # The create action of the LiveView process sends the email; in global mode it goes
   # only to the test process

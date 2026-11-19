@@ -4,9 +4,9 @@ defmodule ThreatShieldWeb.SystemLive.SystemDetails do
   alias ThreatShield.Accounts.User
   use ThreatShieldWeb, :live_view
 
-  alias ThreatShield.Scope
   alias AshThreatShield.ThreatManagement
   alias AshThreatShield.ThreatManagement.System
+  alias ThreatShield.Scope
   import ThreatShieldWeb.Helpers, only: [add_breadcrumbs: 2, link_to: 1]
 
   @impl true

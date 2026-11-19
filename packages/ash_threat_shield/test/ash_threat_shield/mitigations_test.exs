@@ -2,11 +2,11 @@ defmodule AshThreatShield.MitigationsTest do
   use AshThreatShield.DataCase
 
   alias AshThreatShield.RisksFixtures
-  alias AshThreatShield.ThreatsFixtures
   alias AshThreatShield.ThreatManagement
   alias AshThreatShield.ThreatManagement.Mitigation
+  alias AshThreatShield.ThreatsFixtures
 
-  defp user_risk_fixture() do
+  defp user_risk_fixture do
     user = user_fixture()
     organisation = organisation_fixture(user)
     threat = ThreatsFixtures.threat_fixture(user, organisation)

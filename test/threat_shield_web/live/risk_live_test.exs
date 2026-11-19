@@ -4,8 +4,8 @@ defmodule ThreatShieldWeb.RiskLiveTest do
   import Phoenix.LiveViewTest
   import AshThreatShield.RisksFixtures
 
-  alias ThreatShield.OrganisationsFixtures
   alias AshThreatShield.ThreatsFixtures
+  alias ThreatShield.OrganisationsFixtures
 
   setup :register_and_log_in_user
 

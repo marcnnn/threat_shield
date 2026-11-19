@@ -1,4 +1,7 @@
 defmodule ThreatShield.Accounts.User do
+  # credo:disable-for-this-file AshCredo.Check.Design.MissingPrimaryAction
+  # Each update action is a flow of its own (password reset, email change, ...);
+  # there is no general update to make the primary one.
   @moduledoc """
   A user account, authenticated with AshAuthentication.
 
@@ -19,8 +22,8 @@ defmodule ThreatShield.Accounts.User do
     authorizers: [Ash.Policy.Authorizer]
 
   alias AshAuthentication.Strategy.Password
-  alias ThreatShield.Accounts.User
   alias ThreatShield.Accounts.Senders
+  alias ThreatShield.Accounts.User
 
   @password_constraints [min_length: 12, max_length: 72]
 
@@ -50,9 +53,7 @@ defmodule ThreatShield.Accounts.User do
       # Also the lifetime of the "remember me" cookie
       token_lifetime {60, :days}
 
-      signing_secret fn _, _ ->
-        Application.fetch_env(:threat_shield, :token_signing_secret)
-      end
+      signing_secret ThreatShield.Accounts.User.TokenSigningSecret
     end
 
     strategies do
@@ -187,6 +188,7 @@ defmodule ThreatShield.Accounts.User do
     defaults [:read]
 
     read :get_by_email do
+      description "Get the user with the email address."
       argument :email, :ci_string, allow_nil?: false
       get? true
       filter expr(email == ^arg(:email))
@@ -255,6 +257,7 @@ defmodule ThreatShield.Accounts.User do
                     "everywhere and revokes the API keys of the user."
 
       accept []
+      # the token check and the hashing of the password run in Elixir
       require_atomic? false
 
       argument :reset_token, :string, allow_nil?: false, sensitive?: true
@@ -298,6 +301,7 @@ defmodule ThreatShield.Accounts.User do
                     "the API keys of the user."
 
       accept []
+      # the check of the current password and the hashing run in Elixir
       require_atomic? false
 
       argument :current_password, :string, allow_nil?: false, sensitive?: true
@@ -324,6 +328,7 @@ defmodule ThreatShield.Accounts.User do
       """
 
       accept [:email]
+      # the check of the current password runs in Elixir
       require_atomic? false
 
       argument :current_password, :string, allow_nil?: false, sensitive?: true
@@ -338,6 +343,7 @@ defmodule ThreatShield.Accounts.User do
       # ConfirmChange overwrites it with the address that was stored with the token,
       # so a given email is ignored.
       accept [:email]
+      # ConfirmChange reads the stored change of the token in Elixir
       require_atomic? false
 
       argument :confirm, :string, allow_nil?: false, sensitive?: true

@@ -9,8 +9,8 @@ defmodule AshThreatShield.ThreatManagement.ThreatModel.Actions.RiskSummary do
   import Ash.Expr
   require Ash.Query
 
-  alias AshThreatShield.ThreatManagement.{Focus, Mitigation, MitigationStatus, Risk}
-  alias AshThreatShield.ThreatManagement.{RiskStatus, Threat}
+  alias AshThreatShield.ThreatManagement
+  alias AshThreatShield.ThreatManagement.{Focus, MitigationStatus, RiskStatus}
 
   @top 10
 
@@ -20,10 +20,9 @@ defmodule AshThreatShield.ThreatManagement.ThreatModel.Actions.RiskSummary do
     org_id = input.arguments.organisation_id
 
     with {:ok, organisation} <- Focus.get_organisation(org_id, opts),
-         threats = Ash.Query.for_read(Threat, :for_organisation, %{organisation_id: org_id}, opts),
-         risks = Ash.Query.for_read(Risk, :for_organisation, %{organisation_id: org_id}, opts),
-         mitigations =
-           Ash.Query.for_read(Mitigation, :for_organisation, %{organisation_id: org_id}, opts),
+         threats = ThreatManagement.query_to_list_threats(org_id, opts),
+         risks = ThreatManagement.query_to_list_risks(org_id, opts),
+         mitigations = ThreatManagement.query_to_list_mitigations(org_id, opts),
          {:ok, threat_count} <- Ash.count(threats, opts),
          {:ok, risk_figures} <- Ash.aggregate(risks, risk_aggregates(), opts),
          {:ok, mitigation_figures} <-

@@ -11,17 +11,18 @@ defmodule ThreatShieldWeb.AiSuggestionsLiveTest do
   import Phoenix.LiveViewTest
 
   alias AshThreatShield.AssetsFixtures
-  alias ThreatShield.OrganisationsFixtures
   alias AshThreatShield.RisksFixtures
   alias AshThreatShield.ThreatsFixtures
+  alias ThreatShield.OrganisationsFixtures
 
-  alias ThreatShield.Repo
   alias AshThreatShield.SystemsFixtures
-  alias ThreatShield.Accounts.Organisation
   alias AshThreatShield.ThreatManagement.Asset
   alias AshThreatShield.ThreatManagement.Mitigation
   alias AshThreatShield.ThreatManagement.Risk
   alias AshThreatShield.ThreatManagement.Threat
+  alias ThreatShield.Accounts.Organisation
+  alias ThreatShield.Quotas.QuotaManager
+  alias ThreatShield.Repo
 
   @moduletag :capture_log
 
@@ -207,8 +208,7 @@ defmodule ThreatShieldWeb.AiSuggestionsLiveTest do
     flash = assert_redirect(view, path, 1000)
     assert flash["error"] =~ "could not create suggestions"
 
-    assert ThreatShield.Quotas.QuotaManager.get_usage(organisation, "ai_requests_per_month") ==
-             0.0
+    assert QuotaManager.get_usage(organisation, "ai_requests_per_month") == {:ok, 0.0}
   end
 
   test "a suggestion that cannot be stored reloads the page with a message",

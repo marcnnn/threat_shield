@@ -84,7 +84,7 @@ defmodule ThreatShieldWeb.RiskLive.RiskForm do
     noreply(socket)
   end
 
-  def status_options() do
+  def status_options do
     Labels.available_risk_states()
     |> Enum.map(fn {key, label} -> {label, key} end)
   end

@@ -24,7 +24,10 @@ defmodule ThreatShield.AIQuotaTest do
     %{user: user, organisation: organisation, system: system, threat: threat, risk: risk}
   end
 
-  defp usage(organisation), do: QuotaManager.get_usage(organisation, "ai_requests_per_month")
+  defp usage(organisation) do
+    {:ok, usage} = QuotaManager.get_usage(organisation, "ai_requests_per_month")
+    usage
+  end
 
   test "the suggestions record the usage and refuse a request above the quota",
        %{user: user, organisation: organisation, system: system, threat: threat, risk: risk} do

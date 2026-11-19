@@ -6,12 +6,12 @@ defmodule ThreatShield.ChangesetsTest do
   """
   use ThreatShield.DataCase, async: true
 
-  alias ThreatShield.Accounts.Organisation
   alias AshThreatShield.ThreatManagement.Asset
   alias AshThreatShield.ThreatManagement.Mitigation
   alias AshThreatShield.ThreatManagement.Risk
   alias AshThreatShield.ThreatManagement.System
   alias AshThreatShield.ThreatManagement.Threat
+  alias ThreatShield.Accounts.Organisation
 
   # The changeset of the create action, as the contexts build it
   defp changeset(resource, attrs) do

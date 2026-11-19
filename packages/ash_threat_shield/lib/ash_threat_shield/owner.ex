@@ -37,6 +37,7 @@ defmodule AshThreatShield.Owner do
 
     if Code.ensure_loaded?(owner) and function_exported?(owner, :attributes_config, 0) do
       # not a remote call at compile time: the module belongs to the host
+      # credo:disable-for-next-line Credo.Check.Refactor.Apply
       apply(owner, :attributes_config, [])
     else
       []

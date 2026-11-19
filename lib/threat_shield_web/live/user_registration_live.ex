@@ -170,6 +170,8 @@ defmodule ThreatShieldWeb.UserRegistrationLive do
   # The registration sends the confirmation instructions
   defp registration_form(params) do
     User
+    # a visitor without an account registers; there is no actor
+    # credo:disable-for-next-line CredoChecks.ActorInWebCalls
     |> AshPhoenix.Form.for_create(:register_with_password, as: "user", params: params)
     |> to_form()
   end

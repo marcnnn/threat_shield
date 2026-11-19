@@ -64,6 +64,7 @@ defmodule ThreatShield.Accounts.Invite do
   calculations do
     # The invitee is not a member yet and may not read the organisation itself.
     calculate :organisation_name, :string, expr(organisation.name) do
+      allow_nil? false
       public? true
       description "The name of the organisation."
     end

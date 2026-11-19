@@ -7,19 +7,19 @@ defmodule ThreatShieldWeb.EntityMenuLiveTest do
 
   import Phoenix.LiveViewTest
 
-  alias ThreatShield.AccountsFixtures
   alias AshThreatShield.AssetsFixtures
-  alias ThreatShield.MembersFixtures
   alias AshThreatShield.MitigationsFixtures
-  alias ThreatShield.OrganisationsFixtures
   alias AshThreatShield.RisksFixtures
   alias AshThreatShield.ThreatsFixtures
+  alias ThreatShield.AccountsFixtures
+  alias ThreatShield.MembersFixtures
+  alias ThreatShield.OrganisationsFixtures
 
-  alias ThreatShield.Repo
   alias AshThreatShield.SystemsFixtures
   alias AshThreatShield.ThreatManagement.Mitigation
   alias AshThreatShield.ThreatManagement.Risk
   alias AshThreatShield.ThreatManagement.Threat
+  alias ThreatShield.Repo
 
   setup :register_and_log_in_user
 

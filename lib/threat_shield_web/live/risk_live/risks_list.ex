@@ -1,11 +1,11 @@
 defmodule ThreatShieldWeb.RiskLive.RisksList do
   use ThreatShieldWeb, :live_component
 
-  alias ThreatShield.Scope
-  alias ThreatShieldWeb.AiSuggestions
   alias AshThreatShield.ThreatManagement
   alias AshThreatShield.ThreatManagement.Threat
   alias ThreatShield.Accounts.User
+  alias ThreatShield.Scope
+  alias ThreatShieldWeb.AiSuggestions
   import ThreatShieldWeb.Helpers
 
   @moduledoc """

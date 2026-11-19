@@ -49,7 +49,7 @@ defmodule AshThreatShield.DynamicAttribute do
   @doc """
   The error message for an attribute map with an invalid value.
   """
-  def invalid_values_message(), do: "must be texts of at most #{@max_value_length} characters"
+  def invalid_values_message, do: "must be texts of at most #{@max_value_length} characters"
 
   @doc """
   Checks an attribute map: every value must be a string of at most

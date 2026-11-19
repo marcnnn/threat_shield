@@ -1,4 +1,7 @@
 defmodule ThreatShield.Accounts.Token do
+  # credo:disable-for-this-file AshCredo.Check.Design.MissingTimestamps
+  # credo:disable-for-this-file AshCredo.Check.Design.MissingPrimaryAction
+  # AshAuthentication defines the attributes (created_at, expires_at) and the actions.
   @moduledoc """
   The tokens of AshAuthentication: sessions, API sign ins, confirmations, password
   resets and revocations. Only AshAuthentication works with them.

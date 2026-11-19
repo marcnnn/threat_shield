@@ -33,6 +33,7 @@ defmodule AshThreatShield.ThreatManagement.Validations.SameOrganisation do
         exists? =
           opts[:resource]
           |> Ash.Query.filter(id == ^id and organisation_id == ^org_id)
+          # compares organisations only, see above
           |> Ash.exists?(authorize?: false)
 
         if exists? do

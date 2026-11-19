@@ -6,6 +6,7 @@ defmodule ThreatShield.AccountsTest do
   alias AshAuthentication.Jwt
   alias ThreatShield.Accounts
   alias ThreatShield.Accounts.{ApiKey, Membership, User}
+  alias ThreatShield.Accounts.Senders.Urls
   alias ThreatShield.OrganisationsFixtures
 
   defp token_valid?(token), do: match?({:ok, _, _}, Jwt.verify(token, :threat_shield))
@@ -132,7 +133,7 @@ defmodule ThreatShield.AccountsTest do
       on_exit(fn -> Application.put_env(:threat_shield, :account_urls, urls) end)
 
       assert_raise ArgumentError, ~r/no module builds the links/, fn ->
-        ThreatShield.Accounts.Senders.Urls.build(:confirm, "token")
+        Urls.build(:confirm, "token")
       end
     end
   end
@@ -455,7 +456,7 @@ defmodule ThreatShield.AccountsTest do
     test "are deleted when they have expired", %{user: user, api_key: %{id: id}} do
       _expired = api_key_fixture(user, -1)
 
-      Accounts.delete_expired_api_keys()
+      assert %Ash.BulkResult{status: :success} = Accounts.delete_expired_api_keys()
 
       assert [%ApiKey{id: ^id}] = Ash.read!(ApiKey, actor: user)
     end

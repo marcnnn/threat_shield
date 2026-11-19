@@ -1,4 +1,6 @@
 defmodule ThreatShield.Accounts.Membership do
+  # credo:disable-for-this-file AshCredo.Check.Design.MissingTimestamps
+  # The table has no timestamp columns. Adding them is open (docs/plans/backlog.md).
   @moduledoc """
   The membership of a user in an organisation, with a role. Users join an
   organisation by accepting an invite; the creator of an organisation becomes its
@@ -10,9 +12,9 @@ defmodule ThreatShield.Accounts.Membership do
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer]
 
+  alias AshThreatShield.Checks.OrganisationRole
   alias ThreatShield.Accounts.Changes.AcceptInvite
   alias ThreatShield.Accounts.Changes.KeepsOwner
-  alias AshThreatShield.Checks.OrganisationRole
 
   postgres do
     table "memberships"
@@ -65,6 +67,8 @@ defmodule ThreatShield.Accounts.Membership do
     create :create do
       description "Adds a user to an organisation. No actor is allowed to call it directly; " <>
                     "users join through invites."
+
+      primary? true
 
       accept [:role, :user_id, :organisation_id]
     end

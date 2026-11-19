@@ -11,8 +11,8 @@ defmodule ThreatShield.Accounts.Changes.AcceptInvite do
 
   require Ash.Query
 
-  alias ThreatShield.Accounts.{Invite, Membership}
   alias ThreatShield.Accounts.Errors.InviteError
+  alias ThreatShield.Accounts.{Invite, Membership}
 
   @impl true
   def change(changeset, opts, %{actor: %{id: _} = actor}) do

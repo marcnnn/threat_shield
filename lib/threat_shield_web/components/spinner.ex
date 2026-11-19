@@ -1,4 +1,7 @@
 defmodule ThreatShieldWeb.Spinner do
+  @moduledoc """
+  The spinner shown while the AI assistant works.
+  """
   use Phoenix.Component
 
   def spinner(assigns) do

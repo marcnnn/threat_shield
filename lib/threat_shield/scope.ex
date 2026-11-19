@@ -4,9 +4,9 @@ defmodule ThreatShield.Scope do
   `:actor_membership` of the organisation, if it is loaded (with the user as the
   actor).
   """
-  alias ThreatShield.Accounts.User
-  alias ThreatShield.Accounts.{Membership, Organisation}
   alias AshThreatShield.ThreatManagement.System
+  alias ThreatShield.Accounts.{Membership, Organisation}
+  alias ThreatShield.Accounts.User
 
   defstruct [
     :id,

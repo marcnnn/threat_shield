@@ -7,9 +7,9 @@ defmodule ThreatShield.AuthorizationTest do
   use ThreatShield.DataCase
 
   alias AshThreatShield.ThreatManagement
+  alias AshThreatShield.ThreatManagement.{Asset, Mitigation, Risk, System, Threat}
   alias ThreatShield.Accounts
   alias ThreatShield.Accounts.Organisation
-  alias AshThreatShield.ThreatManagement.{Asset, Mitigation, Risk, System, Threat}
 
   alias ThreatShield.{AccountsFixtures, MembersFixtures, OrganisationsFixtures}
 
@@ -89,7 +89,8 @@ defmodule ThreatShield.AuthorizationTest do
       assert_denied(call(fun(:get, entity), [record.id, [actor: outsider]]))
       assert Ash.read!(resource, actor: outsider) == [], inspect(resource)
 
-      assert call(:"list_#{entity}s", [organisation.id, [actor: outsider]]) == {:ok, []},
+      assert call(String.to_existing_atom("list_#{entity}s"), [organisation.id, [actor: outsider]]) ==
+               {:ok, []},
              inspect(resource)
 
       assert_denied(call(fun(:update, entity), [record, %{name: "changed"}, [actor: outsider]]))
@@ -115,7 +116,9 @@ defmodule ThreatShield.AuthorizationTest do
 
       assert {:ok, %{id: id}} = call(fun(:get, entity), [record.id, [actor: viewer]])
       assert id == record.id
-      assert {:ok, [_ | _]} = call(:"list_#{entity}s", [organisation.id, [actor: viewer]])
+
+      assert {:ok, [_ | _]} =
+               call(String.to_existing_atom("list_#{entity}s"), [organisation.id, [actor: viewer]])
 
       assert {:error, %Ash.Error.Forbidden{}} =
                call(fun(:create, entity), [attrs, [actor: viewer]])

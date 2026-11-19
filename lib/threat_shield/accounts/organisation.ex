@@ -1,4 +1,8 @@
 defmodule ThreatShield.Accounts.Organisation do
+  @moduledoc """
+  An organisation owns the threat model (systems, assets, threats) and has members
+  with roles. It is the owner resource of the library ash_threat_shield.
+  """
   use Ash.Resource,
     otp_app: :threat_shield,
     domain: ThreatShield.Accounts,

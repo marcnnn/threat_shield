@@ -2,9 +2,9 @@ defmodule AshThreatShield.RisksTest do
   use AshThreatShield.DataCase
 
   alias AshThreatShield.RisksFixtures
-  alias AshThreatShield.ThreatsFixtures
   alias AshThreatShield.ThreatManagement
   alias AshThreatShield.ThreatManagement.Risk
+  alias AshThreatShield.ThreatsFixtures
 
   setup do
     user = user_fixture()

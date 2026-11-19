@@ -96,7 +96,7 @@ defmodule ThreatShieldWeb.MitigationLive.MitigationForm do
     noreply(socket)
   end
 
-  def status_options() do
+  def status_options do
     Labels.available_mitigation_states()
     |> Enum.map(fn {key, label} -> {label, key} end)
   end

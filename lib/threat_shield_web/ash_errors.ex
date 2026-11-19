@@ -7,6 +7,8 @@ defmodule ThreatShieldWeb.AshErrors do
   `ThreatShieldWeb.CoreComponents.translate_error/1` uses it for every form error.
   """
 
+  alias AshPhoenix.FormData.Error, as: FormError
+
   @doc """
   Returns the field errors of an Ash error or changeset as
   `[{field, {message, vars}}]`, with normalized messages.
@@ -21,9 +23,9 @@ defmodule ThreatShieldWeb.AshErrors do
   end
 
   defp to_form_errors(error) do
-    if AshPhoenix.FormData.Error.impl_for(error) do
+    if FormError.impl_for(error) do
       error
-      |> AshPhoenix.FormData.Error.to_form_error()
+      |> FormError.to_form_error()
       |> List.wrap()
       |> Enum.reject(fn {field, _message, _vars} -> is_nil(field) end)
     else

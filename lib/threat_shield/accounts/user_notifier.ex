@@ -1,8 +1,11 @@
 defmodule ThreatShield.Accounts.UserNotifier do
+  @moduledoc """
+  The emails to users: confirmation, password reset, email change and invites.
+  """
   import Swoosh.Email
 
-  alias ThreatShield.Mailer
   alias ThreatShield.Accounts.Invite
+  alias ThreatShield.Mailer
 
   # Delivers the email using the application mailer.
   defp deliver(recipient, subject, body) do

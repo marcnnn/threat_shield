@@ -2,8 +2,8 @@ defmodule ThreatShield.MembersTest do
   use ThreatShield.DataCase
 
   alias ThreatShield.Accounts
-  alias ThreatShield.Accounts.{Invite, Membership, Organisation}
   alias ThreatShield.Accounts.Errors.InviteError
+  alias ThreatShield.Accounts.{Invite, Membership, Organisation}
   alias ThreatShield.AccountsFixtures
   alias ThreatShield.MembersFixtures
   alias ThreatShield.OrganisationsFixtures
@@ -144,7 +144,7 @@ defmodule ThreatShield.MembersTest do
       assert :invalid_invite = invite_error_reason(Accounts.accept_invite(invite.id, actor: user))
       assert {:ok, nil} = Accounts.get_invite_by_token(invite.token)
 
-      Accounts.delete_expired_invites()
+      assert %Ash.BulkResult{status: :success} = Accounts.delete_expired_invites()
       refute Repo.get(Invite, invite.id)
     end
 

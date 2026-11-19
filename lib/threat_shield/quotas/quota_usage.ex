@@ -1,4 +1,6 @@
 defmodule ThreatShield.Quotas.QuotaUsage do
+  # credo:disable-for-this-file AshCredo.Check.Design.MissingTimestamps
+  # A usage is never updated; its attribute `timestamp` records when it happened.
   @moduledoc """
   Quota usage resource. Tracks how much of a quota has been used by an organisation or user.
   """
@@ -71,6 +73,7 @@ defmodule ThreatShield.Quotas.QuotaUsage do
     defaults [:read]
 
     create :create do
+      description "Records a usage of a quota of an organisation."
       accept [:quota_type, :amount, :message, :timestamp, :organisation_id, :user_id]
     end
 
@@ -88,6 +91,7 @@ defmodule ThreatShield.Quotas.QuotaUsage do
     end
 
     read :get_usage do
+      description "Lists the usages of a quota of an organisation since a point in time."
       argument :organisation_id, :integer, allow_nil?: false
       argument :quota_type, :string, allow_nil?: false
       argument :since, :utc_datetime_usec, allow_nil?: false

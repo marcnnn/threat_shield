@@ -16,6 +16,7 @@ defmodule AshThreatShield.Checks.OrganisationRoleForCreate do
 
   require Ash.Query
 
+  alias Ash.Resource.Info
   alias AshThreatShield.Authorization
 
   @impl true
@@ -69,6 +70,7 @@ defmodule AshThreatShield.Checks.OrganisationRoleForCreate do
         resource
         |> Ash.Query.filter(id == ^parent_id)
         |> Ash.Query.load(load_for(resource))
+        # a lookup inside the policy check, see above
         |> Ash.read_one(authorize?: false)
         |> case do
           {:ok, %{organisation_id: org_id}} -> org_id
@@ -78,7 +80,7 @@ defmodule AshThreatShield.Checks.OrganisationRoleForCreate do
   end
 
   defp load_for(resource) do
-    if Ash.Resource.Info.calculation(resource, :organisation_id), do: [:organisation_id], else: []
+    if Info.calculation(resource, :organisation_id), do: [:organisation_id], else: []
   end
 
   defp value(%Ash.Changeset{} = changeset, attribute),

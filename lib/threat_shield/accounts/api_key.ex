@@ -1,4 +1,6 @@
 defmodule ThreatShield.Accounts.ApiKey do
+  # credo:disable-for-this-file AshCredo.Check.Design.MissingTimestamps
+  # A key is never updated, so it has no update timestamp.
   @moduledoc """
   A personal API key, for clients such as chat agents that act for a user. Only a
   hash is stored. The key itself is in `api_key.__metadata__.plaintext_api_key`
@@ -44,7 +46,7 @@ defmodule ThreatShield.Accounts.ApiKey do
   end
 
   calculations do
-    calculate :valid, :boolean, expr(expires_at > now())
+    calculate :valid, :boolean, expr(expires_at > now()), allow_nil?: false
   end
 
   identities do

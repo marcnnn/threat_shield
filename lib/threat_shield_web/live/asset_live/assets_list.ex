@@ -1,9 +1,9 @@
 defmodule ThreatShieldWeb.AssetLive.AssetsList do
   use ThreatShieldWeb, :live_component
 
+  alias AshThreatShield.ThreatManagement
   alias ThreatShield.Scope
   alias ThreatShieldWeb.AiSuggestions
-  alias AshThreatShield.ThreatManagement
 
   alias AshThreatShield.ThreatManagement.System
 

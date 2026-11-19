@@ -17,6 +17,7 @@ defmodule AshThreatShield.Checks.OrganisationRole do
   """
   use Ash.Policy.FilterCheck
 
+  alias Ash.Query.Exists
   alias AshThreatShield.Authorization
 
   @impl true
@@ -30,7 +31,7 @@ defmodule AshThreatShield.Checks.OrganisationRole do
 
     case Keyword.get(opts, :path, [:organisation]) do
       [] -> organisation_filter
-      path -> Ash.Query.Exists.new(path, organisation_filter)
+      path -> Exists.new(path, organisation_filter)
     end
   end
 end

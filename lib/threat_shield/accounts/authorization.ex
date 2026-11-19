@@ -27,6 +27,7 @@ defmodule ThreatShield.Accounts.Authorization do
     |> Ash.Query.filter(
       user_id == ^actor.id and organisation_id == ^organisation_id and role in ^roles
     )
+    # a lookup inside the policy check, see above
     |> Ash.exists?(authorize?: false)
   end
 
@@ -36,6 +37,7 @@ defmodule ThreatShield.Accounts.Authorization do
 
     Membership
     |> Ash.Query.filter(user_id == ^actor.id and role in ^roles)
+    # a lookup inside the policy check, see above
     |> Ash.exists?(authorize?: false)
   end
 end

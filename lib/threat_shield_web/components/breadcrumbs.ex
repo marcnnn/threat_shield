@@ -1,4 +1,7 @@
 defmodule ThreatShieldWeb.Breadcrumbs do
+  @moduledoc """
+  The breadcrumbs of the pages, built from the path and the scope.
+  """
   use Phoenix.Component
   import ThreatShieldWeb.CoreComponents
 
@@ -94,8 +97,7 @@ defmodule ThreatShieldWeb.Breadcrumbs do
     |> Enum.drop_while(fn b -> b != breadcrumb end)
     |> Enum.reverse()
     |> Enum.map(fn b -> Map.get(@breadcrumb_def, b) end)
-    |> Enum.map(fn b -> Map.get(b, :path) end)
-    |> Enum.join("/")
+    |> Enum.map_join("/", fn b -> Map.get(b, :path) end)
     |> fill_in_ids(context)
   end
 
@@ -134,8 +136,7 @@ defmodule ThreatShieldWeb.Breadcrumbs do
   defp fill_in_ids(path, context) do
     path
     |> String.split("/")
-    |> Enum.map(fn chunk -> replace_chunk(chunk, context) end)
-    |> Enum.join("/")
+    |> Enum.map_join("/", fn chunk -> replace_chunk(chunk, context) end)
   end
 
   defp replace_chunk(chunk, %{scope: %Scope{} = scope} = context) do

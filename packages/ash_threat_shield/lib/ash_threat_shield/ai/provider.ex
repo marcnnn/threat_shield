@@ -10,7 +10,7 @@ defmodule AshThreatShield.AI.Provider do
   answer; parsing it is the job of `AshThreatShield.AI`.
   """
 
-  @typedoc "A chat message, e.g. `%{role: \"system\", content: \"...\"}`."
+  @typedoc ~s(A chat message, e.g. `%{role: "system", content: "..."}`.)
   @type message :: %{role: String.t(), content: String.t()}
 
   @doc """

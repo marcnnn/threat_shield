@@ -8,12 +8,12 @@ defmodule AshThreatShield.AITest do
 
   alias AshThreatShield.AI
   alias AshThreatShield.ThreatManagement
-  alias AshThreatShield.ThreatManagement.Focus
   alias AshThreatShield.ThreatManagement.Asset
+  alias AshThreatShield.ThreatManagement.Description
+  alias AshThreatShield.ThreatManagement.Focus
   alias AshThreatShield.ThreatManagement.Mitigation
   alias AshThreatShield.ThreatManagement.Risk
   alias AshThreatShield.ThreatManagement.Threat
-  alias AshThreatShield.ThreatManagement.Description
 
   setup do
     Application.put_env(:ash_threat_shield, :ai_stub_listener, self())
@@ -67,7 +67,7 @@ defmodule AshThreatShield.AITest do
     organisation
   end
 
-  defp prompts() do
+  defp prompts do
     assert_received {:ai_request,
                      [
                        %{role: "system", content: system_prompt},

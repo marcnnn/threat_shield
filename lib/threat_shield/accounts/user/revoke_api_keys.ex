@@ -20,6 +20,7 @@ defmodule ThreatShield.Accounts.User.Changes.RevokeApiKeys do
       ApiKey
       |> Ash.Query.filter(user_id == ^user.id)
       |> Ash.bulk_destroy(:destroy, %{},
+        # authorized by the action, see above
         authorize?: false,
         strategy: [:atomic, :stream],
         return_errors?: true

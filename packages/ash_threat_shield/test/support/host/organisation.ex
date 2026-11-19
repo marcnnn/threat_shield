@@ -33,16 +33,9 @@ defmodule AshThreatShield.Test.Organisation do
     defaults [:read, :destroy]
 
     create :create do
+      description "Creates an organisation with the actor as its owner."
       accept [:name, :attributes]
-
-      change after_action(fn _changeset, organisation, context ->
-               AshThreatShield.Test.Accounts.create_membership!(
-                 %{role: :owner, user_id: context.actor.id, organisation_id: organisation.id},
-                 authorize?: false
-               )
-
-               {:ok, organisation}
-             end)
+      change AshThreatShield.Test.AddOwnerMembership
     end
   end
 

@@ -5,8 +5,8 @@ defmodule ThreatShield.Exporters.ExcelExporter do
   risks `:threat_name` and `:estimated_risk_cost`, and the mitigations `:risk_name`.
   """
 
-  alias Elixlsx.Workbook
   alias Elixlsx.Sheet
+  alias Elixlsx.Workbook
 
   def export(systems, threats, assets, risks, mitigations) do
     sheets = [

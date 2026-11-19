@@ -75,6 +75,8 @@ defmodule ThreatShieldWeb.UserResetPasswordLive do
 
   defp reset_form(user, token) do
     user
+    # the visitor is not signed in; the reset token authorizes the action
+    # credo:disable-for-next-line CredoChecks.ActorInWebCalls
     |> AshPhoenix.Form.for_update(:password_reset_with_password,
       as: "user",
       prepare_params: fn params, _phase -> Map.put(params, "reset_token", token) end

@@ -1,10 +1,10 @@
 defmodule ThreatShieldWeb.McpTest do
   use ThreatShieldWeb.ConnCase
 
-  alias ThreatShield.{AccountsFixtures, MembersFixtures, OrganisationsFixtures}
   alias AshThreatShield.{RisksFixtures, SystemsFixtures, ThreatsFixtures}
-  alias ThreatShield.Repo
   alias AshThreatShield.ThreatManagement.{Mitigation, System, Threat}
+  alias ThreatShield.{AccountsFixtures, MembersFixtures, OrganisationsFixtures}
+  alias ThreatShield.Repo
 
   @tools ~w(
     list_organisations threat_model_context risk_summary

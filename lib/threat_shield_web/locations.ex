@@ -6,7 +6,7 @@ defmodule ThreatShieldWeb.Locations do
 
   use Gettext, backend: ThreatShieldWeb.Gettext
 
-  def predefined_locations() do
+  def predefined_locations do
     [
       %{iso_code: "AD", flag: "🇦🇩", name: dgettext("organisation", "Andorra")},
       %{iso_code: "AE", flag: "🇦🇪", name: dgettext("organisation", "United Arab Emirates")},
@@ -316,7 +316,7 @@ defmodule ThreatShieldWeb.Locations do
     ]
   end
 
-  def list_locations() do
+  def list_locations do
     predefined_locations()
     |> Enum.sort_by(& &1.name)
     |> Enum.reduce([{dgettext("organisation", "Please choose your country"), ""}], fn location,

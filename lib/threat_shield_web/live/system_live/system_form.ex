@@ -3,8 +3,8 @@ defmodule ThreatShieldWeb.SystemLive.SystemForm do
 
   import ThreatShieldWeb.FormHelpers
 
-  alias AshThreatShield.ThreatManagement.System
   alias AshThreatShield.DynamicAttribute
+  alias AshThreatShield.ThreatManagement.System
 
   import AshThreatShield.ThreatManagement.System, only: [attributes_config: 0]
 

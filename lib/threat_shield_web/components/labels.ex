@@ -1,14 +1,17 @@
 defmodule ThreatShieldWeb.Labels do
+  @moduledoc """
+  The labels and status badges of the entities of the threat model.
+  """
   use Phoenix.Component
 
   use ThreatShieldWeb, :verified_routes
   use Gettext, backend: ThreatShieldWeb.Gettext
 
-  alias AshThreatShield.ThreatManagement.System
   alias AshThreatShield.ThreatManagement.Asset
-  alias AshThreatShield.ThreatManagement.Threat
-  alias AshThreatShield.ThreatManagement.Risk
   alias AshThreatShield.ThreatManagement.{MitigationStatus, RiskStatus}
+  alias AshThreatShield.ThreatManagement.Risk
+  alias AshThreatShield.ThreatManagement.System
+  alias AshThreatShield.ThreatManagement.Threat
 
   def system_label(%Risk{} = risk) do
     system_label(risk.threat)
@@ -71,14 +74,14 @@ defmodule ThreatShieldWeb.Labels do
   @doc """
   The states of a risk with their labels, in the order of `RiskStatus`.
   """
-  def available_risk_states() do
+  def available_risk_states do
     Enum.map(RiskStatus.values(), &{&1, risk_status_label(&1)})
   end
 
   @doc """
   The states of a mitigation with their labels, in the order of `MitigationStatus`.
   """
-  def available_mitigation_states() do
+  def available_mitigation_states do
     Enum.map(MitigationStatus.values(), &{&1, mitigation_status_label(&1)})
   end
 end

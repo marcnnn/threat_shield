@@ -2,9 +2,9 @@ defmodule ThreatShieldWeb.OrganisationLive.OrganisationDetails do
   alias ThreatShield.Accounts.Organisation
   use ThreatShieldWeb, :live_view
 
+  alias AshThreatShield.ThreatManagement
   alias ThreatShield.Accounts
   alias ThreatShieldWeb.Locations
-  alias AshThreatShield.ThreatManagement
 
   import ThreatShield.Accounts.Organisation,
     only: [attributes_config: 0]

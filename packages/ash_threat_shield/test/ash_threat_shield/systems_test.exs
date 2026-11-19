@@ -4,9 +4,9 @@ defmodule AshThreatShield.SystemsTest do
   alias AshThreatShield.AssetsFixtures
   alias AshThreatShield.RisksFixtures
   alias AshThreatShield.SystemsFixtures
-  alias AshThreatShield.ThreatsFixtures
   alias AshThreatShield.ThreatManagement
   alias AshThreatShield.ThreatManagement.{Asset, Risk, System, Threat}
+  alias AshThreatShield.ThreatsFixtures
 
   describe "systems" do
     test "create_system with valid data creates a system" do
@@ -25,7 +25,7 @@ defmodule AshThreatShield.SystemsTest do
 
       assert system.attributes == %{}
       assert Repo.get!(System, system.id).attributes == %{}
-      assert AshThreatShield.ThreatManagement.Description.system(system) =~ "some name"
+      assert ThreatManagement.Description.system(system) =~ "some name"
     end
 
     test "destroy_system deletes the assets and threats of the system" do

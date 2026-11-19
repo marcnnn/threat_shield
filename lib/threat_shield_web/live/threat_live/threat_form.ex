@@ -3,8 +3,8 @@ defmodule ThreatShieldWeb.ThreatLive.ThreatForm do
 
   import ThreatShieldWeb.FormHelpers
 
-  alias ThreatShield.Scope
   alias AshThreatShield.ThreatManagement.Threat
+  alias ThreatShield.Scope
 
   use Gettext, backend: ThreatShieldWeb.Gettext
 

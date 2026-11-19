@@ -3,11 +3,11 @@ defmodule ThreatShieldWeb.OrganisationLiveTest do
 
   import Phoenix.LiveViewTest
 
+  alias ThreatShield.Accounts.Invite
+  alias ThreatShield.Accounts.Organisation
   alias ThreatShield.AccountsFixtures
   alias ThreatShield.MembersFixtures
   alias ThreatShield.OrganisationsFixtures
-  alias ThreatShield.Accounts.Organisation
-  alias ThreatShield.Accounts.Invite
   alias ThreatShield.Repo
 
   @create_attrs %{name: "some name"}
