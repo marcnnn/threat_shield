@@ -9,7 +9,23 @@ defmodule ThreatShield.MixProject do
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
-      deps: deps()
+      deps: deps(),
+      hex: [ignore_advisories: ignored_advisories()]
+    ]
+  end
+
+  # Advisories of `mix hex.audit` that do not affect the app and cannot be fixed by an
+  # update yet. Remove an entry as soon as the update is possible.
+  defp ignored_advisories do
+    [
+      # assent 0.2.13, Sign in with Apple (fixed in 0.3.2): the app signs in only with
+      # a password or an API key and has no OAuth strategy, so assent's Apple code
+      # never runs. ash_authentication 4.15 (the latest) requires assent < 0.3.
+      "EEF-CVE-2026-117656",
+      # phoenix_live_view 0.20.17, open redirect with tab/LF/CR in redirect/2 (fixed in
+      # 1.0.19): the app redirects only to paths it builds itself (verified routes
+      # and ids), never to a URL from a request. The fix needs LiveView 1.x.
+      "EEF-CVE-2026-64941"
     ]
   end
 
