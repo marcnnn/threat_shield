@@ -4,8 +4,8 @@ defmodule ThreatShieldWeb.ThreatLive.ThreatsList do
   alias ThreatShield.Scope
   alias ThreatShieldWeb.AiSuggestions
 
-  alias ThreatShield.ThreatManagement
-  alias ThreatShield.ThreatManagement.System
+  alias AshThreatShield.ThreatManagement
+  alias AshThreatShield.ThreatManagement.System
 
   import ThreatShieldWeb.Labels
   import ThreatShieldWeb.Helpers

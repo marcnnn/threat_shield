@@ -8,7 +8,7 @@
     :ash_authentication,
     :ash_phoenix
   ],
-  subdirectories: ["priv/*/migrations"],
+  subdirectories: ["priv/*/migrations", "packages/*"],
   plugins: [Phoenix.LiveView.HTMLFormatter],
   inputs: ["*.{heex,ex,exs}", "{config,lib,test}/**/*.{heex,ex,exs}", "priv/*/seeds.exs"]
 ]

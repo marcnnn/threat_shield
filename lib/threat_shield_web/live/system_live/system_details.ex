@@ -5,8 +5,8 @@ defmodule ThreatShieldWeb.SystemLive.SystemDetails do
   use ThreatShieldWeb, :live_view
 
   alias ThreatShield.Scope
-  alias ThreatShield.ThreatManagement
-  alias ThreatShield.ThreatManagement.System
+  alias AshThreatShield.ThreatManagement
+  alias AshThreatShield.ThreatManagement.System
   import ThreatShieldWeb.Helpers, only: [add_breadcrumbs: 2, link_to: 1]
 
   @impl true

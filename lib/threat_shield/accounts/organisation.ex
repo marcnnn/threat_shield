@@ -5,8 +5,10 @@ defmodule ThreatShield.Accounts.Organisation do
     data_layer: AshPostgres.DataLayer,
     authorizers: [Ash.Policy.Authorizer]
 
-  alias ThreatShield.Checks.OrganisationRole
-  alias ThreatShield.DynamicAttribute
+  @behaviour AshThreatShield.Owner
+
+  alias AshThreatShield.Checks.OrganisationRole
+  alias AshThreatShield.DynamicAttribute
 
   @attributes [
     %DynamicAttribute{
@@ -95,9 +97,9 @@ defmodule ThreatShield.Accounts.Organisation do
       description "The membership of the actor in the organisation."
     end
 
-    has_many :systems, ThreatShield.ThreatManagement.System, public?: true
-    has_many :threats, ThreatShield.ThreatManagement.Threat, public?: true
-    has_many :assets, ThreatShield.ThreatManagement.Asset, public?: true
+    has_many :systems, AshThreatShield.ThreatManagement.System, public?: true
+    has_many :threats, AshThreatShield.ThreatManagement.Threat, public?: true
+    has_many :assets, AshThreatShield.ThreatManagement.Asset, public?: true
     has_many :invites, ThreatShield.Accounts.Invite, public?: true
   end
 
@@ -130,7 +132,7 @@ defmodule ThreatShield.Accounts.Organisation do
   end
 
   validations do
-    validate {ThreatShield.Validations.AttributeValues, attribute: :attributes}
+    validate {AshThreatShield.Validations.AttributeValues, attribute: :attributes}
   end
 
   actions do
@@ -171,6 +173,7 @@ defmodule ThreatShield.Accounts.Organisation do
     end
   end
 
+  @impl AshThreatShield.Owner
   def attributes_config do
     @attributes
   end

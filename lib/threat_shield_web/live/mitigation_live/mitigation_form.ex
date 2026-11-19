@@ -3,7 +3,7 @@ defmodule ThreatShieldWeb.MitigationLive.MitigationForm do
 
   import ThreatShieldWeb.FormHelpers
 
-  alias ThreatShield.ThreatManagement.Mitigation
+  alias AshThreatShield.ThreatManagement.Mitigation
   alias ThreatShieldWeb.Labels
 
   @impl true

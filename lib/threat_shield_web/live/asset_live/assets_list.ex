@@ -3,9 +3,9 @@ defmodule ThreatShieldWeb.AssetLive.AssetsList do
 
   alias ThreatShield.Scope
   alias ThreatShieldWeb.AiSuggestions
-  alias ThreatShield.ThreatManagement
+  alias AshThreatShield.ThreatManagement
 
-  alias ThreatShield.ThreatManagement.System
+  alias AshThreatShield.ThreatManagement.System
 
   import ThreatShieldWeb.Helpers, only: [link_to: 1, system_options: 1]
 

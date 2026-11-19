@@ -12,7 +12,8 @@ defmodule ThreatShield.Accounts.Invite do
 
   import ThreatShield.Const.RetentionTimes, only: [invite_lifetime_in_seconds: 0]
 
-  alias ThreatShield.Checks.{InviteAddressee, OrganisationRole, OrganisationRoleForCreate}
+  alias AshThreatShield.Checks.{OrganisationRole, OrganisationRoleForCreate}
+  alias ThreatShield.Checks.InviteAddressee
 
   postgres do
     table "invites"

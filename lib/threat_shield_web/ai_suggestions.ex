@@ -5,7 +5,7 @@ defmodule ThreatShieldWeb.AiSuggestions do
   A list component
 
     * calls `request/2` to ask the AI assistant for suggestions, with a function
-      that calls a suggestion action of `ThreatShield.ThreatManagement` (e.g.
+      that calls a suggestion action of `AshThreatShield.ThreatManagement` (e.g.
       `suggest_threats/3`) with the user as `actor:`. The action checks the right
       and the quota,
     * passes the result from its `handle_async/3` callback to `handle_result/2`,

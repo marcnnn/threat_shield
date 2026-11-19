@@ -3,7 +3,7 @@ defmodule ThreatShieldWeb.RiskLive.RiskForm do
 
   import ThreatShieldWeb.FormHelpers
 
-  alias ThreatShield.ThreatManagement.Risk
+  alias AshThreatShield.ThreatManagement.Risk
   alias ThreatShieldWeb.Labels
 
   @impl true

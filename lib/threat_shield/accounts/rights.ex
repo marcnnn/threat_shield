@@ -1,8 +1,9 @@
 defmodule ThreatShield.Accounts.Rights do
   @moduledoc """
   The rights of the roles in an organisation. This map is the single source of truth:
-  the Ash policies authorize with it (see `ThreatShield.Checks.OrganisationRole`), and
-  the templates use `may?/2` to show only the actions that the policies allow.
+  the Ash policies authorize with it (the checks of the threat model library ask
+  `ThreatShield.Accounts.Authorization`), and the templates use `may?/2` to show only
+  the actions that the policies allow.
   """
 
   alias ThreatShield.Accounts.Membership

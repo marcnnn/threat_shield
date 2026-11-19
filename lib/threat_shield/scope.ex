@@ -6,7 +6,7 @@ defmodule ThreatShield.Scope do
   """
   alias ThreatShield.Accounts.User
   alias ThreatShield.Accounts.{Membership, Organisation}
-  alias ThreatShield.ThreatManagement.System
+  alias AshThreatShield.ThreatManagement.System
 
   defstruct [
     :id,

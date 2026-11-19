@@ -1,8 +1,8 @@
 defmodule ThreatShieldWeb.AssetLive.AssetDetails do
   use ThreatShieldWeb, :live_view
 
-  alias ThreatShield.ThreatManagement
-  alias ThreatShield.ThreatManagement.Asset
+  alias AshThreatShield.ThreatManagement
+  alias AshThreatShield.ThreatManagement.Asset
 
   import ThreatShieldWeb.ScopeUrlBinding
 

@@ -3,7 +3,7 @@ defmodule ThreatShieldWeb.SystemLiveTest do
 
   alias ThreatShield.AccountsFixtures
   alias ThreatShield.OrganisationsFixtures
-  alias ThreatShield.SystemsFixtures
+  alias AshThreatShield.SystemsFixtures
 
   @create_attrs %{attributes: %{}, name: "some name", description: "some description"}
 

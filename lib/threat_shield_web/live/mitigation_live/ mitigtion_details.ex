@@ -1,7 +1,7 @@
 defmodule ThreatShieldWeb.MitigationLive.MitigationDetails do
   use ThreatShieldWeb, :live_view
 
-  alias ThreatShield.ThreatManagement
+  alias AshThreatShield.ThreatManagement
 
   import ThreatShieldWeb.Helpers, only: [add_breadcrumbs: 2, get_path_prefix: 1]
 

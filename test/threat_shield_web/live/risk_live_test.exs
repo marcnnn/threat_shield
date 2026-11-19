@@ -2,10 +2,10 @@ defmodule ThreatShieldWeb.RiskLiveTest do
   use ThreatShieldWeb.ConnCase
 
   import Phoenix.LiveViewTest
-  import ThreatShield.RisksFixtures
+  import AshThreatShield.RisksFixtures
 
   alias ThreatShield.OrganisationsFixtures
-  alias ThreatShield.ThreatsFixtures
+  alias AshThreatShield.ThreatsFixtures
 
   setup :register_and_log_in_user
 

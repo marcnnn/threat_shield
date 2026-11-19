@@ -4,7 +4,7 @@ defmodule ThreatShieldWeb.AssetLive.AssetForm do
   import ThreatShieldWeb.FormHelpers
 
   alias ThreatShield.Scope
-  alias ThreatShield.ThreatManagement.Asset
+  alias AshThreatShield.ThreatManagement.Asset
 
   import ThreatShieldWeb.TsComponents
 

@@ -4,7 +4,7 @@ defmodule ThreatShieldWeb.OrganisationLive.OrganisationDetails do
 
   alias ThreatShield.Accounts
   alias ThreatShieldWeb.Locations
-  alias ThreatShield.ThreatManagement
+  alias AshThreatShield.ThreatManagement
 
   import ThreatShield.Accounts.Organisation,
     only: [attributes_config: 0]

@@ -3,10 +3,10 @@ defmodule ThreatShieldWeb.SystemLive.SystemForm do
 
   import ThreatShieldWeb.FormHelpers
 
-  alias ThreatShield.ThreatManagement.System
-  alias ThreatShield.DynamicAttribute
+  alias AshThreatShield.ThreatManagement.System
+  alias AshThreatShield.DynamicAttribute
 
-  import ThreatShield.ThreatManagement.System, only: [attributes_config: 0]
+  import AshThreatShield.ThreatManagement.System, only: [attributes_config: 0]
 
   @impl true
   def render(assigns) do

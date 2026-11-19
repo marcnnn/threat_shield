@@ -6,8 +6,8 @@ defmodule ThreatShieldWeb.ScopeUrlBinding do
   alias ThreatShield.Scope
 
   alias ThreatShield.Accounts.User
-  alias ThreatShield.ThreatManagement.Asset
-  alias ThreatShield.ThreatManagement.Threat
+  alias AshThreatShield.ThreatManagement.Asset
+  alias AshThreatShield.ThreatManagement.Threat
 
   use Phoenix.VerifiedRoutes,
     endpoint: ThreatShieldWeb.Endpoint,

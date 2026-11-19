@@ -5,8 +5,8 @@ defmodule ThreatShieldWeb.MitigationLive.MitigationsList do
   alias ThreatShieldWeb.AiSuggestions
 
   alias ThreatShield.Accounts.User
-  alias ThreatShield.ThreatManagement.Risk
-  alias ThreatShield.ThreatManagement
+  alias AshThreatShield.ThreatManagement.Risk
+  alias AshThreatShield.ThreatManagement
 
   @moduledoc """
   This component renders a list of mitigations for a given risk.

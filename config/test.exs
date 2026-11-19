@@ -27,7 +27,7 @@ config :threat_shield, ThreatShieldWeb.Endpoint,
 config :threat_shield, ThreatShield.Mailer, adapter: Swoosh.Adapters.Test
 
 # In test we don't call a language model.
-config :threat_shield, :ai_provider, ThreatShield.AI.StubProvider
+config :ash_threat_shield, :ai_provider, AshThreatShield.AI.Providers.Stub
 
 # Disable swoosh api client as it is only required for production adapters.
 config :swoosh, :api_client, false

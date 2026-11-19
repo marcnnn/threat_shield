@@ -2,10 +2,10 @@ defmodule ThreatShield.Analytics.RiskAnalytics do
   @moduledoc """
   Scales of the risk chart of the risk board. The risks need the calculation
   `:estimated_risk_cost` loaded. The figures of the board come from the action
-  `ThreatShield.ThreatManagement.ThreatModel.risk_summary`.
+  `AshThreatShield.ThreatManagement.ThreatModel.risk_summary`.
   """
 
-  alias ThreatShield.ThreatManagement.Risk
+  alias AshThreatShield.ThreatManagement.Risk
 
   def max_cost(risks) do
     risks

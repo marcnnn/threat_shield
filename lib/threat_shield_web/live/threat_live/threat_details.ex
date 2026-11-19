@@ -2,9 +2,9 @@ defmodule ThreatShieldWeb.ThreatLive.ThreatDetails do
   use ThreatShieldWeb, :live_view
 
   alias ThreatShield.Scope
-  alias ThreatShield.ThreatManagement
-  alias ThreatShield.ThreatManagement.Threat
-  alias ThreatShield.ThreatManagement.Risk
+  alias AshThreatShield.ThreatManagement
+  alias AshThreatShield.ThreatManagement.Threat
+  alias AshThreatShield.ThreatManagement.Risk
 
   import ThreatShieldWeb.ScopeUrlBinding
 

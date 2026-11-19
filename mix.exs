@@ -24,7 +24,10 @@ defmodule ThreatShield.MixProject do
   end
 
   # Specifies which paths to compile per environment.
-  defp elixirc_paths(:test), do: ["lib", "test/support"]
+  # The fixtures of the threat model are shared with the tests of the library.
+  defp elixirc_paths(:test),
+    do: ["lib", "test/support", "packages/ash_threat_shield/test/support/fixtures"]
+
   defp elixirc_paths(_), do: ["lib"]
 
   # Specifies your project dependencies.
@@ -32,6 +35,7 @@ defmodule ThreatShield.MixProject do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
+      {:ash_threat_shield, path: "packages/ash_threat_shield"},
       {:ash, "~> 3.0"},
       {:ash_postgres, "~> 2.0"},
       {:ash_authentication, "~> 4.0"},

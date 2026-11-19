@@ -22,8 +22,7 @@ defmodule ThreatShield.Application do
       # Start the Endpoint (http/https)
       ThreatShieldWeb.Endpoint,
       # Start a worker by calling: ThreatShield.Worker.start_link(arg)
-      ThreatShield.Periodically,
-      ThreatShield.DynamicAttribute
+      ThreatShield.Periodically
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

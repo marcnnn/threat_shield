@@ -1,7 +1,8 @@
 defmodule ThreatShieldWeb.ExportController do
   use ThreatShieldWeb, :controller
 
-  alias ThreatShield.{Accounts, ThreatManagement}
+  alias AshThreatShield.ThreatManagement
+  alias ThreatShield.Accounts
   alias ThreatShield.Accounts.Organisation
   alias ThreatShield.Exporters.ExcelExporter
 

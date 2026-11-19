@@ -12,7 +12,7 @@ defmodule ThreatShield.Accounts.Membership do
 
   alias ThreatShield.Accounts.Changes.AcceptInvite
   alias ThreatShield.Accounts.Changes.KeepsOwner
-  alias ThreatShield.Checks.OrganisationRole
+  alias AshThreatShield.Checks.OrganisationRole
 
   postgres do
     table "memberships"

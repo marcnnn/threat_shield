@@ -3,24 +3,24 @@ defmodule ThreatShieldWeb.AiSuggestionsLiveTest do
   Tests the AI suggestion flow of the list components: request suggestions,
   select one in the dialog, and create the entity.
 
-  The AI provider is replaced by `ThreatShield.AI.StubProvider`.
+  The AI provider is replaced by `AshThreatShield.AI.Providers.Stub`.
   """
   use ThreatShieldWeb.ConnCase
 
   import Phoenix.LiveViewTest
 
-  alias ThreatShield.AssetsFixtures
+  alias AshThreatShield.AssetsFixtures
   alias ThreatShield.OrganisationsFixtures
-  alias ThreatShield.RisksFixtures
-  alias ThreatShield.ThreatsFixtures
+  alias AshThreatShield.RisksFixtures
+  alias AshThreatShield.ThreatsFixtures
 
   alias ThreatShield.Repo
-  alias ThreatShield.SystemsFixtures
+  alias AshThreatShield.SystemsFixtures
   alias ThreatShield.Accounts.Organisation
-  alias ThreatShield.ThreatManagement.Asset
-  alias ThreatShield.ThreatManagement.Mitigation
-  alias ThreatShield.ThreatManagement.Risk
-  alias ThreatShield.ThreatManagement.Threat
+  alias AshThreatShield.ThreatManagement.Asset
+  alias AshThreatShield.ThreatManagement.Mitigation
+  alias AshThreatShield.ThreatManagement.Risk
+  alias AshThreatShield.ThreatManagement.Threat
 
   @moduletag :capture_log
 
@@ -158,8 +158,8 @@ defmodule ThreatShieldWeb.AiSuggestionsLiveTest do
     end
 
     test "an error of the AI provider closes the dialog with a message", %{view: view, path: path} do
-      Application.put_env(:threat_shield, :ai_stub_result, {:error, :timeout})
-      on_exit(fn -> Application.delete_env(:threat_shield, :ai_stub_result) end)
+      Application.put_env(:ash_threat_shield, :ai_stub_result, {:error, :timeout})
+      on_exit(fn -> Application.delete_env(:ash_threat_shield, :ai_stub_result) end)
 
       view |> element(~s([phx-click="suggest_threats"])) |> render_click()
 
@@ -168,8 +168,8 @@ defmodule ThreatShieldWeb.AiSuggestionsLiveTest do
     end
 
     test "an unexpected response closes the dialog with a message", %{view: view, path: path} do
-      Application.put_env(:threat_shield, :ai_stub_result, {:ok, "no JSON"})
-      on_exit(fn -> Application.delete_env(:threat_shield, :ai_stub_result) end)
+      Application.put_env(:ash_threat_shield, :ai_stub_result, {:ok, "no JSON"})
+      on_exit(fn -> Application.delete_env(:ash_threat_shield, :ai_stub_result) end)
 
       view |> element(~s([phx-click="suggest_threats"])) |> render_click()
 

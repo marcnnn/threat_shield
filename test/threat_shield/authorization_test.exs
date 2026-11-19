@@ -6,16 +6,16 @@ defmodule ThreatShield.AuthorizationTest do
   """
   use ThreatShield.DataCase
 
-  alias ThreatShield.{Accounts, ThreatManagement}
+  alias AshThreatShield.ThreatManagement
+  alias ThreatShield.Accounts
   alias ThreatShield.Accounts.Organisation
-  alias ThreatShield.ThreatManagement.{Asset, Mitigation, Risk, System, Threat}
+  alias AshThreatShield.ThreatManagement.{Asset, Mitigation, Risk, System, Threat}
 
-  alias ThreatShield.{
-    AccountsFixtures,
+  alias ThreatShield.{AccountsFixtures, MembersFixtures, OrganisationsFixtures}
+
+  alias AshThreatShield.{
     AssetsFixtures,
-    MembersFixtures,
     MitigationsFixtures,
-    OrganisationsFixtures,
     RisksFixtures,
     SystemsFixtures,
     ThreatsFixtures

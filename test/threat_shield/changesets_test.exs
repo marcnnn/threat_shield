@@ -7,11 +7,11 @@ defmodule ThreatShield.ChangesetsTest do
   use ThreatShield.DataCase, async: true
 
   alias ThreatShield.Accounts.Organisation
-  alias ThreatShield.ThreatManagement.Asset
-  alias ThreatShield.ThreatManagement.Mitigation
-  alias ThreatShield.ThreatManagement.Risk
-  alias ThreatShield.ThreatManagement.System
-  alias ThreatShield.ThreatManagement.Threat
+  alias AshThreatShield.ThreatManagement.Asset
+  alias AshThreatShield.ThreatManagement.Mitigation
+  alias AshThreatShield.ThreatManagement.Risk
+  alias AshThreatShield.ThreatManagement.System
+  alias AshThreatShield.ThreatManagement.Threat
 
   # The changeset of the create action, as the contexts build it
   defp changeset(resource, attrs) do
@@ -61,6 +61,12 @@ defmodule ThreatShield.ChangesetsTest do
     for field <- [:implementation_notes, :verification_method, :verification_result, :issue_link] do
       assert errors[field] == ["should be at most 255 character(s)"]
     end
+  end
+
+  test "the messages of the library validations have the wording of the forms" do
+    # "is required" of the library, see ThreatShieldWeb.AshErrors
+    assert %{status: ["can't be blank"]} =
+             errors_on(changeset(Mitigation, %{name: "n", description: "d", status: nil}))
   end
 
   test "risk numbers have ranges" do

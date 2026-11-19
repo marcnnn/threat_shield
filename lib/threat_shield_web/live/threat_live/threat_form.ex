@@ -4,7 +4,7 @@ defmodule ThreatShieldWeb.ThreatLive.ThreatForm do
   import ThreatShieldWeb.FormHelpers
 
   alias ThreatShield.Scope
-  alias ThreatShield.ThreatManagement.Threat
+  alias AshThreatShield.ThreatManagement.Threat
 
   import ThreatShieldWeb.Gettext
 

@@ -1,0 +1,6 @@
+/_build/
+/deps/
+/cover/
+/doc/
+erl_crash.dump
+ash_threat_shield-*.tar

@@ -24,9 +24,16 @@ config :threat_shield,
   ecto_repos: [ThreatShield.Repo],
   ash_domains: [
     ThreatShield.Accounts,
-    ThreatShield.ThreatManagement,
+    AshThreatShield.ThreatManagement,
     ThreatShield.Quotas
   ]
+
+# The threat model library (packages/ash_threat_shield, see its README)
+config :ash_threat_shield,
+  repo: ThreatShield.Repo,
+  owner_resource: ThreatShield.Accounts.Organisation,
+  authorization: ThreatShield.Accounts.Authorization,
+  ai_hook: ThreatShield.Quotas.AiQuota
 
 # The links in the account and invite emails, see ThreatShield.Accounts.Senders.Urls
 config :threat_shield, :account_urls, ThreatShieldWeb.AccountUrls

@@ -1,5 +1,5 @@
 defmodule ThreatShieldWeb.OrganisationLive.OrganisationForm do
-  alias ThreatShield.DynamicAttribute
+  alias AshThreatShield.DynamicAttribute
   use ThreatShieldWeb, :live_component
 
   import ThreatShieldWeb.FormHelpers
