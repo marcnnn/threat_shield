@@ -70,7 +70,14 @@ defmodule ThreatShield.MixProject do
       {:ex_rated, "~> 2.1"},
       {:timex, "~> 3.7.11"},
       {:elixlsx, "~> 0.5.1"},
-      {:logger_json, "~> 5.1"}
+      {:logger_json, "~> 5.1"},
+      # static analysis, see "Checks" in AGENTS.md
+      {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
+      {:ash_credo, "~> 0.19.2", only: [:dev, :test], runtime: false},
+      {:sobelow, "~> 0.19", only: [:dev, :test], runtime: false},
+      {:mix_audit, "~> 2.1", only: [:dev, :test], runtime: false},
+      {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
+      {:ex_check, "~> 0.17", only: [:dev, :test], runtime: false}
     ]
   end
 

@@ -45,7 +45,12 @@ defmodule AshThreatShield.MixProject do
       # openai needs httpoison ~> 2.0, which is held at hackney 1.x with open advisories.
       # Its calls work unchanged with httpoison 3 and hackney 4. The override applies
       # only to the builds of this project; a host sets its own.
-      {:httpoison, "~> 3.0", override: true, optional: true}
+      {:httpoison, "~> 3.0", override: true, optional: true},
+      # static analysis, see "Checks" in AGENTS.md of ThreatShield
+      {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
+      {:ash_credo, "~> 0.19.2", only: [:dev, :test], runtime: false},
+      {:mix_audit, "~> 2.1", only: [:dev, :test], runtime: false},
+      {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false}
     ]
   end
 
