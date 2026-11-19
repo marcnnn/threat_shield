@@ -53,3 +53,7 @@ with the same database schema, and must not hold a second copy of the code.
   the host would repeat the resource definitions.
 - **A separate repository for the library.** Needs releases and version bumps for
   every change of the threat model while ThreatShield is its only host.
+- **A UI package with the screens (LiveViews and components themed with daisyUI).**
+  Would let a host mount ready-made screens, but needs Tailwind 4, daisyUI and Phoenix
+  1.8 in ThreatShield first, plus path builders and JS hooks for hosts. The library
+  stays backend only; hosts build their own screens or use the MCP tools.

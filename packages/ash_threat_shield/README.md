@@ -10,6 +10,10 @@ own: the repo, the organisations, the rights of users in them, the language mode
 and, optionally, a hook before each AI request (e.g. a quota). It was extracted from
 [ThreatShield](../../README.md), which uses it as a path dependency.
 
+The library is backend only: it ships no LiveViews, components or styles. A host
+builds its own screens on the code interfaces (e.g. with `AshPhoenix.Form`), or lets
+chat agents work through the MCP tools.
+
 ## Contents
 
 - `AshThreatShield.ThreatManagement`: the domain with code interfaces
