@@ -9,6 +9,7 @@ defmodule ThreatShieldWeb.SecurityHeadersTest do
     assert policy =~ "frame-ancestors 'self'"
     refute policy =~ "openai"
 
-    assert get_resp_header(conn, "x-frame-options") == ["SAMEORIGIN"]
+    # Phoenix 1.8 no longer sends X-Frame-Options; frame-ancestors replaces it
+    assert get_resp_header(conn, "x-frame-options") == []
   end
 end

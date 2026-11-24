@@ -95,7 +95,7 @@ defmodule ThreatShieldWeb.UserResetPasswordLiveTest do
 
       {:ok, conn} =
         lv
-        |> element(~s|main a:fl-contains("Sign in")|)
+        |> element("main a", "Sign in")
         |> render_click()
         |> follow_redirect(conn, ~p"/users/log_in")
 
@@ -110,7 +110,7 @@ defmodule ThreatShieldWeb.UserResetPasswordLiveTest do
 
       {:ok, conn} =
         lv
-        |> element(~s|main a:fl-contains("Sign up")|)
+        |> element("main a", "Sign up")
         |> render_click()
         |> follow_redirect(conn, ~p"/users/register")
 

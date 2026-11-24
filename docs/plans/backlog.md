@@ -5,13 +5,6 @@
 Short entries for open work without a plan of its own. When work on an entry starts and
 needs steps, it gets its own file in this folder and is removed from here.
 
-## Upgrade Phoenix LiveView to 1.0
-
-The app runs on LiveView 0.20 (`mix.exs`: `~> 0.20.12`). The upgrade to 1.0 changes
-`mix.exs`, `mix.lock`, `assets/package.json`, and parts of
-`lib/threat_shield_web/components/core_components.ex`. It fixes the advisory
-EEF-CVE-2026-64941 (fixed in 1.0.19), which `mix.exs` ignores until then.
-
 ## Run tests on all branches
 
 `.github/workflows/test.yml` and `security.yml` trigger on `branches: "*"`. This pattern

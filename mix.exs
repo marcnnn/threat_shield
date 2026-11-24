@@ -28,11 +28,7 @@ defmodule ThreatShield.MixProject do
       # assent 0.2.13, Sign in with Apple (fixed in 0.3.2): the app signs in only with
       # a password or an API key and has no OAuth strategy, so assent's Apple code
       # never runs. ash_authentication 4.15 (the latest) requires assent < 0.3.
-      "EEF-CVE-2026-117656",
-      # phoenix_live_view 0.20.17, open redirect with tab/LF/CR in redirect/2 (fixed in
-      # 1.0.19): the app redirects only to paths it builds itself (verified routes
-      # and ids), never to a URL from a request. The fix needs LiveView 1.x.
-      "EEF-CVE-2026-64941"
+      "EEF-CVE-2026-117656"
     ]
   end
 
@@ -66,16 +62,16 @@ defmodule ThreatShield.MixProject do
       {:ash_ai, "~> 1.5"},
       {:picosat_elixir, "~> 0.2"},
       {:bcrypt_elixir, "~> 3.1"},
-      {:phoenix, "~> 1.7.11"},
+      {:phoenix, "~> 1.8"},
       {:phoenix_ecto, "~> 4.5"},
       {:dotenv, "~> 3.1.0"},
       {:ecto_sql, "~> 3.14"},
       {:postgrex, "~> 0.23"},
       {:phoenix_html, "~> 4.0"},
       {:phoenix_live_reload, "~> 1.2", only: :dev},
-      {:phoenix_live_view, "~> 0.20.12"},
-      {:floki, ">= 0.36.0", only: :test},
-      {:phoenix_live_dashboard, "~> 0.8.3"},
+      {:phoenix_live_view, "~> 1.2"},
+      {:lazy_html, ">= 0.1.0", only: :test},
+      {:phoenix_live_dashboard, "~> 0.9"},
       {:esbuild, "~> 0.7", runtime: Mix.env() == :dev},
       {:tailwind, "~> 0.2.0", runtime: Mix.env() == :dev},
       {:swoosh, "~> 1.3"},

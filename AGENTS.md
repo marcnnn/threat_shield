@@ -20,7 +20,7 @@ dependency (see "Library ash_threat_shield").
 
 - **Elixir** 1.20.4 / **OTP** 29.1.1 (see `.tool-versions`; CI and the `Dockerfile` pin the
   same versions). `mix.exs` requires Elixir `~> 1.20`.
-- **Phoenix** `~> 1.7` with **LiveView** `~> 0.20` — the UI is almost entirely LiveView.
+- **Phoenix** `~> 1.8` with **LiveView** `~> 1.2`; the UI is almost entirely LiveView.
 - **Ash 3** for the domain layer: **AshPostgres** over **PostgreSQL**, **AshPhoenix**
   (forms), **AshAuthentication** (users and tokens). Ecto is still there underneath
   (repo, migrations, test sandbox).
