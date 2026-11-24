@@ -86,7 +86,7 @@ defmodule ThreatShieldWeb.CoreComponents do
         tabindex="0"
       >
         <div class="flex min-h-full items-center justify-center">
-          <div class="min-w-3xl p-4 sm:p-6 lg:py-8">
+          <div class="p-4 sm:p-6 lg:py-8">
             <.focus_wrap
               id={"#{@id}-container"}
               phx-window-keydown={JS.exec("data-cancel", to: "##{@id}")}
@@ -150,7 +150,7 @@ defmodule ThreatShieldWeb.CoreComponents do
         {@rest}
       >
         <div class="flex items-start gap-3">
-          <div class="flex-grow ">
+          <div class="grow ">
             <p :if={@title} class="flex items-center gap-1.5 text-sm font-semibold leading-6">
               <.icon :if={@kind == :info} name="hero-information-circle-mini" class="h-4 w-4" />
               <.icon :if={@kind == :error} name="hero-exclamation-circle-mini" class="h-4 w-4" />
@@ -309,7 +309,7 @@ defmodule ThreatShieldWeb.CoreComponents do
     <button
       type={@type}
       class={[
-        "phx-submit-loading:opacity-75 rounded-lg bg-primary-100 shadow shadow-inner hover:bg-primary-500 py-2 px-3",
+        "phx-submit-loading:opacity-75 rounded-lg bg-primary-100 shadow-sm shadow-inner hover:bg-primary-500 py-2 px-3",
         "text-gray-900 text-sm font-semibold hover:text-white active:text-white",
         "disabled:bg-secondary-900 disabled:pointer-events-none",
         @class
@@ -355,7 +355,7 @@ defmodule ThreatShieldWeb.CoreComponents do
     <button
       type={@type}
       class={[
-        "phx-submit-loading:opacity-75  bg-red-500 hover:bg-red-600 py-2 px-3 shadow rounded-lg shadow-inner",
+        "phx-submit-loading:opacity-75  bg-red-500 hover:bg-red-600 py-2 px-3 shadow-sm rounded-lg shadow-inner",
         "text-white text-sm font-semibold",
         "disabled:bg-red-800 disabled:pointer-events-none",
         @class
@@ -443,7 +443,7 @@ defmodule ThreatShieldWeb.CoreComponents do
           name={@name}
           value="true"
           checked={@checked}
-          class="rounded border-zinc-300 text-gray-900 focus:ring-0"
+          class="rounded-sm border-zinc-300 text-gray-900 focus:ring-0"
           {@rest}
         />
         {@label}
@@ -460,7 +460,7 @@ defmodule ThreatShieldWeb.CoreComponents do
       <select
         id={@id}
         name={@name}
-        class="mt-2 block w-full rounded-sm border border-gray-300 bg-white shadow-sm focus:border-zinc-400 focus:ring-0 sm:text-sm"
+        class="mt-2 block w-full rounded-xs border border-gray-300 bg-white shadow-xs focus:border-zinc-400 focus:ring-0 sm:text-sm"
         multiple={@multiple}
         {@rest}
       >
@@ -481,7 +481,7 @@ defmodule ThreatShieldWeb.CoreComponents do
         name={@name}
         class={[
           "mt-2 block w-full rounded-lg text-gray-900 focus:ring-0 sm:text-sm sm:leading-6",
-          "min-h-[6rem]",
+          "min-h-24",
           @errors == [] && "border-zinc-300 focus:border-zinc-400",
           @errors != [] && "border-rose-400 focus:border-rose-400"
         ]}
@@ -624,7 +624,7 @@ defmodule ThreatShieldWeb.CoreComponents do
             class={["relative px-2 py-0", @row_click && "hover:cursor-pointer"]}
           >
             <div class="block py-4 pr-0">
-              <span class="absolute -inset-y-px -right-0 -left-4 group-hover:bg-zinc-50 sm:rounded-l-xl" />
+              <span class="absolute -inset-y-px right-0 -left-4 group-hover:bg-zinc-50 sm:rounded-l-xl" />
               <span class={["relative", i == 0 && "font-semibold text-gray-900"]}>
                 {render_slot(col, @row_item.(row))}
               </span>
@@ -839,7 +839,7 @@ defmodule ThreatShieldWeb.CoreComponents do
             class={["relative p-0", @row_click && "hover:cursor-pointer"]}
           >
             <div class="block py-4 pr-4">
-              <span class="absolute -inset-y-px -right-0 -left-4 group-hover:bg-zinc-50 sm:rounded-l-xl" />
+              <span class="absolute -inset-y-px right-0 -left-4 group-hover:bg-zinc-50 sm:rounded-l-xl" />
               <span class={["relative", i == 0 && "font-semibold"]}>
                 {render_slot(col, @row_item.(row))}
               </span>
@@ -904,7 +904,7 @@ defmodule ThreatShieldWeb.CoreComponents do
     >
       <.icon name="hero-ellipsis-vertical" class="h-5 w-5" />
 
-      <ul class="absolute link-dropdown-menu hidden right-0 mt-4 bg-white text-primary-500 rounded-sm shadow-xl">
+      <ul class="absolute link-dropdown-menu hidden right-0 mt-4 bg-white text-primary-500 rounded-xs shadow-xl">
         {render_slot(@links)}
       </ul>
     </div>

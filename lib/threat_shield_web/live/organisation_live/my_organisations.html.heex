@@ -1,5 +1,5 @@
 <section class="ts-container my-8">
-  <div class="px-8 py-4 bg-white rounded-lg shadow">
+  <div class="px-8 py-4 bg-white rounded-lg shadow-sm">
     <.header class="mt-6">
       {dgettext("organisations", "Your organisations")}
       <p :if={@has_memberships} class="text-sm leading-6 text-gray-600 font-normal">
@@ -48,7 +48,7 @@
 </section>
 
 <section :if={is_nil(@current_user.confirmed_at)} class="ts-container my-8">
-  <div class="px-8 py-4 bg-primary-100 rounded-lg shadow">
+  <div class="px-8 py-4 bg-primary-100 rounded-lg shadow-sm">
     <p class="text-sm leading-6 text-gray-600">
       {dgettext(
         "organisations",
@@ -62,7 +62,7 @@
 </section>
 
 <section :if={length(@open_invitations) > 0} class="ts-container my-8">
-  <div class="px-8 py-4 bg-primary-100 rounded-lg shadow">
+  <div class="px-8 py-4 bg-primary-100 rounded-lg shadow-sm">
     <.h1>
       {dgettext("organisation", "Open invitations")}
     </.h1>
@@ -74,7 +74,7 @@
         {format_datetime(ThreatShield.Accounts.Invite.expiration_point(invite))}
       </:col>
       <:col :let={invite}>
-        <div class="flex flex-grow gap-x-2">
+        <div class="flex grow gap-x-2">
           <div class="md:ms-auto">
             <.button_secondary
               phx-click="reject_invitation"

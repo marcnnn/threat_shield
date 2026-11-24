@@ -9,7 +9,7 @@ defmodule ThreatShieldWeb.UserSettingsLive do
 
   def render(assigns) do
     ~H"""
-    <section class="w-full bg-white py-4 shadow-primary-200 shadow-sm">
+    <section class="w-full bg-white py-4 shadow-primary-200 shadow-xs">
       <div class="ts-container">
         <.header class="text-center">
           Account Settings

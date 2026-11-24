@@ -20,7 +20,7 @@ defmodule ThreatShieldWeb.RiskLive.RiskBoard do
   @impl true
   def render(assigns) do
     ~H"""
-    <section class="w-full bg-white py-4 shadow-primary-200 shadow-sm">
+    <section class="w-full bg-white py-4 shadow-primary-200 shadow-xs">
       <div class="ts-container">
         <.header>
           <.h1>{dgettext("risks", "Risk board")}</.h1>
@@ -35,16 +35,16 @@ defmodule ThreatShieldWeb.RiskLive.RiskBoard do
     </section>
 
     <section class="mx-2 lg:mx-auto lg:px-4 mt-4 flex flex-wrap gap-4 justify-center ">
-      <div class="none md:block px-6 py-6 bg-white rounded-lg shadow">
+      <div class="none md:block px-6 py-6 bg-white rounded-lg shadow-sm">
         <.risk_quadrants risk_model={@risk_model} size={700} show_labels={true} />
       </div>
 
-      <div class="px-4 pt-4 bg-white rounded-lg shadow" id="risks_by_status" phx-update="ignore">
+      <div class="px-4 pt-4 bg-white rounded-lg shadow-sm" id="risks_by_status" phx-update="ignore">
         <h2 class="px-2 font-semibold flex">
           <.risk_icon class="w-5 h-6 mr-2" />{dgettext("risks", "Risk by status")}
         </h2>
         <div
-          class="chart px-2 lg:px-4 w-[16rem] lg:w-[22rem] xl:w-[22rem] "
+          class="chart px-2 lg:px-4 w-[16rem] lg:w-88 xl:w-88 "
           data-chart-type="doughnut"
           data-data-point-label={dgettext("risk-board", "Number of risks")}
           data-datasets={@risks_by_status.data |> Jason.encode!()}
@@ -57,7 +57,7 @@ defmodule ThreatShieldWeb.RiskLive.RiskBoard do
           <.mitigation_icon class="w-6 h-6 mr-2" />{dgettext("risks", "Mitigations by status")}
         </h2>
         <div
-          class="chart px-2 lg:px-4 py-2 w-[16rem] lg:w-[22rem]"
+          class="chart px-2 lg:px-4 py-2 w-[16rem] lg:w-88"
           data-chart-type="doughnut"
           data-data-point-label={dgettext("risk-board", "Number of mitigations")}
           data-datasets={@mitigations_by_status.data |> Jason.encode!()}
@@ -68,12 +68,12 @@ defmodule ThreatShieldWeb.RiskLive.RiskBoard do
         </div>
       </div>
 
-      <div class="px-6 py-6 bg-white rounded-lg shadow">
+      <div class="px-6 py-6 bg-white rounded-lg shadow-sm">
         <h2 class="px-2 font-semibold">{dgettext("risks", "Risk summary")}</h2>
 
         <table class="mt-2 w-full">
           <tr :for={item <- @summary}>
-            <td class="pl-2 leading-1">{item.label}</td>
+            <td class="pl-2">{item.label}</td>
             <td class="pl-8 py-1 text-right">
               {item.value}
             </td>
@@ -81,7 +81,7 @@ defmodule ThreatShieldWeb.RiskLive.RiskBoard do
         </table>
       </div>
 
-      <div class="px-6 py-6 bg-white rounded-lg shadow">
+      <div class="px-6 py-6 bg-white rounded-lg shadow-sm">
         <h2 class="px-2 font-semibold">{dgettext("risks", "Top 10 risks by severity")}</h2>
         <table class="mt-2 w-full">
           <tr
@@ -90,7 +90,7 @@ defmodule ThreatShieldWeb.RiskLive.RiskBoard do
             phx-value-risk-id={risk.id}
             class="cursor-pointer hover:bg-gray-100"
           >
-            <td class="pl-2 leading-1">{risk.name}</td>
+            <td class="pl-2">{risk.name}</td>
             <td class="pl-8 py-1">
               <.criticality_badge value={risk.severity} title={dgettext("risks", "Severity")} />
             </td>
@@ -98,7 +98,7 @@ defmodule ThreatShieldWeb.RiskLive.RiskBoard do
         </table>
       </div>
 
-      <div class="px-6 py-6 bg-white rounded-lg shadow">
+      <div class="px-6 py-6 bg-white rounded-lg shadow-sm">
         <h2 class="px-2 font-semibold">{dgettext("risks", "Top 10 risks by costs")}</h2>
         <table class="mt-2 w-full">
           <tr
@@ -107,7 +107,7 @@ defmodule ThreatShieldWeb.RiskLive.RiskBoard do
             phx-value-risk-id={risk.id}
             class="cursor-pointer hover:bg-gray-100"
           >
-            <td class="pl-2 leading-1">{risk.name}</td>
+            <td class="pl-2">{risk.name}</td>
             <td class="px-4 py-2 text-end">
               {risk_cost(risk) |> format_monetary_amount()}
             </td>

@@ -7,8 +7,8 @@ defmodule ThreatShieldWeb.UserLoginLive do
       <div class="hidden md:block md:w-1/2">
         <img src={~p"/images/shiba-hero1.png"} alt="" class="w-full h-full object-cover" />
       </div>
-      <div class="md:w-1/2 flex flex-col justify-stretch px-4 lg:px-12 xl:px-20 h-full md:shadow md:shadow-lg shadow-primary-300">
-        <div class="flex-grow h-32 pt-2">
+      <div class="md:w-1/2 flex flex-col justify-stretch px-4 lg:px-12 xl:px-20 h-full md:shadow-sm md:shadow-lg shadow-primary-300">
+        <div class="grow h-32 pt-2">
           <.flash_group flash={@flash} />
         </div>
         <main class="xxl:w-[36rem] mx-auto">
@@ -49,7 +49,7 @@ defmodule ThreatShieldWeb.UserLoginLive do
             </:actions>
           </.simple_form>
         </main>
-        <footer class="flex-grow text-center flex flex-col justify-center md:justify-end text-xs h-32">
+        <footer class="grow text-center flex flex-col justify-center md:justify-end text-xs h-32">
           <div class="py-6 space-x-6">
             <a href="https://threatshield.eu" class="text-gray-500">
               threatshield.eu

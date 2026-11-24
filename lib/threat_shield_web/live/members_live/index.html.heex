@@ -1,4 +1,4 @@
-<section class="w-full bg-white pb-6 shadow-primary-200 shadow-sm">
+<section class="w-full bg-white pb-6 shadow-primary-200 shadow-xs">
   <div class="ts-container">
     <.header>
       <.h1>{dgettext("organisation", "Members of")}</.h1>
@@ -53,7 +53,7 @@
 
 <%= if not Enum.empty?(@organisation.invites) and may?(@current_org_membership, :invite_new_members) do %>
   <section class="ts-container my-8">
-    <div class="px-8 py-4 bg-primary-100 rounded-lg shadow">
+    <div class="px-8 py-4 bg-primary-100 rounded-lg shadow-sm">
       <.h1>
         {dgettext("organisation", "Pending invites")}
       </.h1>

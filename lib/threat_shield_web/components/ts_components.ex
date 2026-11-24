@@ -25,9 +25,9 @@ defmodule ThreatShieldWeb.TsComponents do
 
   def entity_info(assigns) do
     ~H"""
-    <section class="w-full bg-white pb-6 shadow-primary-200 shadow-sm">
+    <section class="w-full bg-white pb-6 shadow-primary-200 shadow-xs">
       <div class="ts-container flex justify-between">
-        <div class="min-h-10 pb-2">
+        <div class="pb-2">
           <.h1>
             {render_slot(@name)}
           </.h1>
@@ -72,7 +72,7 @@ defmodule ThreatShieldWeb.TsComponents do
 
   def suggestions_dialog(assigns) do
     ~H"""
-    <div class="min-h-64 lg:min-w-5xl">
+    <div>
       <div :if={has_suggestions?(assigns)}>
         <.header>
           {@title}
@@ -225,7 +225,7 @@ defmodule ThreatShieldWeb.TsComponents do
   def risk_status_badge(assigns) do
     ~H"""
     <span class={[
-      "inline-flex items-center rounded-md px-4 py-1 text-xs font-bold text-center leading-1 text-gray-100",
+      "inline-flex items-center rounded-md px-4 py-1 text-xs font-bold text-center text-gray-100",
       bg_class_for_risk_status(assigns.status)
     ]}>
       {risk_status_label(assigns.status)}
@@ -239,7 +239,7 @@ defmodule ThreatShieldWeb.TsComponents do
   def mitigation_status_badge(assigns) do
     ~H"""
     <span class={[
-      "inline-flex items-center rounded-md px-4 py-1 text-xs font-bold text-center leading-1",
+      "inline-flex items-center rounded-md px-4 py-1 text-xs font-bold text-center",
       if(@light, do: "bg-neutral-400 text-white", else: "bg-neutral-600 text-gray-100")
     ]}>
       {mitigation_status_label(assigns.status)}

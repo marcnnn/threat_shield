@@ -1,19 +1,137 @@
-@import "tailwindcss/base";
-@import "tailwindcss/components";
-@import "tailwindcss/utilities";
+/* Tailwind CSS v4: the theme, the plugins and the variants are configured in this file */
+@import "tailwindcss" source(none);
+@source "../js";
+@source "../../lib/threat_shield_web.ex";
+@source "../../lib/threat_shield_web";
 
-/* This file is for your main application CSS */
+@plugin "@tailwindcss/forms";
+@plugin "../vendor/heroicons.js";
 
-/* RESETS */
-:root,
-html,
-body {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+/* Variants for the classes that LiveView sets while an event is pending, for example
+   <div class="phx-click-loading:animate-ping"> */
+@custom-variant phx-click-loading (.phx-click-loading&, .phx-click-loading &);
+@custom-variant phx-submit-loading (.phx-submit-loading&, .phx-submit-loading &);
+@custom-variant phx-change-loading (.phx-change-loading&, .phx-change-loading &);
+
+@theme {
+  --font-sans: SpaceGrotesk, sans-serif;
+
+  --color-primary-100: #f8f6fb;
+  --color-primary-200: #e1d6f6;
+  --color-primary-300: #a583e5;
+  --color-primary-400: #8759dd;
+  --color-primary-500: #6930d4;
+  --color-primary-600: #5426aa;
+  --color-primary-700: #3f1d7f;
+  --color-primary-800: #2a1355;
+  --color-primary-900: #150a2a;
+
+  --color-secondary-400: #d1d5db;
+
+  --color-gray-100: #ededed;
+  --color-gray-200: #d7d8df;
+  --color-gray-300: #c2c5d0;
+  --color-gray-400: #aeb1c0;
+  --color-gray-500: #9396a7;
+  --color-gray-600: #7e8291;
+  --color-gray-700: #7e8291;
+  --color-gray-800: #7e8291;
+  --color-gray-900: #1a1b1f;
+
+  --color-neutral-100: #f2f7ff;
+  --color-neutral-200: #b4cbf5;
+  --color-neutral-300: #8fb1ef;
+  --color-neutral-400: #6997ea;
+  --color-neutral-500: #1a1b1f;
+  --color-neutral-600: #3664b7;
+  --color-neutral-700: #294b8a;
+  --color-neutral-800: #1b325c;
+  --color-neutral-900: #001233;
+
+  --color-green-100: #f3fff2;
+  --color-green-200: #def5dd;
+  --color-green-300: #9be29a;
+  --color-green-400: #7ad878;
+  --color-green-500: #59ce56;
+  --color-green-600: #47a545;
+  --color-green-700: #357c34;
+  --color-green-800: #245222;
+  --color-green-900: #013300;
+
+  --color-orange-500: #e89e2e;
+
+  --color-red-100: #fff2f3;
+  --color-red-200: #f3b1b5;
+  --color-red-300: #ee8b91;
+  --color-red-400: #e8646c;
+  --color-red-500: #e23d47;
+  --color-red-600: #b53139;
+  --color-red-700: #88252b;
+  --color-red-800: #5a181c;
+  --color-red-900: #330003;
+
+  /* Colours of the default palette that the pages (and @tailwindcss/forms) use, with
+     their Tailwind v3 values: the v4 palette is slightly more saturated. */
+  --color-blue-600: #2563eb;
+  --color-orange-600: #ea580c;
+  --color-purple-200: #e9d5ff;
+  --color-rose-400: #fb7185;
+  --color-rose-600: #e11d48;
+  --color-zinc-50: #fafafa;
+  --color-zinc-100: #f4f4f5;
+  --color-zinc-200: #e4e4e7;
+  --color-zinc-300: #d4d4d8;
+  --color-zinc-400: #a1a1aa;
+  --color-zinc-600: #52525b;
+  --color-zinc-700: #3f3f46;
 }
 
-/* Fonts */
+/* The padding of the container per breakpoint, as in the Tailwind v3 configuration */
+@utility container {
+  padding-inline: 1rem;
+
+  @variant sm {
+    padding-inline: 2rem;
+  }
+
+  @variant lg {
+    padding-inline: 4rem;
+  }
+
+  @variant xl {
+    padding-inline: 5rem;
+  }
+
+  @variant 2xl {
+    padding-inline: 6rem;
+  }
+}
+
+/* Defaults of Tailwind v3 that v4 changed, so that the pages look as before */
+@layer base {
+  /* v4: borders are currentcolor */
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentcolor);
+  }
+
+  /* v4: placeholders are the text colour at 50% opacity */
+  input::placeholder,
+  textarea::placeholder {
+    color: var(--color-gray-400);
+  }
+
+  /* v4: buttons have the default cursor */
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+}
+
+/* Fonts and animations */
 
 @font-face {
   font-family: "SpaceGrotesk";
@@ -63,80 +181,6 @@ body {
   font-display: swap;
 }
 
-/* Common ThreatShield styles */
-
-.threatshield-gradient {
-  border-radius: 6px;
-  background: linear-gradient(
-    270deg,
-    #ac50f4 0.8%,
-    #7e4bed 60.29%,
-    #6e68d1 105.85%
-  );
-}
-
-.threadshield-header {
-  color: #000;
-  leading-trim: both;
-  text-edge: cap;
-  font-family: Jockey One;
-  font-style: normal;
-  font-weight: 400;
-  line-height: normal;
-}
-
-.ts-container {
-  @apply xl:container mx-4 xl:mx-auto;
-}
-
-.help-text {
-  @apply text-gray-500 text-sm font-normal;
-}
-
-a {
-  color: theme("colors.primary.900");
-  text-decoration: none;
-}
-
-li.context-menu-item a {
-  display: inline-block;
-  min-width: 8rem;
-  @apply py-2 px-4 text-gray-900 text-sm font-medium;
-}
-
-li.context-menu-item:hover {
-  min-width: 8rem;
-  background-color: theme("colors.gray.100");
-}
-
-li.context-menu-item a:hover {
-  color: theme("colors.primary.600");
-  font-weight: 800;
-}
-
-.tooltip {
-  z-index: 1000;
-  background-color: #333;
-  line-height: 12pt;
-  color: white;
-  padding: 5px 10px;
-  border-radius: 4px;
-  font-size: 10pt;
-}
-
-/* USER INDICATOR */
-
-/* User indicator for waiting */
-#suggest-spinner {
-  margin: 2rem auto 0;
-  display: block;
-  padding: 20px;
-  width: 8rem;
-  height: 8rem;
-  transform: translate(-50%, -50%);
-  animation: spin 1.8s linear infinite;
-}
-
 @keyframes spin {
   0% {
     transform: rotate(0deg);
@@ -155,59 +199,148 @@ li.context-menu-item a:hover {
   }
 }
 
-/* Range input styles -- https://www.smashingmagazine.com/2021/12/create-custom-range-input-consistent-browsers/*/
-/*Range Reset*/
-input[type="range"] {
-  -webkit-appearance: none;
-  appearance: none;
-  height: 1rem;
-}
+/* The rules of the app. Tailwind v3 put them after its utilities without a layer, so
+   the more specific selector won and, at equal specificity, the rule of the app. In
+   the layer of the utilities they keep that order; without a layer they would win
+   over every utility (for example the colour of `a` over `text-white`). */
+@layer utilities {
+  /* RESETS */
+  :root,
+  html,
+  body {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
 
-/***** Chrome, Safari, Opera and Edge Chromium styles *****/
-/* slider track */
-input[type="range"]::-webkit-slider-runnable-track {
-  border-radius: 0.5rem;
-  height: 0.5rem;
-}
+  /* Common ThreatShield styles */
 
-/* slider thumb */
-input[type="range"]::-webkit-slider-thumb {
-  -webkit-appearance: none; /* Override default look */
-  appearance: none;
-  margin-top: -10px; /* Centers thumb on the track */
+  .threatshield-gradient {
+    border-radius: 6px;
+    background: linear-gradient(
+      270deg,
+      #ac50f4 0.8%,
+      #7e4bed 60.29%,
+      #6e68d1 105.85%
+    );
+  }
 
-  /*custom styles*/
-  background-color: #150a2a;
-  border-radius: 3px;
-  height: 1.8rem;
-  width: 1rem;
-}
+  .threadshield-header {
+    color: #000;
+    leading-trim: both;
+    text-edge: cap;
+    font-family: Jockey One;
+    font-style: normal;
+    font-weight: 400;
+    line-height: normal;
+  }
 
-input[type="range"]:focus::-webkit-slider-thumb {
-  border: 1px solid #053a5f;
-  outline-offset: 0.125rem;
-}
+  .ts-container {
+    @apply xl:container mx-4 xl:mx-auto;
+  }
 
-/******** Firefox styles ********/
-/* slider track */
-input[type="range"]::-moz-range-track {
-  border-radius: 0.5rem;
-  height: 0.5rem;
-}
+  .help-text {
+    @apply text-gray-500 text-sm font-normal;
+  }
 
-/* slider thumb */
-input[type="range"]::-moz-range-thumb {
-  border: none; /*Removes extra border that FF applies*/
-  border-radius: 0; /*Removes default border-radius that FF applies*/
+  a {
+    color: var(--color-primary-900);
+    text-decoration: none;
+  }
 
-  /*custom styles*/
-  background-color: #150a2a;
-  height: 2rem;
-  width: 1rem;
-}
+  li.context-menu-item a {
+    display: inline-block;
+    min-width: 8rem;
+    @apply py-2 px-4 text-gray-900 text-sm font-medium;
+  }
 
-input[type="range"]:focus::-moz-range-thumb {
-  border: 1px solid #053a5f;
-  outline: 3px solid #053a5f;
-  outline-offset: 0.125rem;
+  li.context-menu-item:hover {
+    min-width: 8rem;
+    background-color: var(--color-gray-100);
+  }
+
+  li.context-menu-item a:hover {
+    color: var(--color-primary-600);
+    font-weight: 800;
+  }
+
+  .tooltip {
+    z-index: 1000;
+    background-color: #333;
+    line-height: 12pt;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 10pt;
+  }
+
+  /* USER INDICATOR */
+
+  /* User indicator for waiting */
+  #suggest-spinner {
+    margin: 2rem auto 0;
+    display: block;
+    padding: 20px;
+    width: 8rem;
+    height: 8rem;
+    transform: translate(-50%, -50%);
+    animation: spin 1.8s linear infinite;
+  }
+
+  /* Range input styles -- https://www.smashingmagazine.com/2021/12/create-custom-range-input-consistent-browsers/*/
+  /*Range Reset*/
+  input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    height: 1rem;
+  }
+
+  /***** Chrome, Safari, Opera and Edge Chromium styles *****/
+  /* slider track */
+  input[type="range"]::-webkit-slider-runnable-track {
+    border-radius: 0.5rem;
+    height: 0.5rem;
+  }
+
+  /* slider thumb */
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none; /* Override default look */
+    appearance: none;
+    margin-top: -10px; /* Centers thumb on the track */
+
+    /*custom styles*/
+    background-color: #150a2a;
+    border-radius: 3px;
+    height: 1.8rem;
+    width: 1rem;
+  }
+
+  input[type="range"]:focus::-webkit-slider-thumb {
+    border: 1px solid #053a5f;
+    outline-offset: 0.125rem;
+  }
+
+  /******** Firefox styles ********/
+  /* slider track */
+  input[type="range"]::-moz-range-track {
+    border-radius: 0.5rem;
+    height: 0.5rem;
+  }
+
+  /* slider thumb */
+  input[type="range"]::-moz-range-thumb {
+    border: none; /*Removes extra border that FF applies*/
+    border-radius: 0; /*Removes default border-radius that FF applies*/
+
+    /*custom styles*/
+    background-color: #150a2a;
+    height: 2rem;
+    width: 1rem;
+  }
+
+  input[type="range"]:focus::-moz-range-thumb {
+    border: 1px solid #053a5f;
+    outline: 3px solid #053a5f;
+    outline-offset: 0.125rem;
+  }
 }

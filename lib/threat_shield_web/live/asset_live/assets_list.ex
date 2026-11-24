@@ -18,7 +18,7 @@ defmodule ThreatShieldWeb.AssetLive.AssetsList do
   def render(assigns) do
     ~H"""
     <div class="assets" id="assets">
-      <div class="mt-4 px-8 py-6 bg-white rounded-lg shadow">
+      <div class="mt-4 px-8 py-6 bg-white rounded-lg shadow-sm">
         <.stacked_list_header>
           <:name>
             <span class="text-gray-700 inline-block">

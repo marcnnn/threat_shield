@@ -25,7 +25,7 @@ defmodule ThreatShieldWeb.ThreatLive.ThreatsList do
   def render(%{id: _component_id} = assigns) do
     ~H"""
     <div class="threats">
-      <div class="mt-4 px-8 py-6 bg-white rounded-lg shadow">
+      <div class="mt-4 px-8 py-6 bg-white rounded-lg shadow-sm">
         <.stacked_list_header>
           <:name>
             <span class="text-gray-800 inline-block">
