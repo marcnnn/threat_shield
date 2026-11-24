@@ -1,26 +1,26 @@
 <section class="w-full bg-white pb-6 shadow-primary-200 shadow-sm">
   <div class="ts-container">
     <.header>
-      <.h1><%= dgettext("organisation", "Members of") %></.h1>
+      <.h1>{dgettext("organisation", "Members of")}</.h1>
       <.h3>
         <span class="text-gray-700 inline-block">
           <Icons.organisation_icon class="w-5 h-5" />
         </span>
-        <%= @organisation.name %>
+        {@organisation.name}
       </.h3>
       <:actions>
         <.link patch={~p"/organisations/#{@organisation.id}/members/new"} class="pe-4">
           <.button_primary :if={may?(@current_org_membership, :invite_new_members)}>
-            <%= dgettext("organisation", "Invite") %>
+            {dgettext("organisation", "Invite")}
           </.button_primary>
         </.link>
       </:actions>
     </.header>
 
     <.table id="memberships" rows={@organisation.memberships}>
-      <:col :let={membership} label="E-mail"><%= membership.user.email %></:col>
+      <:col :let={membership} label="E-mail">{membership.user.email}</:col>
       <:col :let={membership} label="Role">
-        <%= role_label(membership.role) %>
+        {role_label(membership.role)}
       </:col>
       <:col :let={membership}>
         <div class="text-right pr-4">
@@ -32,9 +32,9 @@
               data-confirm={"Do you really want to remove #{membership.user.email} from #{@organisation.name}?"}
             >
               <%= if membership.user_id == @current_user.id do %>
-                <%= dgettext("common", "Leave") %>
+                {dgettext("common", "Leave")}
               <% else %>
-                <%= dgettext("common", "Delete") %>
+                {dgettext("common", "Delete")}
               <% end %>
             </.button_secondary>
           <% end %>
@@ -43,7 +43,7 @@
             phx-click="edit_membership"
             phx-value-membership_id={membership.id}
           >
-            <%= dgettext("common", "Edit") %>
+            {dgettext("common", "Edit")}
           </.button_secondary>
         </div>
       </:col>
@@ -55,12 +55,12 @@
   <section class="ts-container my-8">
     <div class="px-8 py-4 bg-primary-100 rounded-lg shadow">
       <.h1>
-        <%= dgettext("organisation", "Pending invites") %>
+        {dgettext("organisation", "Pending invites")}
       </.h1>
       <.table id="invites" rows={@organisation.invites}>
-        <:col :let={invite} label="Email"><%= invite.email %></:col>
+        <:col :let={invite} label="Email">{invite.email}</:col>
         <:col :let={invite} label="Expiration Date">
-          <%= format_datetime(ThreatShield.Accounts.Invite.expiration_point(invite)) %>
+          {format_datetime(ThreatShield.Accounts.Invite.expiration_point(invite))}
         </:col>
         <:col :let={invite}>
           <div class="text-right">
@@ -69,7 +69,7 @@
               phx-value-invite_id={invite.id}
               data-confirm={"Do you really want to revoke the invite for #{invite.email}?"}
             >
-              <%= dgettext("common", "Revoke") %>
+              {dgettext("common", "Revoke")}
             </.button_danger>
           </div>
         </:col>

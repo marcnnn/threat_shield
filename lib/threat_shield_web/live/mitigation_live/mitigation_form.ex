@@ -11,12 +11,12 @@ defmodule ThreatShieldWeb.MitigationLive.MitigationForm do
     ~H"""
     <div>
       <.header>
-        <%= @title %>
+        {@title}
         <:subtitle>
-          <%= dgettext(
+          {dgettext(
             "mitigations",
             "Mitigations: short description"
-          ) %>
+          )}
         </:subtitle>
       </.header>
 

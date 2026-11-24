@@ -22,23 +22,23 @@ defmodule ThreatShieldWeb.MitigationLive.MitigationsList do
             <span class="text-gray-700 inline-block">
               <Icons.mitigation_icon class="w-5 h-5" />
             </span>
-            <%= dgettext("mitigations", "Mitigations") %>
+            {dgettext("mitigations", "Mitigations")}
           </:name>
 
           <:subtitle>
-            <%= dgettext(
+            {dgettext(
               "mitigations",
               "Mitigations: short description"
-            ) %>
+            )}
           </:subtitle>
 
           <:buttons>
             <.link :if={may?(@scope, :create_mitigation)} patch={@origin <> "/mitigations/new"}>
               <.button_primary>
-                <.icon name="hero-cursor-arrow-ripple" class="mr-1 mb-1" /><%= dgettext(
+                <.icon name="hero-cursor-arrow-ripple" class="mr-1 mb-1" />{dgettext(
                   "mitigations",
                   "New Mitigation"
-                ) %>
+                )}
               </.button_primary>
             </.link>
             <.link>
@@ -47,10 +47,10 @@ defmodule ThreatShieldWeb.MitigationLive.MitigationsList do
                 phx-click="suggest_mitigations"
                 phx-target={@myself}
               >
-                <.icon name="hero-sparkles" class="mr-1 mb-1" /><%= dgettext(
+                <.icon name="hero-sparkles" class="mr-1 mb-1" />{dgettext(
                   "mitigations",
                   "Suggest Mitigations"
-                ) %>
+                )}
               </.button_magic>
             </.link>
           </:buttons>
@@ -69,13 +69,13 @@ defmodule ThreatShieldWeb.MitigationLive.MitigationsList do
           }
         >
           <:col :let={mitigation}>
-            <%= mitigation.name %>
+            {mitigation.name}
           </:col>
           <:col :let={mitigation}><.boolean_status_icon value={mitigation.is_implemented} /></:col>
           <:col :let={mitigation}>
             <.mitigation_status_badge status={mitigation.status} light />
           </:col>
-          <:col :let={mitigation}><%= mitigation.description %></:col>
+          <:col :let={mitigation}>{mitigation.description}</:col>
         </.stacked_list>
 
         <p :if={Enum.empty?(@mitigations)} class="mt-4">

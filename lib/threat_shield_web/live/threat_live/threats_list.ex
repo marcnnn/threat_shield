@@ -31,11 +31,11 @@ defmodule ThreatShieldWeb.ThreatLive.ThreatsList do
             <span class="text-gray-800 inline-block">
               <Icons.threat_icon class="w-6 h-6" />
             </span>
-            <%= dgettext("threats", "Threats") %>
+            {dgettext("threats", "Threats")}
           </:name>
 
           <:subtitle>
-            <%= dgettext("threats", "Threat: short description") %>
+            {dgettext("threats", "Threat: short description")}
           </:subtitle>
 
           <:buttons>
@@ -45,10 +45,10 @@ defmodule ThreatShieldWeb.ThreatLive.ThreatsList do
               phx-target={@myself}
             >
               <.button_primary>
-                <.icon name="hero-cursor-arrow-ripple" class="mr-1 mb-1" /><%= dgettext(
+                <.icon name="hero-cursor-arrow-ripple" class="mr-1 mb-1" />{dgettext(
                   "threats",
                   "New Threat"
-                ) %>
+                )}
               </.button_primary>
             </.link>
             <.link>
@@ -57,10 +57,10 @@ defmodule ThreatShieldWeb.ThreatLive.ThreatsList do
                 phx-click="suggest_threats"
                 phx-target={@myself}
               >
-                <.icon name="hero-sparkles" class="mr-1 mb-1" /><%= dgettext(
+                <.icon name="hero-sparkles" class="mr-1 mb-1" />{dgettext(
                   "threats",
                   "Suggest Threats"
-                ) %>
+                )}
               </.button_magic>
             </.link>
           </:buttons>
@@ -72,15 +72,15 @@ defmodule ThreatShieldWeb.ThreatLive.ThreatsList do
           row_click={fn threat -> JS.navigate(link_to(threat)) end}
         >
           <:col :let={threat}>
-            <%= threat.name %>
+            {threat.name}
           </:col>
           <:col :let={threat}>
-            <%= system_label(threat) %>
+            {system_label(threat)}
           </:col>
           <:col :let={threat}>
-            <%= asset_label(threat) %>
+            {asset_label(threat)}
           </:col>
-          <:col :let={threat}><%= threat.description %></:col>
+          <:col :let={threat}>{threat.description}</:col>
         </.stacked_list>
 
         <p :if={Enum.empty?(@threats)} class="mt-4">

@@ -15,10 +15,10 @@ defmodule ThreatShieldWeb.UserRegistrationLive do
         <main class="xl:w-[36rem] mx-auto">
           <.header class="text-center">
             <div class="threadshield-header text-4xl md:text-6xl xl:text-8xl">
-              <%= dgettext("accounts", "Join us") %>
+              {dgettext("accounts", "Join us")}
             </div>
             <div class="threadshield-header md:text-2xl mb-5">
-              <%= dgettext("accounts", "in our beta phase.") %>
+              {dgettext("accounts", "in our beta phase.")}
             </div>
             <:subtitle>
               Already registered?
@@ -26,7 +26,7 @@ defmodule ThreatShieldWeb.UserRegistrationLive do
                 navigate={~p"/users/log_in"}
                 class="font-semibold text-primary-500 hover:underline"
               >
-                <%= dgettext("accounts", "Sign in") %>
+                {dgettext("accounts", "Sign in")}
               </.link>
               to your account now.
             </:subtitle>
@@ -62,9 +62,9 @@ defmodule ThreatShieldWeb.UserRegistrationLive do
             <label class="flex items-center gap-4 text-sm leading-6">
               <.input field={@form[:accept_toc]} type="checkbox" required />
               <span>
-                <%= dgettext("accounts", "By checking this box, you agree to our") %>
+                {dgettext("accounts", "By checking this box, you agree to our")}
                 <a href="https://threatshield.eu/terms.html" target="_blank" class="text-primary-500">
-                  <%= dgettext("accounts", "Terms of Service") %>
+                  {dgettext("accounts", "Terms of Service")}
                 </a>
                 and our <a
                   href="https://threatshield.eu/privacy.html"
@@ -78,7 +78,7 @@ defmodule ThreatShieldWeb.UserRegistrationLive do
 
             <:actions>
               <.button_magic phx-disable-with="Creating account..." class="text-lg w-full">
-                <%= dgettext("accounts", "Sign up") %>
+                {dgettext("accounts", "Sign up")}
               </.button_magic>
             </:actions>
           </.simple_form>

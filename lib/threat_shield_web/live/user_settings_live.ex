@@ -76,13 +76,13 @@ defmodule ThreatShieldWeb.UserSettingsLive do
             </.simple_form>
           </div>
           <div id="api_keys" class="pt-8">
-            <.h3><%= dgettext("accounts", "API keys") %></.h3>
+            <.h3>{dgettext("accounts", "API keys")}</.h3>
             <p class="mt-2 text-sm text-gray-700">
-              <%= dgettext(
+              {dgettext(
                 "accounts",
                 "Chat agents such as Claude use an API key to work with your organisations through the MCP server at %{url}. A key has your rights.",
                 url: @mcp_url
-              ) %>
+              )}
             </p>
 
             <div
@@ -91,9 +91,9 @@ defmodule ThreatShieldWeb.UserSettingsLive do
               class="mt-4 rounded-lg border border-primary-300 bg-primary-50 p-4"
             >
               <p class="text-sm font-semibold">
-                <%= dgettext("accounts", "Copy the key now. It is not shown again.") %>
+                {dgettext("accounts", "Copy the key now. It is not shown again.")}
               </p>
-              <code class="mt-2 block break-all text-sm"><%= @new_api_key %></code>
+              <code class="mt-2 block break-all text-sm">{@new_api_key}</code>
             </div>
 
             <.simple_form for={@api_key_form} id="api_key_form" phx-submit="create_api_key">
@@ -105,7 +105,7 @@ defmodule ThreatShieldWeb.UserSettingsLive do
               />
               <:actions>
                 <.button_primary phx-disable-with="Creating...">
-                  <%= dgettext("accounts", "Create API key") %>
+                  {dgettext("accounts", "Create API key")}
                 </.button_primary>
               </:actions>
             </.simple_form>
@@ -113,18 +113,18 @@ defmodule ThreatShieldWeb.UserSettingsLive do
             <table :if={@api_keys != []} class="mt-6 w-full text-sm">
               <thead class="text-left text-gray-600">
                 <tr>
-                  <th class="py-1"><%= dgettext("accounts", "Created") %></th>
-                  <th class="py-1"><%= dgettext("accounts", "Expires") %></th>
+                  <th class="py-1">{dgettext("accounts", "Created")}</th>
+                  <th class="py-1">{dgettext("accounts", "Expires")}</th>
                   <th></th>
                 </tr>
               </thead>
               <tbody>
                 <tr :for={api_key <- @api_keys} id={"api_key-#{api_key.id}"}>
-                  <td class="py-1"><%= format_datetime(api_key.inserted_at) %></td>
+                  <td class="py-1">{format_datetime(api_key.inserted_at)}</td>
                   <td class="py-1">
-                    <%= format_datetime(api_key.expires_at) %>
+                    {format_datetime(api_key.expires_at)}
                     <span :if={!api_key.valid} class="text-gray-500">
-                      (<%= dgettext("accounts", "expired") %>)
+                      ({dgettext("accounts", "expired")})
                     </span>
                   </td>
                   <td class="py-1 text-right">
@@ -133,7 +133,7 @@ defmodule ThreatShieldWeb.UserSettingsLive do
                       phx-value-id={api_key.id}
                       data-confirm={dgettext("accounts", "Revoke this API key?")}
                     >
-                      <%= dgettext("accounts", "Revoke") %>
+                      {dgettext("accounts", "Revoke")}
                     </.button_secondary>
                   </td>
                 </tr>

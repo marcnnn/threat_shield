@@ -13,11 +13,11 @@ defmodule ThreatShieldWeb.SystemLive.SystemForm do
     ~H"""
     <div>
       <.header>
-        <%= @title %>
+        {@title}
       </.header>
 
       <p class="help-text">
-        <%= dgettext("systems", "System: long description") %>
+        {dgettext("systems", "System: long description")}
       </p>
 
       <.simple_form
@@ -30,10 +30,10 @@ defmodule ThreatShieldWeb.SystemLive.SystemForm do
         <.input field={@form[:name]} type="text" label="Name" />
         <.input field={@form[:description]} type="text" label="Description" />
         <em>
-          <%= dgettext(
+          {dgettext(
             "common",
             "The more details you provide about context and purpose of this system, the better the suggestions can be."
-          ) %>
+          )}
         </em>
         <%= for attribute <- @attributes do %>
           <.input
@@ -42,7 +42,7 @@ defmodule ThreatShieldWeb.SystemLive.SystemForm do
             type="text"
             label={attribute.name}
           />
-          <em>e.g. <%= DynamicAttribute.get_suggestions(attribute) |> Enum.join(", ") %></em>
+          <em>e.g. {DynamicAttribute.get_suggestions(attribute) |> Enum.join(", ")}</em>
         <% end %>
         <:actions>
           <.button_primary phx-disable-with="Saving...">Save System</.button_primary>

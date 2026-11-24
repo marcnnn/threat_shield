@@ -11,13 +11,13 @@ defmodule ThreatShieldWeb.RiskLive.RiskForm do
     ~H"""
     <div>
       <.header>
-        <%= @title %>
+        {@title}
       </.header>
       <p class="help-text">
-        <%= dgettext(
+        {dgettext(
           "risks",
           "Risk: short description"
-        ) %>
+        )}
       </p>
 
       <.simple_form

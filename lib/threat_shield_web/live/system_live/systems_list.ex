@@ -20,11 +20,11 @@ defmodule ThreatShieldWeb.SystemLive.SystemsList do
             <span class="text-gray-700 inline-block">
               <Icons.system_icon class="w-5 h-5" />
             </span>
-            <%= dgettext("systems", "Systems") %>
+            {dgettext("systems", "Systems")}
           </:name>
 
           <:subtitle>
-            <%= dgettext("systems", "System: short description") %>
+            {dgettext("systems", "System: short description")}
           </:subtitle>
 
           <:buttons>
@@ -34,7 +34,7 @@ defmodule ThreatShieldWeb.SystemLive.SystemsList do
               phx-target={@myself}
             >
               <.button_primary>
-                <.icon name="hero-pencil" class="mr-1 mb-1" /><%= dgettext("systems", "New System") %>
+                <.icon name="hero-pencil" class="mr-1 mb-1" />{dgettext("systems", "New System")}
               </.button_primary>
             </.link>
           </:buttons>
@@ -50,14 +50,14 @@ defmodule ThreatShieldWeb.SystemLive.SystemsList do
           }
         >
           <:col :let={system}>
-            <%= system.name %>
+            {system.name}
             <p class="text-gray-500 text-xs font-normal">
-              <%= system.threats |> Enum.count() %><span> Threats</span>
+              {system.threats |> Enum.count()}<span> Threats</span>
               <span>•</span>
-              <%= system.assets |> Enum.count() %><span> Assets</span>
+              {system.assets |> Enum.count()}<span> Assets</span>
             </p>
           </:col>
-          <:col :let={system}><%= system.description %></:col>
+          <:col :let={system}>{system.description}</:col>
         </.stacked_list>
 
         <p :if={Enum.empty?(@scope.organisation.systems)} class="mt-4">

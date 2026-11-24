@@ -24,14 +24,14 @@ defmodule ThreatShieldWeb.AssetLive.AssetsList do
             <span class="text-gray-700 inline-block">
               <Icons.asset_icon class="w-6 h-6" />
             </span>
-            <%= dgettext("assets", "Assets") %>
+            {dgettext("assets", "Assets")}
           </:name>
 
           <:subtitle>
-            <%= dgettext(
+            {dgettext(
               "assets",
               "Asset: short description"
-            ) %>
+            )}
           </:subtitle>
 
           <:buttons>
@@ -41,10 +41,10 @@ defmodule ThreatShieldWeb.AssetLive.AssetsList do
               phx-target={@myself}
             >
               <.button_primary>
-                <.icon name="hero-cursor-arrow-ripple" class="mr-1 mb-1" /><%= dgettext(
+                <.icon name="hero-cursor-arrow-ripple" class="mr-1 mb-1" />{dgettext(
                   "assets",
                   "New Asset"
-                ) %>
+                )}
               </.button_primary>
             </.link>
             <.link>
@@ -53,10 +53,10 @@ defmodule ThreatShieldWeb.AssetLive.AssetsList do
                 phx-click="suggest_assets"
                 phx-target={@myself}
               >
-                <.icon name="hero-sparkles" class="mr-1 mb-1" /><%= dgettext(
+                <.icon name="hero-sparkles" class="mr-1 mb-1" />{dgettext(
                   "assets",
                   "Suggest Assets"
-                ) %>
+                )}
               </.button_magic>
             </.link>
           </:buttons>
@@ -68,12 +68,12 @@ defmodule ThreatShieldWeb.AssetLive.AssetsList do
           row_click={fn asset -> JS.navigate(link_to(asset)) end}
         >
           <:col :let={asset}>
-            <%= asset.name %>
+            {asset.name}
             <p :if={is_list(asset.threats)} class="text-gray-500 text-xs font-normal">
-              <%= asset.threats |> Enum.count() %><span> Threats</span>
+              {asset.threats |> Enum.count()}<span> Threats</span>
             </p>
           </:col>
-          <:col :let={asset}><%= asset.description %></:col>
+          <:col :let={asset}>{asset.description}</:col>
           <:col :let={asset}>
             <.criticality_badge
               value={asset.criticality_overall}

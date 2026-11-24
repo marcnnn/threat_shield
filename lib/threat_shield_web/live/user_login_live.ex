@@ -14,17 +14,17 @@ defmodule ThreatShieldWeb.UserLoginLive do
         <main class="xxl:w-[36rem] mx-auto">
           <.header class="text-center">
             <div class="threadshield-header text-4xl md:text-6xl 2xl:text-8xl">
-              <%= dgettext("accounts", "Welcome back") %>
+              {dgettext("accounts", "Welcome back")}
             </div>
             <:subtitle>
               <span class="text-gray-700">
-                <%= dgettext("accounts", "Don't have an account yet?") %>
+                {dgettext("accounts", "Don't have an account yet?")}
               </span>
               <.link
                 navigate={~p"/users/register"}
                 class="font-semibold text-primary-500 hover:underline"
               >
-                <%= dgettext("accounts", "Sign up now!") %>
+                {dgettext("accounts", "Sign up now!")}
               </.link>
             </:subtitle>
           </.header>
@@ -39,12 +39,12 @@ defmodule ThreatShieldWeb.UserLoginLive do
                 label={dgettext("accounts", "remember me")}
               />
               <.link href={~p"/users/reset_password"} class="text-sm font-semibold text-gray-700">
-                <%= dgettext("accounts", "Forgot your password?") %>
+                {dgettext("accounts", "Forgot your password?")}
               </.link>
             </:actions>
             <:actions>
               <.button_magic phx-disable-with="Signing in..." class="mt-4 text-lg w-full">
-                <%= dgettext("accounts", "Sign in") %>
+                {dgettext("accounts", "Sign in")}
               </.button_magic>
             </:actions>
           </.simple_form>

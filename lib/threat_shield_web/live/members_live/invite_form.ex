@@ -10,13 +10,13 @@ defmodule ThreatShieldWeb.MembersLive.InviteForm do
     ~H"""
     <div class="md:w-[800px]">
       <.header>
-        <%= @title %>
+        {@title}
       </.header>
       <.h3>
         <span class="text-gray-700 inline-block">
           <Icons.organisation_icon class="w-5 h-5" />
         </span>
-        <%= @organisation.name %>
+        {@organisation.name}
       </.h3>
 
       <.simple_form
@@ -31,7 +31,7 @@ defmodule ThreatShieldWeb.MembersLive.InviteForm do
           <div class="w-full text-end">
             <.button_primary phx-disable-with="Saving...">
               <.icon name="hero-envelope" class="h-5 w-5 me-2" />
-              <%= dgettext("organisation", "Send invite") %>
+              {dgettext("organisation", "Send invite")}
             </.button_primary>
           </div>
         </:actions>

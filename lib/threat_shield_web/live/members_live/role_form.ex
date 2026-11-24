@@ -10,7 +10,7 @@ defmodule ThreatShieldWeb.MembersLive.RoleForm do
     ~H"""
     <div class="md:w-[800px]">
       <.header>
-        <%= dgettext("organisation", "Edit role for") %> <%= @membership.user.email %>
+        {dgettext("organisation", "Edit role for")} {@membership.user.email}
       </.header>
 
       <.simple_form
@@ -34,7 +34,7 @@ defmodule ThreatShieldWeb.MembersLive.RoleForm do
         <:actions>
           <div class="w-full text-end">
             <.button_primary phx-disable-with="Saving...">
-              <%= dgettext("organisation", "Save Membership") %>
+              {dgettext("organisation", "Save Membership")}
             </.button_primary>
           </div>
         </:actions>

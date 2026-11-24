@@ -12,7 +12,7 @@ defmodule ThreatShieldWeb.OrganisationLive.OrganisationForm do
     ~H"""
     <div>
       <.header>
-        <%= @title %>
+        {@title}
       </.header>
 
       <.simple_form
@@ -36,7 +36,7 @@ defmodule ThreatShieldWeb.OrganisationLive.OrganisationForm do
             type="text"
             label={attribute.name}
           />
-          <em>e.g. <%= DynamicAttribute.get_suggestions(attribute) |> Enum.join(", ") %></em>
+          <em>e.g. {DynamicAttribute.get_suggestions(attribute) |> Enum.join(", ")}</em>
         <% end %>
         <:actions>
           <.button_primary phx-disable-with="Saving...">Save Organisation</.button_primary>

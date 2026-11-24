@@ -13,13 +13,13 @@ defmodule ThreatShieldWeb.AssetLive.AssetForm do
     ~H"""
     <div>
       <.header>
-        <%= @title %>
+        {@title}
       </.header>
       <p>
-        <%= dgettext(
+        {dgettext(
           "assets",
           "Asset: long description"
-        ) %>
+        )}
       </p>
 
       <.simple_form

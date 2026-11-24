@@ -40,7 +40,7 @@ defmodule ThreatShieldWeb.InfoVis do
       <line x1={@size / 2} y1={0} x2={@size / 2} y2={@size} stroke="gray" stroke-width="1" />
       <!-- Axis Labels -->
       <text x={@size / 8} y={@size - 10} font-size="12">
-        <%= dgettext("risks", "Severity") %> &rarr;
+        {dgettext("risks", "Severity")} &rarr;
       </text>
       <text
         x={@size / 70 + 5}
@@ -48,11 +48,11 @@ defmodule ThreatShieldWeb.InfoVis do
         font-size="12"
         transform={"rotate(-90, #{@size / 70 + 5}, #{@size * 0.92})"}
       >
-        <%= dgettext("risks", "Frequency") %> &rarr;
+        {dgettext("risks", "Frequency")} &rarr;
       </text>
 
       <a :for={risk <- @risk_model} xlink:href={risk.link}>
-        <title><%= "#{risk.name}: EUR #{risk.cost_label}" %></title>
+        <title>{"#{risk.name}: EUR #{risk.cost_label}"}</title>
         <circle
           cx={risk.severity * @size}
           cy={@size - risk.frequency * @size}
@@ -66,7 +66,7 @@ defmodule ThreatShieldWeb.InfoVis do
           y={@size - risk.frequency * @size + 3}
           text-anchor="start"
         >
-          <%= risk.name %>
+          {risk.name}
         </text>
         <text
           :if={@show_labels && risk.severity >= 0.7}
@@ -74,7 +74,7 @@ defmodule ThreatShieldWeb.InfoVis do
           y={@size - risk.frequency * @size + 3}
           text-anchor="end"
         >
-          <%= risk.name %>
+          {risk.name}
         </text>
       </a>
     </svg>

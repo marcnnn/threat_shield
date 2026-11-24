@@ -13,14 +13,14 @@ defmodule ThreatShieldWeb.ThreatLive.ThreatForm do
     ~H"""
     <div class="max-w-3xl">
       <.header>
-        <%= @title %>
+        {@title}
       </.header>
 
       <p class="help-text">
-        <%= dgettext(
+        {dgettext(
           "threats",
           "Threat: long description"
-        ) %>
+        )}
       </p>
 
       <.simple_form
@@ -53,7 +53,7 @@ defmodule ThreatShieldWeb.ThreatLive.ThreatForm do
         />
         <:actions>
           <.button_primary phx-disable-with={dgettext("common", "Saving...")} class="mt-2">
-            <%= dgettext("threats", "Save Threat") %>
+            {dgettext("threats", "Save Threat")}
           </.button_primary>
         </:actions>
       </.simple_form>

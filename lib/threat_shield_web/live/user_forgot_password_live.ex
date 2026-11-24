@@ -7,7 +7,7 @@ defmodule ThreatShieldWeb.UserForgotPasswordLive do
     ~H"""
     <div class="mx-auto max-w-sm mt-6">
       <.header class="text-center">
-        <span class="text-xl"><%= dgettext("accounts", "Forgot your password?") %></span>
+        <span class="text-xl">{dgettext("accounts", "Forgot your password?")}</span>
         <:subtitle>We'll send a password reset link to your inbox</:subtitle>
       </.header>
 
@@ -22,8 +22,8 @@ defmodule ThreatShieldWeb.UserForgotPasswordLive do
         </:actions>
       </.simple_form>
       <p class="text-center text-sm mt-4">
-        <.link href={~p"/users/register"}><%= dgettext("accounts", "Sign up") %></.link>
-        | <.link href={~p"/users/log_in"}><%= dgettext("accounts", "Sign in") %></.link>
+        <.link href={~p"/users/register"}>{dgettext("accounts", "Sign up")}</.link>
+        | <.link href={~p"/users/log_in"}>{dgettext("accounts", "Sign in")}</.link>
       </p>
     </div>
     """

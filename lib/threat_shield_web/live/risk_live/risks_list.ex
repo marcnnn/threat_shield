@@ -22,20 +22,20 @@ defmodule ThreatShieldWeb.RiskLive.RisksList do
             <span class="text-gray-700 inline-block">
               <Icons.risk_icon class="w-5 h-5" />
             </span>
-            <%= dgettext("risks", "Risks") %>
+            {dgettext("risks", "Risks")}
           </:name>
 
           <:subtitle>
-            <%= dgettext("risks", "Risk: short description") %>
+            {dgettext("risks", "Risk: short description")}
           </:subtitle>
 
           <:buttons>
             <.link :if={may?(@scope, :create_risk)} patch={@origin <> "/risks/new"}>
               <.button_primary>
-                <.icon name="hero-hand-raised" class="mr-1 mb-1" /><%= dgettext(
+                <.icon name="hero-hand-raised" class="mr-1 mb-1" />{dgettext(
                   "risks",
                   "New Risk"
-                ) %>
+                )}
               </.button_primary>
             </.link>
             <.link>
@@ -44,10 +44,10 @@ defmodule ThreatShieldWeb.RiskLive.RisksList do
                 phx-click="suggest_risks"
                 phx-target={@myself}
               >
-                <.icon name="hero-sparkles" class="mr-1 mb-1" /><%= dgettext(
+                <.icon name="hero-sparkles" class="mr-1 mb-1" />{dgettext(
                   "risks",
                   "Suggest Risks"
-                ) %>
+                )}
               </.button_magic>
             </.link>
           </:buttons>
@@ -59,12 +59,12 @@ defmodule ThreatShieldWeb.RiskLive.RisksList do
           row_click={fn risk -> JS.navigate(link_to(risk, @scope)) end}
         >
           <:col :let={risk}>
-            <%= risk.name %>
+            {risk.name}
           </:col>
           <:col :let={risk}>
             <.risk_status_badge status={risk.status} />
           </:col>
-          <:col :let={risk}><%= risk.description %></:col>
+          <:col :let={risk}>{risk.description}</:col>
           <:col :let={risk}>
             <.criticality_badge value={risk.severity} title={dgettext("risks", "Severity")} />
           </:col>

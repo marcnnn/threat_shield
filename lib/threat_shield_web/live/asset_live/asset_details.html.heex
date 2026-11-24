@@ -3,10 +3,10 @@
     <span class="text-gray-700 inline-block">
       <Icons.asset_icon class="w-6 h-6" />
     </span>
-    <%= @asset.name %>
+    {@asset.name}
   </:name>
   <:description>
-    <%= @asset.description %>
+    {@asset.description}
   </:description>
   <:links>
     <.delete_menu_item :if={may?(@scope, :delete_asset)} value={%{asset_id: @asset.id}} />
@@ -18,8 +18,8 @@
 
   <:attribute>
     <div>
-      <.label><%= dgettext("threats", "System") %></.label>
-      <p><%= system_label(@asset) %></p>
+      <.label>{dgettext("threats", "System")}</.label>
+      <p>{system_label(@asset)}</p>
     </div>
   </:attribute>
 

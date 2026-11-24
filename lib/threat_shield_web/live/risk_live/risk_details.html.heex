@@ -3,10 +3,10 @@
     <span class="text-gray-700 inline-block">
       <Icons.risk_icon class="w-5 h-5" />
     </span>
-    <%= @risk.name %>
+    {@risk.name}
   </:name>
   <:description>
-    <%= @risk.description %>
+    {@risk.description}
   </:description>
   <:status>
     <.risk_status_badge status={@risk.status} />
@@ -21,27 +21,27 @@
 
   <:attribute>
     <div>
-      <.label><%= dgettext("risks", "System") %></.label>
-      <p><%= system_label(@risk) %></p>
+      <.label>{dgettext("risks", "System")}</.label>
+      <p>{system_label(@risk)}</p>
     </div>
     <div>
-      <.label><%= dgettext("risks", "Asset") %></.label>
-      <p><%= asset_label(@risk) %></p>
+      <.label>{dgettext("risks", "Asset")}</.label>
+      <p>{asset_label(@risk)}</p>
     </div>
     <div>
-      <.label><%= dgettext("risks", "Frequency of incidences per year") %></.label>
-      <p><%= format_number(@risk.probability) %></p>
+      <.label>{dgettext("risks", "Frequency of incidences per year")}</.label>
+      <p>{format_number(@risk.probability)}</p>
     </div>
     <div>
-      <.label><%= dgettext("risks", "Estimated cost per incidence") %></.label>
-      <p><%= format_monetary_amount(@risk.estimated_cost) %></p>
+      <.label>{dgettext("risks", "Estimated cost per incidence")}</.label>
+      <p>{format_monetary_amount(@risk.estimated_cost)}</p>
     </div>
     <div>
-      <.label><%= dgettext("risks", "Risk costs per year") %></.label>
-      <p><%= format_monetary_amount(@risk.estimated_risk_cost) %></p>
+      <.label>{dgettext("risks", "Risk costs per year")}</.label>
+      <p>{format_monetary_amount(@risk.estimated_risk_cost)}</p>
     </div>
     <div>
-      <.label><%= dgettext("risks", "Severity") %></.label>
+      <.label>{dgettext("risks", "Severity")}</.label>
       <.criticality_badge
         value={@risk.severity}
         title={dgettext("risks", "Severity - from 0 to 5")}

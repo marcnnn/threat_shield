@@ -29,21 +29,21 @@ defmodule ThreatShieldWeb.TsComponents do
       <div class="ts-container flex justify-between">
         <div class="min-h-10 pb-2">
           <.h1>
-            <%= render_slot(@name) %>
+            {render_slot(@name)}
           </.h1>
           <p class="text-sm leading-6 text-gray-600 font-normal">
-            <%= render_slot(@description) %>
+            {render_slot(@description)}
           </p>
           <div :if={@status != []} class="my-2">
-            <%= render_slot(@status) %>
+            {render_slot(@status)}
           </div>
         </div>
         <div class="flex gap-2">
           <div :if={@actions != []}>
-            <%= render_slot(@actions) %>
+            {render_slot(@actions)}
           </div>
           <.dropdown>
-            <:links><%= render_slot(@links) %></:links>
+            <:links>{render_slot(@links)}</:links>
           </.dropdown>
         </div>
       </div>
@@ -53,11 +53,11 @@ defmodule ThreatShieldWeb.TsComponents do
             "w-full grid gap-4 mt-0 px-6 py-4 bg-primary-100",
             "grid-cols-#{@columns}"
           ]}>
-            <%= render_slot(@attribute) %>
+            {render_slot(@attribute)}
           </div>
         <% end %>
         <%= if @custom != [] do %>
-          <%= render_slot(@custom) %>
+          {render_slot(@custom)}
         <% end %>
       </div>
     </section>
@@ -75,7 +75,7 @@ defmodule ThreatShieldWeb.TsComponents do
     <div class="min-h-64 lg:min-w-5xl">
       <div :if={has_suggestions?(assigns)}>
         <.header>
-          <%= @title %>
+          {@title}
         </.header>
 
         <.form for={%{}} phx-submit="apply_selection" phx-target={@listener}>
@@ -83,13 +83,13 @@ defmodule ThreatShieldWeb.TsComponents do
             <:col :let={suggestion} label={dgettext("common", "Select")}>
               <input type="checkbox" name="selected_suggestions[]" value={suggestion.name} />
             </:col>
-            <:col :let={suggestion} label="Name"><%= suggestion.name %></:col>
-            <:col :let={suggestion} label="Description"><%= suggestion.description %></:col>
+            <:col :let={suggestion} label="Name">{suggestion.name}</:col>
+            <:col :let={suggestion} label="Description">{suggestion.description}</:col>
           </.table>
 
           <div>
             <.button_primary phx-disable-with="Saving...">
-              <%= dgettext("common", "Apply selection") %>
+              {dgettext("common", "Apply selection")}
             </.button_primary>
           </div>
         </.form>
@@ -97,7 +97,7 @@ defmodule ThreatShieldWeb.TsComponents do
 
       <div :if={not has_suggestions?(assigns)}>
         <.header>
-          <%= @loading_title %>
+          {@loading_title}
         </.header>
 
         <ThreatShieldWeb.Spinner.spinner />
@@ -122,7 +122,7 @@ defmodule ThreatShieldWeb.TsComponents do
     ~H"""
     <li class="context-menu-item">
       <.link phx-click={JS.push("delete", value: @value)} data-confirm="Are you sure?">
-        <%= dgettext("common", "Delete") %>
+        {dgettext("common", "Delete")}
       </.link>
     </li>
     """
@@ -137,7 +137,7 @@ defmodule ThreatShieldWeb.TsComponents do
     ~H"""
     <li class="context-menu-item">
       <.link patch={@patch} phx-click={JS.push_focus()}>
-        <%= dgettext("common", "Edit") %>
+        {dgettext("common", "Edit")}
       </.link>
     </li>
     """
@@ -190,12 +190,12 @@ defmodule ThreatShieldWeb.TsComponents do
   def criticality_display(assigns) do
     ~H"""
     <div class="flex justify-between">
-      <.label for={@id}><%= @label %></.label>
+      <.label for={@id}>{@label}</.label>
       <span
         class="inline-block w-10 h-10 text-center leading-9 text-gray-800 font-semibold rounded-full appearance-none cursor-pointer border-2"
         style={"background-color: #{color_code_for_criticality(@value, 0.4)}; border-color: #{color_code_for_criticality(@value, 1)}"}
       >
-        <%= @value %>
+        {@value}
       </span>
     </div>
     """
@@ -215,7 +215,7 @@ defmodule ThreatShieldWeb.TsComponents do
       style={"background-color: #{color_code_for_criticality(@value, 0.4)}; border-color: #{color_code_for_criticality(@value, 1)}"}
       title={@title}
     >
-      <%= @value %>
+      {@value}
     </span>
     """
   end
@@ -228,7 +228,7 @@ defmodule ThreatShieldWeb.TsComponents do
       "inline-flex items-center rounded-md px-4 py-1 text-xs font-bold text-center leading-1 text-gray-100",
       bg_class_for_risk_status(assigns.status)
     ]}>
-      <%= risk_status_label(assigns.status) %>
+      {risk_status_label(assigns.status)}
     </span>
     """
   end
@@ -242,7 +242,7 @@ defmodule ThreatShieldWeb.TsComponents do
       "inline-flex items-center rounded-md px-4 py-1 text-xs font-bold text-center leading-1",
       if(@light, do: "bg-neutral-400 text-white", else: "bg-neutral-600 text-gray-100")
     ]}>
-      <%= mitigation_status_label(assigns.status) %>
+      {mitigation_status_label(assigns.status)}
     </span>
     """
   end

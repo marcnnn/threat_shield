@@ -5,19 +5,19 @@
         <span class="text-gray-700 inline-block">
           <Icons.organisation_icon class="w-5 h-5" />
         </span>
-        <%= @organisation.name %>
+        {@organisation.name}
       </.h1>
       <p class="leading-6 text-gray-600 text-sm font-normal space-x-3">
         <span :if={@organisation.location}>
           <.icon name="hero-map-pin" class="w-5 h-5" />
-          <%= @organisation.location %>
+          {@organisation.location}
         </span>
         <span>
           <.icon name="hero-identification" class="w-5 h-5" />
           <span>
-            <%= dgettext("common", "Created on") %>
+            {dgettext("common", "Created on")}
           </span>
-          <%= convert_date(@organisation.inserted_at) %>
+          {convert_date(@organisation.inserted_at)}
         </span>
       </p>
     </div>
@@ -26,7 +26,7 @@
         <:links>
           <li class="context-menu-item">
             <.link navigate={~p"/organisations/#{@organisation}/members"}>
-              <%= dgettext("organisation", "Members") %>
+              {dgettext("organisation", "Members")}
             </.link>
           </li>
           <.delete_menu_item
@@ -42,7 +42,7 @@
               patch={~p"/exports/excel?org_id=#{@organisation.id}"}
               phx-click={JS.push_focus()}
             >
-              <%= dgettext("common", "Export Threat Model") %>
+              {dgettext("common", "Export Threat Model")}
             </.link>
           </li>
         </:links>

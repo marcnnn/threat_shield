@@ -3,10 +3,10 @@
     <span class="text-gray-800 inline-block">
       <Icons.threat_icon class="w-5 h-5" />
     </span>
-    <%= @threat.name %>
+    {@threat.name}
   </:name>
   <:description>
-    <%= @threat.description %>
+    {@threat.description}
   </:description>
   <:links>
     <.delete_menu_item :if={may?(@scope, :delete_threat)} value={%{threat_id: @threat.id}} />
@@ -17,12 +17,12 @@
   </:links>
   <:attribute>
     <div>
-      <.label><%= dgettext("threats", "System") %></.label>
-      <p><%= system_label(@threat) %></p>
+      <.label>{dgettext("threats", "System")}</.label>
+      <p>{system_label(@threat)}</p>
     </div>
     <div>
-      <.label><%= dgettext("threats", "Asset") %></.label>
-      <p><%= asset_label(@threat) %></p>
+      <.label>{dgettext("threats", "Asset")}</.label>
+      <p>{asset_label(@threat)}</p>
     </div>
   </:attribute>
 </.entity_info>

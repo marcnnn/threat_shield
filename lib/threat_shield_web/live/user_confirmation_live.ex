@@ -18,8 +18,8 @@ defmodule ThreatShieldWeb.UserConfirmationLive do
       </.simple_form>
 
       <p class="text-center mt-4">
-        <.link href={~p"/users/register"}><%= dgettext("accounts", "Sign up") %></.link>
-        | <.link href={~p"/users/log_in"}><%= dgettext("accounts", "Sign in") %></.link>
+        <.link href={~p"/users/register"}>{dgettext("accounts", "Sign up")}</.link>
+        | <.link href={~p"/users/log_in"}>{dgettext("accounts", "Sign in")}</.link>
       </p>
     </div>
     """

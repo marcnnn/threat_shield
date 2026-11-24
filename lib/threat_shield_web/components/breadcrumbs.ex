@@ -69,7 +69,7 @@ defmodule ThreatShieldWeb.Breadcrumbs do
       <div class="flex items-center">
         <.icon name="hero-chevron-right" class="h-4 w-4" />
         <span class="ml-1 text-sm font-medium md:ml-2">
-          <%= @text %>
+          {@text}
         </span>
       </div>
     </li>
@@ -82,7 +82,7 @@ defmodule ThreatShieldWeb.Breadcrumbs do
       <div class="flex items-center">
         <.icon name="hero-chevron-right" class="h-4 w-4" />
         <.link navigate={@navigate} class="ml-1 text-sm font-medium md:ml-2 ">
-          <%= @text %>
+          {@text}
         </.link>
       </div>
     </li>
