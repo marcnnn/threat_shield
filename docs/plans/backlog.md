@@ -65,8 +65,9 @@ the tests against 15 as well.
 
 ## Update assent
 
-ash_authentication 4.15 requires assent `< 0.3`, so the lock holds assent 0.2.13 with the
-advisory EEF-CVE-2026-117656 (Sign in with Apple, fixed in 0.3.2). The app uses no OAuth
+ash_authentication 4.15.1 (the latest) requires assent `< 0.3`, so the lock holds assent
+0.2.13 (the latest is 0.4.0) with the advisory EEF-CVE-2026-117656 (Sign in with Apple,
+fixed in 0.3.2). The app uses no OAuth
 strategy, so `mix.exs` ignores the advisory. When ash_authentication allows assent 0.3,
 update it and remove the entry from `ignored_advisories/0`.
 
@@ -76,6 +77,12 @@ The provider `AshThreatShield.AI.Providers.OpenAI` uses the package `openai` 0.6
 latest version, which asks for httpoison 2 and so for hackney 1 with open advisories. Both `mix.exs` override
 httpoison to 3 (hackney 4); a host of the library has to do the same. A provider that
 calls the API with Finch or Req would drop the package and the override.
+
+## Update bcrypt_elixir
+
+ash_authentication 4.15.1 (the latest) requires bcrypt_elixir `~> 3.0`, so the lock holds
+3.3.2 although 4.0.0 is out. There is no advisory. Update it when ash_authentication
+allows 4.0.
 
 ## Timestamps of memberships
 

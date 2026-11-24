@@ -27,11 +27,15 @@ dependency (see "Library ash_threat_shield").
 - **OpenAI** via the `openai` hex package (`gpt-3.5-turbo`), behind the behaviour
   `AshThreatShield.AI.Provider` of the library (see "AI integration").
 - **ash_ai** serves the domain actions as MCP tools at `/mcp` (see "MCP server").
-- Assets: **esbuild** + **tailwind**, run through Mix. JS dependencies (`chart.js`,
-  `@popperjs/core`) come from `assets/package.json` and need `npm install` in `assets/`
-  (Node.js 20, see `.tool-versions`). `choices.js` is listed there but not used.
+- Assets: **esbuild** + **Tailwind CSS 4**, run through Mix (binary versions in
+  `config/config.exs`). Tailwind is configured in `assets/css/app.css` (`@theme`,
+  `@plugin`, `@custom-variant`; there is no `tailwind.config.js`); the Heroicons plugin
+  is `assets/vendor/heroicons.js`. JS dependencies (`chart.js`, `@popperjs/core`) come
+  from `assets/package.json` and need `npm install` in `assets/` (Node.js 20, see
+  `.tool-versions`).
 - Other: `bcrypt_elixir` (passwords), `ex_rated` (rate limiting), `gettext` (i18n),
-  `elixlsx` (Excel export), `swoosh`/`finch` (mail), `timex`, `logger_json`.
+  `elixlsx` (Excel export), `swoosh`/`finch` (mail), `timex`, `logger_json` (JSON logs
+  for Google Cloud in production, a formatter of the default handler).
 - Checks (dev/test only): `credo` with `ash_credo`, `sobelow`, `mix_audit`, `dialyxir`,
   `ex_check`; see "Checks".
 

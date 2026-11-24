@@ -32,6 +32,12 @@ The branch moves the domain layer to Ash and the sign in to AshAuthentication
 
 ## After the deployment
 
+- Look at a few pages (sign in, an organisation, a threat with its risks, the risk
+  board): the branch moves the styles to Tailwind CSS 4, which needs Safari 16.4,
+  Chrome 111 or Firefox 128 or newer.
+- Check in Cloud Logging that the logs still arrive as JSON with a severity: the
+  production logger is now the formatter `LoggerJSON.Formatters.GoogleCloud` of
+  logger_json 7.
 - Sign in, request a password reset and accept an invite once, to check the links of
   the emails (`ThreatShieldWeb.AccountUrls`, host from `PHX_HOST`).
 - Create an API key on the settings page and call `/mcp` with it
