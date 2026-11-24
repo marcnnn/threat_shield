@@ -38,7 +38,7 @@ def deps do
   [
     {:ash_threat_shield, path: "packages/ash_threat_shield"},
     # the default AI provider; optional
-    {:openai, "~> 0.5.2"},
+    {:openai, "~> 0.6.2"},
     # openai asks for httpoison ~> 2.0, which is held at hackney 1.x with open
     # security advisories; openai works with httpoison 3
     {:httpoison, "~> 3.0", override: true}

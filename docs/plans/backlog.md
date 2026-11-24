@@ -79,8 +79,8 @@ update it and remove the entry from `ignored_advisories/0`.
 
 ## Replace the package openai
 
-The provider `AshThreatShield.AI.Providers.OpenAI` uses the package `openai` 0.5, which
-asks for httpoison 2 and so for hackney 1 with open advisories. Both `mix.exs` override
+The provider `AshThreatShield.AI.Providers.OpenAI` uses the package `openai` 0.6, the
+latest version, which asks for httpoison 2 and so for hackney 1 with open advisories. Both `mix.exs` override
 httpoison to 3 (hackney 4); a host of the library has to do the same. A provider that
 calls the API with Finch or Req would drop the package and the override.
 

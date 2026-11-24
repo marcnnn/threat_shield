@@ -21,7 +21,10 @@ config :swoosh, api_client: Swoosh.ApiClient.Finch, finch_name: ThreatShield.Fin
 config :swoosh, local: false
 
 # Do not print debug messages in production
-config :logger, backends: [LoggerJSON], level: :info
+config :logger, level: :info
+
+# Log in the JSON format of Google Cloud Logging, which Cloud Run reads from stdout
+config :logger, :default_handler, formatter: {LoggerJSON.Formatters.GoogleCloud, metadata: :all}
 
 # Runtime production configuration, including reading
 # of environment variables, is done on config/runtime.exs.

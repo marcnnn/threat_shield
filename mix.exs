@@ -70,7 +70,7 @@ defmodule ThreatShield.MixProject do
       {:phoenix_ecto, "~> 4.5"},
       {:dotenv, "~> 3.1.0"},
       {:ecto_sql, "~> 3.14"},
-      {:postgrex, ">= 0.0.0"},
+      {:postgrex, "~> 0.23"},
       {:phoenix_html, "~> 4.0"},
       {:phoenix_live_reload, "~> 1.2", only: :dev},
       {:phoenix_live_view, "~> 0.20.12"},
@@ -80,20 +80,20 @@ defmodule ThreatShield.MixProject do
       {:tailwind, "~> 0.2.0", runtime: Mix.env() == :dev},
       {:swoosh, "~> 1.3"},
       {:finch, "~> 0.19"},
-      {:telemetry_metrics, "~> 0.6"},
+      {:telemetry_metrics, "~> 1.2"},
       {:telemetry_poller, "~> 1.0"},
-      {:gettext, "~> 0.20"},
+      {:gettext, "~> 1.0"},
       {:jason, "~> 1.2"},
       {:plug_cowboy, "~> 2.5"},
-      {:openai, "~> 0.5.2"},
-      # openai needs httpoison ~> 2.0, which is held at hackney 1.x with open advisories.
-      # Its calls work unchanged with httpoison 3 and hackney 4.
+      {:openai, "~> 0.6.2"},
+      # openai 0.6 (the latest) still needs httpoison ~> 2.0, which is held at hackney 1.x
+      # with open advisories. Its calls work unchanged with httpoison 3 and hackney 4.
       {:httpoison, "~> 3.0", override: true},
       {:ecto_psql_extras, "~> 0.8"},
       {:ex_rated, "~> 2.1"},
-      {:timex, "~> 3.7.11"},
-      {:elixlsx, "~> 0.5.1"},
-      {:logger_json, "~> 5.1"},
+      {:timex, "~> 4.0"},
+      {:elixlsx, "~> 0.6.0"},
+      {:logger_json, "~> 7.0"},
       # static analysis, see "Checks" in AGENTS.md
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:ash_credo, "~> 0.19.2", only: [:dev, :test], runtime: false},
