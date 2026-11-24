@@ -35,7 +35,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Elixir
         uses: ./.github/actions/setup-elixir
@@ -76,7 +76,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Elixir
         uses: ./.github/actions/setup-elixir
@@ -115,7 +115,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Elixir
         uses: ./.github/actions/setup-elixir
@@ -125,7 +125,7 @@ jobs:
       # The PLTs depend on Erlang, Elixir and the locked dependencies
       - name: Restore the PLTs
         id: plt-cache
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v6
         with:
           path: priv/plts
           key: ${{ runner.os }}-plt-otp29.1.1-elixir1.20.4-${{ hashFiles('mix.lock') }}
@@ -139,7 +139,7 @@ jobs:
       # saved even if Dialyzer finds problems below
       - name: Save the PLTs
         if: steps.plt-cache.outputs.cache-hit != 'true'
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v6
         with:
           path: priv/plts
           key: ${{ steps.plt-cache.outputs.cache-primary-key }}
