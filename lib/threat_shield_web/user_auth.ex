@@ -206,12 +206,7 @@ defmodule ThreatShieldWeb.UserAuth do
   end
 
   defp flash(%Socket{} = socket, message) do
-    if is_nil(socket.router) or unauth_flash_needed(socket.router.assigns[:path_info]) do
-      socket
-      |> Phoenix.LiveView.put_flash(:error, message)
-    else
-      socket
-    end
+    Phoenix.LiveView.put_flash(socket, :error, message)
   end
 
   defp flash(%Plug.Conn{} = conn, message) do

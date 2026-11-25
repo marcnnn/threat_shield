@@ -254,6 +254,40 @@ defmodule ThreatShieldWeb.McpTest do
       assert %Threat{name: "Phishing mails"} = Repo.get!(Threat, threat_id)
     end
 
+    test "update_system changes the name without touching the attributes",
+         %{conn: conn, key: key, system: system} do
+      assert %{"name" => "Web shop 2"} =
+               call_tool!(conn, key, "update_system", %{
+                 id: system.id,
+                 input: %{name: "Web shop 2"}
+               })
+
+      assert %System{name: "Web shop 2"} = Repo.get!(System, system.id)
+    end
+
+    test "update_system of a viewer is forbidden",
+         %{conn: conn, organisation: organisation, system: system} do
+      viewer = AccountsFixtures.user_fixture()
+      MembersFixtures.membership_fixture(organisation, viewer, :viewer)
+      key = AccountsFixtures.api_key_fixture(viewer)
+
+      assert {:error, text} =
+               call_tool(conn, key, "update_system", %{id: system.id, input: %{name: "Changed"}})
+
+      refute text =~ "unexpected error"
+      assert %System{name: "Web shop"} = Repo.get!(System, system.id)
+    end
+
+    test "create_asset needs a description",
+         %{conn: conn, key: key, organisation: organisation} do
+      assert {:error, text} =
+               call_tool(conn, key, "create_asset", %{
+                 input: %{name: "No description", organisation_id: organisation.id}
+               })
+
+      assert text =~ "description"
+    end
+
     test "creating in another organisation is forbidden",
          %{conn: conn, key: key, other_organisation: other, other_threat: other_threat} do
       assert {:error, text} =

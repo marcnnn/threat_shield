@@ -52,6 +52,7 @@ defmodule ThreatShield.Accounts do
 
     resource ThreatShield.Accounts.Organisation do
       define :list_organisations, action: :read
+      define :list_all_organisations, action: :all
       define :get_organisation, action: :read, get_by: [:id]
       define :create_organisation, action: :create
       define :update_organisation, action: :update
@@ -68,6 +69,7 @@ defmodule ThreatShield.Accounts do
 
     resource ThreatShield.Accounts.Invite do
       define :list_received_invites, action: :received
+      define :list_open_invites, action: :open
       define :get_invite_by_token, action: :by_token, args: [:token], not_found_error?: false
       define :create_invite, action: :create, args: [:organisation_id]
       define :revoke_invite, action: :destroy, get_by: [:id]

@@ -77,6 +77,25 @@ defmodule ThreatShieldWeb.Helpers do
     sign <> delimit(Integer.to_string(abs(integer)))
   end
 
+  @doc """
+  Formats a number with up to two decimal places, e.g. a frequency per year:
+  `0.3` gives "0,3", `1234.5` gives "1.234,5", `2.0` gives "2".
+  """
+  def format_decimal(nil), do: "-"
+
+  def format_decimal(number) do
+    rounded = number |> to_decimal() |> Decimal.round(2)
+    sign = if Decimal.negative?(rounded), do: "-", else: ""
+
+    [integer | fraction] =
+      rounded |> Decimal.abs() |> Decimal.to_string(:normal) |> String.split(".")
+
+    case fraction |> List.first("") |> String.trim_trailing("0") do
+      "" -> sign <> delimit(integer)
+      digits -> sign <> delimit(integer) <> "," <> digits
+    end
+  end
+
   defp to_decimal(%Decimal{} = number), do: number
   defp to_decimal(number) when is_integer(number), do: Decimal.new(number)
   defp to_decimal(number) when is_float(number), do: Decimal.from_float(number)
@@ -106,11 +125,12 @@ defmodule ThreatShieldWeb.Helpers do
   def link_to(%Risk{id: risk_id, threat: %Threat{id: threat_id} = threat}, %Organisation{
         id: org_id
       }) do
-    case {threat.system_id, threat.asset_id} do
-      {nil, nil} ->
+    # risks have routes below a system or below the organisation, not below an asset
+    case threat.system_id do
+      nil ->
         ~p"/organisations/#{org_id}/threats/#{threat_id}/risks/#{risk_id}"
 
-      {system_id, _} ->
+      system_id ->
         ~p"/organisations/#{org_id}/systems/#{system_id}/threats/#{threat_id}/risks/#{risk_id}"
     end
   end

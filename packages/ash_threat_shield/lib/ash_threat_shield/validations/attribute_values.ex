@@ -22,11 +22,16 @@ defmodule AshThreatShield.Validations.AttributeValues do
   def validate(changeset, opts, _context) do
     field = opts[:attribute]
 
-    case Ash.Changeset.get_attribute(changeset, field) do
-      nil ->
+    # Only a changed value needs a check. An atomic update has no original data, so the
+    # value must not be read with get_attribute when the input does not change it.
+    case Ash.Changeset.fetch_change(changeset, field) do
+      {:ok, nil} ->
         :ok
 
-      attributes ->
+      :error ->
+        :ok
+
+      {:ok, attributes} ->
         if DynamicAttribute.valid_values?(attributes) do
           :ok
         else

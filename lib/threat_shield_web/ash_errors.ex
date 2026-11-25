@@ -54,5 +54,13 @@ defmodule ThreatShieldWeb.AshErrors do
   defp whole_number({key, value}) when is_float(value) and value == trunc(value),
     do: {key, trunc(value)}
 
+  # Some constraints arrive as text, e.g. "0.0" for the minimum of a float.
+  defp whole_number({key, value}) when is_binary(value) do
+    case Float.parse(value) do
+      {float, ""} when float == trunc(float) -> {key, trunc(float)}
+      _ -> {key, value}
+    end
+  end
+
   defp whole_number(var), do: var
 end

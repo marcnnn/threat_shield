@@ -104,7 +104,13 @@ defmodule ThreatShield.Accounts.Organisation do
     has_many :systems, AshThreatShield.ThreatManagement.System, public?: true
     has_many :threats, AshThreatShield.ThreatManagement.Threat, public?: true
     has_many :assets, AshThreatShield.ThreatManagement.Asset, public?: true
-    has_many :invites, ThreatShield.Accounts.Invite, public?: true
+
+    has_many :invites, ThreatShield.Accounts.Invite do
+      public? true
+      # expired invites wait for the periodic cleanup; they are not listed
+      read_action :open
+      description "The open (not expired) invites of the organisation."
+    end
   end
 
   aggregates do
@@ -147,6 +153,10 @@ defmodule ThreatShield.Accounts.Organisation do
       description "Lists the organisations of which the actor is a member."
     end
 
+    read :all do
+      description "Lists all organisations of the instance, for platform administrators."
+    end
+
     create :create do
       description "Creates an organisation. The actor becomes its first owner."
       accept [:name, :location, :attributes]
@@ -160,6 +170,10 @@ defmodule ThreatShield.Accounts.Organisation do
   end
 
   policies do
+    bypass action(:all) do
+      authorize_if ThreatShield.Checks.PlatformAdmin
+    end
+
     policy action_type(:read) do
       authorize_if {OrganisationRole, right: :view_organisation, path: []}
     end

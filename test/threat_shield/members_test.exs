@@ -35,13 +35,29 @@ defmodule ThreatShield.MembersTest do
       other_user = AccountsFixtures.confirmed_user_fixture()
       email = to_string(other_user.email)
 
+      # an invite to the address and a link invite to another address
       invite_1 = MembersFixtures.invite_fixture(owner, organisation, email)
-      {:ok, %Membership{}} = Accounts.accept_invite(invite_1.id, actor: other_user)
-
-      invite_2 = MembersFixtures.invite_fixture(owner, organisation, email)
+      link_invite = MembersFixtures.invite_fixture(owner, organisation, "link@example.com")
+      {:ok, %Membership{}} = Accounts.join_with_token(link_invite.token, actor: other_user)
 
       assert :already_member =
-               invite_error_reason(Accounts.accept_invite(invite_2.id, actor: other_user))
+               invite_error_reason(Accounts.accept_invite(invite_1.id, actor: other_user))
+    end
+
+    test "a member cannot be invited again, whatever the case of the address" do
+      owner = AccountsFixtures.user_fixture()
+      organisation = OrganisationsFixtures.organisation_fixture(owner)
+      member = AccountsFixtures.confirmed_user_fixture()
+      MembersFixtures.membership_fixture(organisation, member, :viewer)
+
+      assert {:error, %Ash.Error.Invalid{} = error} =
+               Accounts.create_invite(
+                 organisation.id,
+                 %{email: String.upcase(to_string(member.email))},
+                 actor: owner
+               )
+
+      assert Exception.message(error) =~ "is already a member of this organisation"
     end
 
     test "the creator of an organisation becomes its owner" do

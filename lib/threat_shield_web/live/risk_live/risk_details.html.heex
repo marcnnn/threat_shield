@@ -30,7 +30,7 @@
     </div>
     <div>
       <.label>{dgettext("risks", "Frequency of incidences per year")}</.label>
-      <p>{format_number(@risk.probability)}</p>
+      <p>{format_decimal(@risk.probability)}</p>
     </div>
     <div>
       <.label>{dgettext("risks", "Estimated cost per incidence")}</.label>

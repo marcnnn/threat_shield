@@ -87,10 +87,44 @@ defmodule ThreatShieldWeb.EntityFormLiveTest do
     |> render_submit()
 
     assert_patch(view, org_path)
-    assert render(view) =~ "Customer data"
+    html = render(view)
+    assert html =~ "Customer data"
+    assert html =~ "Asset created successfully"
 
     assert %Asset{} = asset = Repo.get_by!(Asset, name: "Customer data")
     assert asset.organisation_id == organisation.id
+  end
+
+  test "creates an asset from the assets list of a system and shows the message",
+       %{conn: conn, system: system, org_path: org_path} do
+    system_path = org_path <> "/systems/#{system.id}"
+    {:ok, view, _html} = live(conn, system_path)
+
+    view |> element(~s([phx-click="open-create-dialog"])) |> render_click()
+
+    view
+    |> form("#asset-form", asset: %{name: "Card tokens", description: "Payment data"})
+    |> render_submit()
+
+    assert_patch(view, system_path)
+    html = render(view)
+    assert html =~ "Card tokens"
+    assert html =~ "Asset created successfully"
+  end
+
+  test "requires a description for an asset", %{conn: conn, org_path: org_path} do
+    {:ok, view, _html} = live(conn, org_path)
+    switch_tab(view, "assets")
+
+    view |> element(~s([phx-click="open-create-dialog"])) |> render_click()
+
+    html =
+      view
+      |> form("#asset-form", asset: %{name: "No description", description: ""})
+      |> render_submit()
+
+    assert html =~ "can&#39;t be blank"
+    refute Repo.get_by(Asset, name: "No description")
   end
 
   test "creates a threat from the threats list",
@@ -133,6 +167,21 @@ defmodule ThreatShieldWeb.EntityFormLiveTest do
 
     assert %Risk{} = risk = Repo.get_by!(Risk, name: "Loss of customers")
     assert risk.threat_id == threat.id
+  end
+
+  test "words the lower limit of a risk's probability like the original",
+       %{conn: conn, threat: threat, org_path: org_path} do
+    {:ok, view, _html} = live(conn, org_path <> "/threats/#{threat.id}/risks/new")
+
+    html =
+      view
+      |> form("#risk-form",
+        risk: %{name: "Fine", description: "d", probability: "-0.5", estimated_cost: "-5"}
+      )
+      |> render_submit()
+
+    assert html =~ ~r/must be greater than or equal to 0\s*</
+    refute html =~ "must be greater than or equal to 0.0"
   end
 
   test "shows validation errors for a duplicate system name and a long threat name",

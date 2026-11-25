@@ -79,7 +79,13 @@
             <.button_secondary
               phx-click="reject_invitation"
               phx-value-invite_id={invite.id}
-              data-confirm={"Do you really want to revoke the invite for #{invite.email}?"}
+              data-confirm={
+                dgettext(
+                  "members",
+                  "Do you really want to reject the invitation to %{organisation}?",
+                  organisation: invite.organisation_name
+                )
+              }
             >
               {dgettext("common", "Reject")}
             </.button_secondary>

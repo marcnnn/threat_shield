@@ -205,6 +205,12 @@ defmodule AshThreatShield.ThreatManagement.Asset do
     end
   end
 
+  validations do
+    # like the other entities, an asset needs a description (the column is nullable);
+    # only when the description is valid otherwise, e.g. not too long
+    validate present(:description), message: "is required", only_when_valid?: true
+  end
+
   policies do
     policy action_type(:read) do
       authorize_if {OrganisationRole, right: :view_organisation}

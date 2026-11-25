@@ -7,6 +7,8 @@ defmodule ThreatShieldWeb.FormHelpers do
   after a successful save.
   """
 
+  use Gettext, backend: ThreatShieldWeb.Gettext
+
   import Phoenix.Component, only: [assign: 3, to_form: 1]
   import Phoenix.LiveView, only: [put_flash: 3, push_patch: 2]
 
@@ -37,7 +39,8 @@ defmodule ThreatShieldWeb.FormHelpers do
   Handles the result of a submitted form.
 
   On success, it sends `{form_module, {:saved, entity}}` to the parent LiveView,
-  shows the message, and returns to the path in the assign `:patch`. On an error,
+  shows the message, and returns to the path in the assign `:patch`. If the actor may
+  not do it, it shows an error message and returns there too. On another error,
   it shows the form with the errors.
   """
   def handle_save_result(socket, {:ok, entity}, form_module, message) do
@@ -49,6 +52,21 @@ defmodule ThreatShieldWeb.FormHelpers do
   end
 
   def handle_save_result(socket, {:error, form}, _form_module, _message) do
-    assign_form(socket, form)
+    if forbidden?(form) do
+      # The actor may not do this (e.g. a viewer on an edit route). There is no field
+      # to show the error at, so the form closes with a message.
+      socket
+      |> put_flash(:error, dgettext("errors", "You are not allowed to do this."))
+      |> push_patch(to: socket.assigns.patch)
+    else
+      assign_form(socket, form)
+    end
   end
+
+  defp forbidden?(%Phoenix.HTML.Form{source: form}), do: forbidden?(form)
+
+  defp forbidden?(%AshPhoenix.Form{source: %{errors: [_ | _] = errors}}),
+    do: match?(%Ash.Error.Forbidden{}, Ash.Error.to_error_class(errors))
+
+  defp forbidden?(_form), do: false
 end

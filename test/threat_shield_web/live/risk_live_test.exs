@@ -49,5 +49,38 @@ defmodule ThreatShieldWeb.RiskLiveTest do
         ~p"/organisations/#{organisation.id}/threats/#{risk.threat_id}/risks/#{risk.id}"
       )
     end
+
+    test "links a risk of a threat with an asset but without a system",
+         %{conn: conn, user: user, organisation: organisation} do
+      asset =
+        AshThreatShield.AssetsFixtures.asset_fixture(user, organisation, %{name: "Laptop"})
+
+      threat =
+        ThreatsFixtures.threat_fixture(user, organisation, %{name: "Theft", asset_id: asset.id})
+
+      risk = risk_fixture(user, threat.id, %{name: "Lost laptop", severity: 2.0})
+
+      {:ok, view, html} = live(conn, ~p"/organisations/#{organisation.id}/risk-board")
+      assert html =~ "Lost laptop"
+
+      render_click(view, "risk-selected", %{"risk-id" => to_string(risk.id)})
+
+      assert_redirect(
+        view,
+        ~p"/organisations/#{organisation.id}/threats/#{threat.id}/risks/#{risk.id}"
+      )
+    end
+  end
+
+  test "shows the frequency of a risk with its decimals",
+       %{conn: conn, user: user} do
+    organisation = OrganisationsFixtures.organisation_fixture(user)
+    threat = ThreatsFixtures.threat_fixture(user, organisation)
+    risk = risk_fixture(user, threat.id, %{name: "Rare", probability: 0.3})
+
+    {:ok, _view, html} =
+      live(conn, ~p"/organisations/#{organisation.id}/threats/#{threat.id}/risks/#{risk.id}")
+
+    assert html =~ "0,3"
   end
 end

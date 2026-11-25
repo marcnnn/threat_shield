@@ -27,6 +27,11 @@ defmodule AshThreatShield.ThreatManagement.Validations.SameOrganisation do
       nil ->
         :ok
 
+      # Without an organisation there is nothing to compare yet (e.g. a new form before
+      # the parent id is set); the required organisation_id stops the action.
+      _id when is_nil(org_id) ->
+        :ok
+
       id ->
         # Only compares organisations, so it reads without authorization; the
         # policies of the action check the actor.

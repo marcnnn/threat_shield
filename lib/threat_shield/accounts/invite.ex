@@ -117,6 +117,11 @@ defmodule ThreatShield.Accounts.Invite do
              )
     end
 
+    read :open do
+      description "Lists the invites that have not expired."
+      filter expr(inserted_at >= ago(^invite_lifetime_in_seconds(), :second))
+    end
+
     read :expired do
       description "Lists the invites that have expired."
       filter expr(inserted_at < ago(^invite_lifetime_in_seconds(), :second))
@@ -127,6 +132,7 @@ defmodule ThreatShield.Accounts.Invite do
                     "join to the address. An address can be invited once per organisation."
 
       accept [:email, :organisation_id]
+      validate ThreatShield.Accounts.Validations.NotAMember
       change ThreatShield.Accounts.Changes.GenerateInviteToken
       change ThreatShield.Accounts.Changes.SendInviteEmail
     end

@@ -62,7 +62,7 @@ defmodule ThreatShield.AuthorizationTest do
   defp resources(%{organisation: org, records: records}) do
     [
       {System, :system, %{name: "new", description: "d", organisation_id: org.id}},
-      {Asset, :asset, %{name: "new", organisation_id: org.id}},
+      {Asset, :asset, %{name: "new", description: "d", organisation_id: org.id}},
       {Threat, :threat, %{name: "new", description: "d", organisation_id: org.id}},
       {Risk, :risk, %{name: "new", description: "d", threat_id: records[Threat].id}},
       {Mitigation, :mitigation, %{name: "new", description: "d", risk_id: records[Risk].id}}

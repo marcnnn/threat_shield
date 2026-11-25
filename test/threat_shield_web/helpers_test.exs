@@ -18,6 +18,17 @@ defmodule ThreatShieldWeb.HelpersTest do
     end
   end
 
+  describe "format_decimal/1" do
+    test "keeps up to two decimal places" do
+      assert format_decimal(nil) == "-"
+      assert format_decimal(0.3) == "0,3"
+      assert format_decimal(2.0) == "2"
+      assert format_decimal(0.125) == "0,13"
+      assert format_decimal(1234.5) == "1.234,5"
+      assert format_decimal(-0.25) == "-0,25"
+    end
+  end
+
   describe "format_monetary_amount/2" do
     test "appends the currency" do
       assert format_monetary_amount(nil) == "-"

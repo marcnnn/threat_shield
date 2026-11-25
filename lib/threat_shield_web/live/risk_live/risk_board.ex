@@ -231,7 +231,7 @@ defmodule ThreatShieldWeb.RiskLive.RiskBoard do
         severity: normalized_risk_severity(risk),
         color: color_code_for_criticality(risk.severity, 0.7),
         cost_label: format_monetary_amount(risk_cost(risk)),
-        frequency_label: format_number(risk.probability),
+        frequency_label: format_decimal(risk.probability),
         severity_label: format_number(risk.severity),
         link: link_to(risk, organisation)
       }

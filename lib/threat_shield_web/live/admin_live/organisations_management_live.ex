@@ -10,7 +10,12 @@ defmodule ThreatShieldWeb.AdminLive.OrganisationsManagement do
   def mount(_params, _session, socket) do
     locations_options = Locations.list_locations()
 
-    organisations = Accounts.list_organisations!(actor: socket.assigns.current_user)
+    organisations =
+      case Accounts.list_all_organisations(actor: socket.assigns.current_user) do
+        {:ok, organisations} -> organisations
+        # the page is only mounted for platform admins; show nothing if that changed
+        {:error, _error} -> []
+      end
 
     socket
     |> assign(locations_options: locations_options)
